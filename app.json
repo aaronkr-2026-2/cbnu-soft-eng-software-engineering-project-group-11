@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "FILMER",
+    "slug": "filmer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "filmer",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-status-bar"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
