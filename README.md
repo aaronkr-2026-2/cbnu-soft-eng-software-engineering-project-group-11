@@ -1,10 +1,39 @@
 # FILMER
 
-## Overview
+## Product Vision
 
-FILMER is a mobile app designed for film photography enthusiasts to organize and manage their film photography archive.
+FILMER is a mobile app for film photography enthusiasts to keep their film archive organized in one place.
 
-Users can manage film rolls, cameras, and scanned photos in one place, with each photo organized by its corresponding roll. The app also supports metadata such as shooting date, location, and notes.
+The app connects film rolls, cameras, and scanned photos, allowing users to record and revisit their film photography memories through a simple and organized workflow.
+
+## MVP Status
+
+### Current MVP
+
+The current MVP is in the initial development stage.
+
+Currently available:
+- React Native + Expo project setup
+- TypeScript configuration
+- Basic project structure
+- Initial UI/UX design
+- iOS Simulator development environment
+
+### Core Workflow
+
+The core MVP workflow is:
+
+**Create Roll → Select Film & Camera → Add Photos → View Roll → View Photos**
+
+### Current Limitations
+
+The following core features are still under development:
+
+- Film roll management
+- Photo import
+- Google authentication
+- Local data storage
+- Cloud synchronization
 
 ## Technology Stack
 
@@ -19,6 +48,10 @@ Users can manage film rolls, cameras, and scanned photos in one place, with each
 - Figma
 - Git + GitHub
 - Expo EAS
+
+## Design
+
+[Figma Design](https://www.figma.com/design/p87D59J5BkCPvYnHbt2P5s)
 
 
 ## FIGMA
