@@ -1,14 +1,25 @@
-# software-project
+# FILMER
 
-Team Software Engineering Projects
+## Overview
 
-Collect all your software engineering project files, resources, etc here.
+FILMER is a mobile app designed for film photography enthusiasts to organize and manage their film photography archive.
 
-## `AI_LOG.md`
+Users can manage film rolls, cameras, and scanned photos in one place, with each photo organized by its corresponding roll. The app also supports metadata such as shooting date, location, and notes.
 
-Every time you update your project, please make a note of what you did in the `AI_LOG.md` file, according to the following template.
+## Technology Stack
 
-```markdown
+- React Native + Expo
+- TypeScript
+- Expo Router
+- Zustand
+- SQLite
+- Supabase
+- Google Sign-In
+- iOS Photos / Android Photo Picker
+- Figma
+- Git + GitHub
+- Expo EAS
+  
 ## [Milestone name] — [Date]
 **Tool(s) used:**
 **What I asked for:**
