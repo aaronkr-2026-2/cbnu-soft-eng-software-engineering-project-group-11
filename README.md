@@ -19,6 +19,11 @@ Users can manage film rolls, cameras, and scanned photos in one place, with each
 - Figma
 - Git + GitHub
 - Expo EAS
+
+
+## FIGMA
+<img width="851" height="330" alt="image" src="https://github.com/user-attachments/assets/04034014-f4b0-4c1f-8855-1e290b656b5c" />
+
   
 ## [Milestone name] — [Date]
 **Tool(s) used:**
