@@ -13,7 +13,13 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow FILMER to access your photos so you can attach scans to film rolls."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
