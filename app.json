@@ -19,6 +19,18 @@
         {
           "photosPermission": "Allow FILMER to access your photos so you can attach scans to film rolls."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow FILMER to use your location when you choose a shooting location.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": false,
+          "locationAlwaysPermission": false,
+          "locationAlwaysAndWhenInUsePermission": false,
+          "motionUsagePermission": false
+        }
       ]
     ],
     "experiments": {

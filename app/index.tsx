@@ -1,5 +1,7 @@
+import { useTranslation } from '../src/i18n/useTranslation';
+import { createHomeStyles } from '../src/features/home/styles/home.styles';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { EmptyState } from '../src/components/ui/EmptyState';
@@ -8,7 +10,7 @@ import { IconButton } from '../src/components/ui/IconButton';
 import { PrimaryButton } from '../src/components/ui/PrimaryButton';
 import { Screen } from '../src/components/ui/Screen';
 import { SearchBar } from '../src/components/ui/SearchBar';
-import { colors, spacing, typography } from '../src/constants/theme';
+import { useThemedStyles } from '../src/constants/theme';
 import { RollCard } from '../src/features/rolls/components/RollCard';
 import { useRolls } from '../src/features/rolls/hooks/useRolls';
 import type { RollSearchField } from '../src/features/rolls/types';
@@ -23,6 +25,9 @@ const searchFieldByFilter: Record<Filter, RollSearchField> = {
 };
 
 export default function Home() {
+  const { t } = useTranslation();
+  const styles = useThemedStyles(createHomeStyles);
+
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<Filter>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,9 +46,9 @@ export default function Home() {
         <View style={styles.header}>
           <Text style={styles.wordmark}>FILMER</Text>
           <View style={styles.headerActions}>
-            <Text style={styles.archiveLabel}>PERSONAL ARCHIVE</Text>
+            <Text style={styles.archiveLabel}>{t('archive')}</Text>
             <IconButton
-              accessibilityLabel="Open settings"
+              accessibilityLabel={t('settings')}
               icon="⚙"
               onPress={() => router.push('/settings')}
             />
@@ -52,7 +57,7 @@ export default function Home() {
 
         <SearchBar
           onChangeText={setSearchQuery}
-          placeholder="Search films, cameras, rolls"
+          placeholder={t('search')}
           value={searchQuery}
         />
 
@@ -60,7 +65,7 @@ export default function Home() {
           {filters.map((filter) => (
             <FilterChip
               key={filter}
-              label={filter}
+              label={t(filter === 'All' ? 'all' : filter === 'Camera' ? 'camera' : 'film')}
               onPress={() => setActiveFilter(filter)}
               selected={filter === activeFilter}
             />
@@ -68,8 +73,8 @@ export default function Home() {
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>RECENT ROLLS</Text>
-          <Text style={styles.rollCount}>{totalCount} ROLLS</Text>
+          <Text style={styles.sectionTitle}>{t('recentRolls')}</Text>
+          <Text style={styles.rollCount}>{totalCount} {t('rolls')}</Text>
         </View>
 
         <View style={styles.rollList}>
@@ -85,70 +90,16 @@ export default function Home() {
             ))
           ) : (
             <EmptyState
-              description="Try a different search or filter."
-              title="No rolls found"
+              description={t('trySearch')}
+              title={t('noRolls')}
             />
           )}
         </View>
       </ScrollView>
 
       <View style={styles.newRollButton}>
-        <PrimaryButton label="+ New Roll" onPress={() => router.push('/new-roll')} />
+        <PrimaryButton label={t('newRoll')} onPress={() => router.push('/new-roll')} />
       </View>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    paddingBottom: 104,
-    paddingHorizontal: spacing.screen,
-    paddingTop: 18,
-  },
-  header: {
-    alignItems: 'baseline',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-  },
-  wordmark: {
-    color: colors.text,
-    fontSize: typography.size.title,
-    fontWeight: typography.weight.bold,
-    letterSpacing: 2.4,
-  },
-  headerActions: { alignItems: 'center', flexDirection: 'row', gap: 10 },
-  archiveLabel: {
-    color: colors.secondaryText,
-    fontSize: typography.size.micro,
-    fontWeight: typography.weight.semibold,
-    letterSpacing: 1.1,
-  },
-  chips: { flexDirection: 'row', gap: spacing.sm, marginTop: 14 },
-  sectionHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 11,
-    marginTop: 31,
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: typography.size.small,
-    fontWeight: typography.weight.bold,
-    letterSpacing: 1.25,
-  },
-  rollCount: {
-    color: colors.secondaryText,
-    fontSize: typography.size.caption,
-    fontWeight: typography.weight.semibold,
-    letterSpacing: 0.8,
-  },
-  rollList: { gap: 12 },
-  newRollButton: {
-    bottom: 22,
-    left: spacing.screen,
-    position: 'absolute',
-    right: spacing.screen,
-  },
-});

@@ -6,7 +6,3 @@ export const cameras: Camera[] = [
   { id: 'olympus-mju-ii', brand: 'Olympus', model: 'Mju-II', format: '35mm', isCustom: false },
   { id: 'canon-ae-1', brand: 'Canon', model: 'AE-1', format: '35mm', isCustom: false },
 ];
-
-export function getCameraById(id: string): Camera | undefined {
-  return cameras.find((camera) => camera.id === id);
-}

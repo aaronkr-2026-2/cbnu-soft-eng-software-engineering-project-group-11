@@ -1,6 +1,8 @@
 export type PhotoProviderName = 'apple-photos';
 
 export type PhotoReference = {
+  /** Absent on older references; treated as reference mode. */
+  storageMode?: 'reference';
   id: string;
   provider: PhotoProviderName;
   assetId: string;
@@ -11,6 +13,7 @@ export type PhotoReference = {
 
 export type PhotoPickResult =
   | { status: 'cancelled' }
+  | { status: 'copy-unavailable' }
   | { status: 'permission-denied' }
   | { photos: PhotoReference[]; status: 'selected' };
 

@@ -1,9 +1,12 @@
 import * as ImagePicker from 'expo-image-picker';
+import { useAppStore } from '../../../store/app-store';
 
 import type { PhotoPickResult, PhotoProvider, PhotoReference } from '../types';
 
 class ApplePhotosProvider implements PhotoProvider {
   async pickMultiplePhotos(): Promise<PhotoPickResult> {
+    // Copy requires a managed file-storage implementation; never silently import references instead.
+    if (useAppStore.getState().importMode === 'copy') return { status: 'copy-unavailable' };
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
@@ -36,6 +39,7 @@ function toPhotoReference(
   return {
     id: 'apple-photos-' + assetId,
     provider: 'apple-photos',
+    storageMode: 'reference',
     assetId,
     localIdentifier: asset.assetId ?? undefined,
     sortOrder,

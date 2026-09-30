@@ -15,6 +15,7 @@ export type Camera = {
   brand: string;
   model: string;
   format?: '35mm' | '120' | '110';
+  imageUri?: string;
   imageUrl?: string;
   isCustom: boolean;
 };

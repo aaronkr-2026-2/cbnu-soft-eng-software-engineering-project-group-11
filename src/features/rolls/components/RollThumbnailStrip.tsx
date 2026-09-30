@@ -1,52 +1,76 @@
+import { useTranslation } from '../../../i18n/useTranslation';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '../../../constants/theme';
+import { useThemedStyles, type ThemeColors, radii, spacing, typography } from '../../../constants/theme';
 import type { PhotoReference } from '../../photos/types';
 
 type RollThumbnailStripProps = {
   photos: PhotoReference[];
 };
 
+const visibleCount = 4;
+
 export function RollThumbnailStrip({ photos }: RollThumbnailStripProps) {
+  const { t } = useTranslation();
+  const styles = useThemedStyles(createStyles);
+
   if (photos.length === 0) {
-    return <View style={styles.empty}><Text style={styles.emptyText}>No photos added</Text></View>;
+    return <View style={styles.empty}><Text style={styles.emptyText}>{t('noPhotos')}</Text></View>;
   }
+
+  const sorted = [...photos].sort((left, right) => left.sortOrder - right.sortOrder);
+  const visible = sorted.slice(0, visibleCount);
+  const hidden = photos.length - visible.length;
 
   return (
     <View style={styles.container}>
-      {photos.slice(0, 3).map((photo) => (
+      {visible.map((photo, index) => (
         <View key={photo.id} style={styles.thumbnail}>
           {photo.thumbnailUri ? (
             <Image source={{ uri: photo.thumbnailUri }} style={styles.image} />
           ) : (
-            <Text style={styles.unavailable}>Unavailable</Text>
+            <Text style={styles.unavailable}>{t('unavailable')}</Text>
           )}
+          {hidden > 0 && index === visible.length - 1 ? (
+            <View style={styles.moreOverlay}><Text style={styles.moreText}>+{hidden}</Text></View>
+          ) : null}
         </View>
       ))}
-      {photos.length > 3 ? <View style={styles.morePhotos}><Text style={styles.morePhotosText}>+{photos.length - 3}</Text></View> : null}
+      {Array.from({ length: visibleCount - visible.length }, (_, index) => <View key={`spacer-${index}`} style={styles.spacer} />)}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flexDirection: 'row', gap: spacing.xs + 2, marginTop: 14 },
-  thumbnail: { alignItems: 'center', backgroundColor: colors.surface, borderRadius: radii.sm, flex: 1, height: 48, justifyContent: 'center', overflow: 'hidden' },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flexDirection: 'row', gap: spacing.sm - 2, marginTop: 14 },
+  thumbnail: {
+    alignItems: 'center',
+    aspectRatio: 1,
+    backgroundColor: colors.background,
+    borderRadius: radii.md,
+    flex: 1,
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  spacer: { aspectRatio: 1, flex: 1 },
   image: { height: '100%', width: '100%' },
   unavailable: { color: colors.secondaryText, fontSize: typography.size.micro },
-  morePhotos: {
+  moreOverlay: {
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radii.sm,
-    borderWidth: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    width: 48,
   },
-  morePhotosText: {
-    color: colors.secondaryText,
-    fontSize: 11,
-    fontWeight: typography.weight.semibold,
+  moreText: { color: '#FFFFFF', fontSize: typography.size.label, fontWeight: typography.weight.bold },
+  empty: {
+    alignItems: 'center',
+    borderColor: colors.border,
+    borderRadius: radii.md,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    height: 56,
+    justifyContent: 'center',
+    marginTop: 14,
   },
-  empty: { alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radii.sm, borderWidth: StyleSheet.hairlineWidth, height: 48, justifyContent: 'center', marginTop: 14 },
   emptyText: { color: colors.secondaryText, fontSize: typography.size.small },
 });

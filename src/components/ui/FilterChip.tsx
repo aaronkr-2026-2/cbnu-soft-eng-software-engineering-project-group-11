@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { colors, radii, typography } from '../../constants/theme';
+import { useThemedStyles, type ThemeColors, radii, typography } from '../../constants/theme';
 
 type FilterChipProps = {
   label: string;
@@ -9,6 +9,8 @@ type FilterChipProps = {
 };
 
 export function FilterChip({ label, onPress, selected }: FilterChipProps) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -21,7 +23,7 @@ export function FilterChip({ label, onPress, selected }: FilterChipProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   chip: {
     borderColor: colors.border,
     borderRadius: radii.pill,

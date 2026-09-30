@@ -2,6 +2,13 @@ export type RollFormat = '35mm' | '120' | '110' | 'other';
 
 import type { PhotoReference } from '../photos/types';
 
+export type RollLocation = {
+  latitude: number;
+  longitude: number;
+  name?: string;
+  address?: string;
+};
+
 export type Roll = {
   id: string;
   filmId: string;
@@ -9,8 +16,9 @@ export type Roll = {
   cameraId: string;
   cameraName: string;
   format: RollFormat;
-  frameCount: number;
   date: string;
+  location?: RollLocation;
+  lab?: string;
   notes?: string;
   photos: PhotoReference[];
 };

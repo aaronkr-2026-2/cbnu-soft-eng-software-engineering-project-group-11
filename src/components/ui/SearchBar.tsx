@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { colors, radii, spacing, typography } from '../../constants/theme';
+import { useTheme, useThemedStyles, type ThemeColors, radii, spacing, typography } from '../../constants/theme';
 
 type SearchBarProps = {
   onChangeText: (value: string) => void;
@@ -9,11 +9,14 @@ type SearchBarProps = {
 };
 
 export function SearchBar({ onChangeText, placeholder, value }: SearchBarProps) {
+  const styles = useThemedStyles(createStyles);
+  const colors = useTheme();
+
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>⌕</Text>
       <TextInput
-        accessibilityLabel="Search your film archive"
+        accessibilityLabel={placeholder}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.secondaryText}
@@ -24,7 +27,7 @@ export function SearchBar({ onChangeText, placeholder, value }: SearchBarProps) 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     alignItems: 'center',
     backgroundColor: colors.surface,

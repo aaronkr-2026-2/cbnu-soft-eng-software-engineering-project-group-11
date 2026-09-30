@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { colors } from '../../constants/theme';
+import { useThemedStyles, type ThemeColors } from '../../constants/theme';
 
 type IconButtonProps = {
   accessibilityLabel: string;
@@ -10,6 +10,8 @@ type IconButtonProps = {
 };
 
 export function IconButton({ accessibilityLabel, circular = false, icon, onPress }: IconButtonProps) {
+  const styles = useThemedStyles(createStyles);
+
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
@@ -23,7 +25,7 @@ export function IconButton({ accessibilityLabel, circular = false, icon, onPress
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   button: { alignItems: 'center', height: 24, justifyContent: 'center', width: 24 },
   circular: { backgroundColor: colors.surface, borderRadius: 22, height: 44, width: 44 },
   icon: { color: colors.text, fontSize: 17 },

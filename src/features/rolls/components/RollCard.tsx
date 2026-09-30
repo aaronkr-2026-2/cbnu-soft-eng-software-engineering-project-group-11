@@ -1,7 +1,9 @@
+import { useTranslation } from '../../../i18n/useTranslation';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '../../../components/ui/Card';
-import { colors, radii, spacing, typography } from '../../../constants/theme';
+import { useThemedStyles, type ThemeColors, radii, spacing, typography } from '../../../constants/theme';
+import { isValidLocation, locationLabel } from '../../location/services/locationService';
 import type { Roll } from '../types';
 import { RollThumbnailStrip } from './RollThumbnailStrip';
 import { formatRollMonth } from '../utils/rollMonth';
@@ -12,51 +14,96 @@ type RollCardProps = {
 };
 
 export function RollCard({ onPress, roll }: RollCardProps) {
+  const { t, language } = useTranslation();
+  const styles = useThemedStyles(createStyles);
+  const meta = [
+    roll.format === 'other' ? t('other') : roll.format,
+    formatRollMonth(roll.date, language),
+    isValidLocation(roll.location) ? locationLabel(roll.location) : null,
+  ].filter((item): item is string => Boolean(item));
+
   return (
     <Card
-      accessibilityLabel={`Open ${roll.filmName} roll`}
+      accessibilityLabel={t('openRoll', { name: roll.filmName })}
       onPress={onPress}
       pressedStyle={styles.pressed}
       style={styles.card}
     >
       <View style={styles.topRow}>
-        <View>
-          <Text style={styles.filmName}>{roll.filmName}</Text>
-          <Text style={styles.cameraName}>{roll.cameraName}</Text>
+        <View style={styles.titleBlock}>
+          <Text numberOfLines={1} style={styles.filmName}>{roll.filmName}</Text>
+          <Text numberOfLines={1} style={styles.cameraName}>{roll.cameraName}</Text>
         </View>
-        <Text style={styles.photoCount}>{roll.photos.length} PHOTOS</Text>
+        <View style={styles.countBadge}>
+          <Text style={styles.countValue}>{roll.photos.length}</Text>
+          <Text style={styles.countUnit}>{t('photoUnit')}</Text>
+        </View>
       </View>
 
-      <Text style={styles.rollDetails}>{roll.format} · {roll.frameCount} frames</Text>
-      <Text style={styles.locationDate}>{formatRollMonth(roll.date)}</Text>
+      <View style={styles.metaRow}>
+        {meta.map((item) => (
+          <View key={item} style={styles.metaChip}>
+            <Text numberOfLines={1} style={styles.metaText}>{item}</Text>
+          </View>
+        ))}
+      </View>
+
       <RollThumbnailStrip photos={roll.photos} />
     </Card>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
+    backgroundColor: colors.surface,
     borderColor: colors.border,
-    borderRadius: radii.lg,
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    padding: 15,
+    elevation: 3,
+    padding: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
   },
-  pressed: { opacity: 0.72 },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  pressed: { opacity: 0.85, transform: [{ scale: 0.985 }] },
+  topRow: { alignItems: 'flex-start', flexDirection: 'row', gap: spacing.md, justifyContent: 'space-between' },
+  titleBlock: { flex: 1 },
   filmName: {
     color: colors.text,
-    fontSize: typography.size.label,
-    fontWeight: typography.weight.semibold,
-    letterSpacing: -0.2,
-  },
-  cameraName: { color: colors.secondaryText, fontSize: typography.size.small, marginTop: spacing.xxs },
-  photoCount: {
-    color: colors.secondaryText,
-    fontSize: typography.size.micro,
+    fontSize: 19,
     fontWeight: typography.weight.bold,
-    letterSpacing: 0.65,
-    marginTop: spacing.xxs,
+    letterSpacing: -0.3,
   },
-  rollDetails: { color: colors.text, fontSize: typography.size.small, marginTop: 15 },
-  locationDate: { color: colors.secondaryText, fontSize: typography.size.small, marginTop: spacing.xxs },
+  cameraName: { color: colors.secondaryText, fontSize: typography.size.body, marginTop: spacing.xxs },
+  countBadge: {
+    alignItems: 'center',
+    backgroundColor: colors.accent,
+    borderRadius: radii.md,
+    minWidth: 48,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  countValue: {
+    color: colors.background,
+    fontSize: typography.size.label,
+    fontWeight: typography.weight.bold,
+  },
+  countUnit: {
+    color: colors.background,
+    fontSize: typography.size.caption,
+    fontWeight: typography.weight.medium,
+    opacity: 0.8,
+  },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
+  metaChip: {
+    backgroundColor: colors.background,
+    borderColor: colors.border,
+    borderRadius: radii.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    maxWidth: '100%',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  metaText: { color: colors.text, fontSize: typography.size.small, fontWeight: typography.weight.medium },
 });

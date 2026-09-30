@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 import type { PhotoReference } from '../../photos/types';
 import { mockRolls } from '../data/mockRolls';
-import type { Roll, RollFormat } from '../types';
+import type { Roll, RollFormat, RollLocation } from '../types';
 
 export type CreateRollInput = {
   cameraName: string;
@@ -11,11 +11,14 @@ export type CreateRollInput = {
   filmId: string;
   filmName: string;
   format: RollFormat;
-  frameCount: number;
+  location?: RollLocation;
+  lab?: string;
   notes?: string;
 };
 
 type RollState = {
+  updateRoll: (rollId: string, input: CreateRollInput) => void;
+  reorderPhotos: (rollId: string, ids: string[]) => void;
   addPhotosToRoll: (rollId: string, photos: PhotoReference[]) => void;
   createRoll: (input: CreateRollInput) => Roll;
   rolls: Roll[];
@@ -23,6 +26,24 @@ type RollState = {
 
 export const useRollStore = create<RollState>((set) => ({
   rolls: mockRolls,
+  updateRoll: (rollId, input) => set((state) => ({
+    rolls: state.rolls.map((roll) => roll.id === rollId ? {
+      ...roll,
+      filmId: input.filmId, filmName: input.filmName,
+      cameraId: input.cameraId, cameraName: input.cameraName,
+      format: input.format, date: input.date,
+      lab: input.lab?.trim() || undefined, notes: input.notes?.trim() || undefined,
+      location: input.location ? { ...input.location } : undefined,
+    } : roll),
+  })),
+  reorderPhotos: (rollId, ids) => set((state) => ({
+    rolls: state.rolls.map((roll) => {
+      if (roll.id !== rollId) return roll;
+      const byId = new Map(roll.photos.map((photo) => [photo.id, photo]));
+      if (ids.length !== roll.photos.length || new Set(ids).size !== ids.length || ids.some((id) => !byId.has(id))) return roll;
+      return { ...roll, photos: ids.map((id, sortOrder) => ({ ...byId.get(id)!, sortOrder })) };
+    }),
+  })),
   createRoll: (input) => {
     const roll: Roll = {
       id: 'roll-' + Date.now(),
