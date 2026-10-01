@@ -4,7 +4,7 @@ import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useState } from 'react';
 import { Redirect, useRouter } from 'expo-router';
 import { Screen } from '../../../components/ui/Screen';
-import { IconButton } from '../../../components/ui/IconButton';
+import { BackButton } from '../../../components/ui/BackButton';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 import { MonthYearPicker } from '../../../components/ui/MonthYearPicker';
 import { useThemedStyles } from '../../../constants/theme';
@@ -58,7 +58,7 @@ export function RollInformationScreen({ editingId }: { editingId?: string }) {
     reset();
   }
   return <Screen><ScrollView contentContainerStyle={styles.content}>
-    {editingId ? <Pressable accessibilityRole="button" onPress={closeEditor} style={styles.cancel}><Text style={styles.label}>{t('cancel')}</Text></Pressable> : <IconButton accessibilityLabel={t('back')} icon="‹" circular onPress={closeEditor} />}
+    <BackButton onPress={closeEditor} />
     <Text style={styles.title}>{t(editingId ? 'editRoll' : 'rollInfo')}</Text>
     <View style={styles.film}>
       {film?.imageUri || film?.imageUrl ? <Image source={{ uri: film.imageUri ?? film.imageUrl }} resizeMode="contain" style={styles.image} /> : <View style={styles.image}><Text style={styles.secondary}>{t('film')}</Text></View>}

@@ -2,6 +2,7 @@ import { createSettingsStyles } from '../src/features/settings/styles/settings.s
 import { useState, type ReactNode } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { BackButton } from '../src/components/ui/BackButton';
 import { Screen } from '../src/components/ui/Screen';
 import { useThemedStyles } from '../src/constants/theme';
 import { useAppStore } from '../src/store/app-store';
@@ -38,7 +39,7 @@ export default function Settings() {
     ]);
   }
   return <Screen><ScrollView contentContainerStyle={styles.content}>
-    <View style={styles.header}><Pressable accessibilityRole="button" accessibilityLabel={t('close')} onPress={handleClose} style={styles.close}><Text style={styles.closeText}>×</Text></Pressable><Text style={styles.title}>{t('settings')}</Text><View style={styles.spacer} /></View>
+    <View style={styles.header}><BackButton onPress={handleClose} /><Text style={styles.title}>{t('settings')}</Text><View style={styles.spacer} /></View>
     <Group title={t('language')}><Row label={t('language')} value={languageLabels[settings.language]} onPress={() => setSelector('language')} /></Group>
     <Group title={t('appearance')}><Row label={t('appearance')} value={t(settings.appearance)} onPress={() => setSelector('appearance')} /></Group>
     <Group title={t('storage')}>

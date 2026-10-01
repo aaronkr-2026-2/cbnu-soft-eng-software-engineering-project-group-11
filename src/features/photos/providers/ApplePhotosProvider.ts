@@ -2,6 +2,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAppStore } from '../../../store/app-store';
 
 import type { PhotoPickResult, PhotoProvider, PhotoReference } from '../types';
+import { photoDateFromExif } from '../utils/photoDate';
 
 class ApplePhotosProvider implements PhotoProvider {
   async pickMultiplePhotos(): Promise<PhotoPickResult> {
@@ -15,6 +16,8 @@ class ApplePhotosProvider implements PhotoProvider {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsMultipleSelection: true,
+      // EXIF gives each photo a default "date taken" the user can still edit in the viewer.
+      exif: true,
       mediaTypes: ['images'],
       quality: 1,
     });
@@ -44,6 +47,7 @@ function toPhotoReference(
     localIdentifier: asset.assetId ?? undefined,
     sortOrder,
     thumbnailUri: asset.uri,
+    takenAt: photoDateFromExif(asset.exif),
   };
 }
 

@@ -4,8 +4,9 @@ import { useNewRollDraftStore } from '../src/features/rolls/store/newRollDraftSt
 import { CustomCameraModal } from '../src/features/cameras/components/CustomCameraModal';
 import { PrimaryButton } from '../src/components/ui/PrimaryButton';
 import { createCamerasStyles } from '../src/features/cameras/styles/cameras.styles';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { BackButton } from '../src/components/ui/BackButton';
 import { Screen } from '../src/components/ui/Screen';
 import { useThemedStyles } from '../src/constants/theme';
 import { CameraCard } from '../src/features/cameras/components/CameraCard';
@@ -31,5 +32,5 @@ export default function Cameras() {
     }
   }
   const cameras = useCameraStore((state) => state.cameras);
-  return <Screen><ScrollView contentContainerStyle={styles.content}><Pressable accessibilityRole="button" onPress={handleBack}><Text style={styles.back}>‹ {t('back')}</Text></Pressable><Text style={styles.title}>{t('cameras')}</Text><View style={styles.grid}>{cameras.map((camera) => <CameraCard camera={camera} key={camera.id} onPress={() => select(camera.id)} selected={camera.id === (draft.cameraId ?? cameras[0]?.id)} />)}</View><PrimaryButton label={t('addCustomCamera')} onPress={() => setCustom(true)} /></ScrollView>{custom ? <CustomCameraModal visible onClose={() => setCustom(false)} onAdded={select} /> : null}</Screen>;
+  return <Screen><ScrollView contentContainerStyle={styles.content}><View style={styles.back}><BackButton onPress={handleBack} /></View><Text style={styles.title}>{t('cameras')}</Text><View style={styles.grid}>{cameras.map((camera) => <CameraCard camera={camera} key={camera.id} onPress={() => select(camera.id)} selected={camera.id === (draft.cameraId ?? cameras[0]?.id)} />)}</View><PrimaryButton label={t('addCustomCamera')} onPress={() => setCustom(true)} /></ScrollView>{custom ? <CustomCameraModal visible onClose={() => setCustom(false)} onAdded={select} /> : null}</Screen>;
 }

@@ -5,7 +5,7 @@ export const colors = {
 };
 export type ThemeColors = typeof colors;
 export const darkColors: ThemeColors = {
-  background: '#121212', surface: '#202020', border: '#383838',
-  text: '#F5F5F5', secondaryText: '#AAAAAA', accent: '#F5F5F5',
+  background: '#000000', surface: '#1C1C1E', border: '#2C2C2E',
+  text: '#FFFFFF', secondaryText: '#8E8E93', accent: '#D1D1D6',
   destructive: '#FF8585', backdrop: 'rgba(0,0,0,0.65)',
 };

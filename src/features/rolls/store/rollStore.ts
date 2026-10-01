@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { PhotoReference } from '../../photos/types';
+import type { PhotoDetailsPatch, PhotoReference } from '../../photos/types';
 import { mockRolls } from '../data/mockRolls';
 import type { Roll, RollFormat, RollLocation } from '../types';
 
@@ -19,6 +19,7 @@ export type CreateRollInput = {
 type RollState = {
   updateRoll: (rollId: string, input: CreateRollInput) => void;
   reorderPhotos: (rollId: string, ids: string[]) => void;
+  updatePhoto: (rollId: string, photoId: string, patch: PhotoDetailsPatch) => void;
   addPhotosToRoll: (rollId: string, photos: PhotoReference[]) => void;
   createRoll: (input: CreateRollInput) => Roll;
   rolls: Roll[];
@@ -35,6 +36,12 @@ export const useRollStore = create<RollState>((set) => ({
       lab: input.lab?.trim() || undefined, notes: input.notes?.trim() || undefined,
       location: input.location ? { ...input.location } : undefined,
     } : roll),
+  })),
+  updatePhoto: (rollId, photoId, patch) => set((state) => ({
+    rolls: state.rolls.map((roll) => roll.id !== rollId ? roll : {
+      ...roll,
+      photos: roll.photos.map((photo) => photo.id === photoId ? { ...photo, ...patch } : photo),
+    }),
   })),
   reorderPhotos: (rollId, ids) => set((state) => ({
     rolls: state.rolls.map((roll) => {

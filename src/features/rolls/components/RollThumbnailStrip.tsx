@@ -1,8 +1,9 @@
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 
-import { useThemedStyles, type ThemeColors, radii, spacing, typography } from '../../../constants/theme';
+import { useThemedStyles } from '../../../constants/theme';
 import type { PhotoReference } from '../../photos/types';
+import { createRollThumbnailStripStyles } from '../styles/roll-thumbnail-strip.styles';
 
 type RollThumbnailStripProps = {
   photos: PhotoReference[];
@@ -12,7 +13,7 @@ const visibleCount = 4;
 
 export function RollThumbnailStrip({ photos }: RollThumbnailStripProps) {
   const { t } = useTranslation();
-  const styles = useThemedStyles(createStyles);
+  const styles = useThemedStyles(createRollThumbnailStripStyles);
 
   if (photos.length === 0) {
     return <View style={styles.empty}><Text style={styles.emptyText}>{t('noPhotos')}</Text></View>;
@@ -40,37 +41,3 @@ export function RollThumbnailStrip({ photos }: RollThumbnailStripProps) {
     </View>
   );
 }
-
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: { flexDirection: 'row', gap: spacing.sm - 2, marginTop: 14 },
-  thumbnail: {
-    alignItems: 'center',
-    aspectRatio: 1,
-    backgroundColor: colors.background,
-    borderRadius: radii.md,
-    flex: 1,
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  spacer: { aspectRatio: 1, flex: 1 },
-  image: { height: '100%', width: '100%' },
-  unavailable: { color: colors.secondaryText, fontSize: typography.size.micro },
-  moreOverlay: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-  },
-  moreText: { color: '#FFFFFF', fontSize: typography.size.label, fontWeight: typography.weight.bold },
-  empty: {
-    alignItems: 'center',
-    borderColor: colors.border,
-    borderRadius: radii.md,
-    borderStyle: 'dashed',
-    borderWidth: 1,
-    height: 56,
-    justifyContent: 'center',
-    marginTop: 14,
-  },
-  emptyText: { color: colors.secondaryText, fontSize: typography.size.small },
-});

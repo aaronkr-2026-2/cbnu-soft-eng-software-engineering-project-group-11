@@ -5,6 +5,7 @@ import { useTranslation } from '../../src/i18n/useTranslation';
 import { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { BackButton } from '../../src/components/ui/BackButton';
 import { Screen } from '../../src/components/ui/Screen';
 import { useThemedStyles } from '../../src/constants/theme';
 import { applePhotosProvider } from '../../src/features/photos/providers/ApplePhotosProvider';
@@ -33,6 +34,7 @@ export default function RollDetail() {
   const roll = useRoll(id);
   const film = useFilmStore((state) => state.films.find((item) => item.id === roll?.filmId));
   const reorderPhotos = useRollStore((state) => state.reorderPhotos);
+  const updatePhoto = useRollStore((state) => state.updatePhoto);
   const [locationVisible, setLocationVisible] = useState(false);
   const [dragging, setDragging] = useState(false);
   const addPhotosToRoll = useRollStore((state) => state.addPhotosToRoll);
@@ -59,7 +61,7 @@ export default function RollDetail() {
 
   return <Screen><ScrollView scrollEnabled={!dragging} contentContainerStyle={styles.container}>
     <View style={styles.navigation}>
-      <Pressable accessibilityRole="button" style={styles.navButton} onPress={handleBack}><Text style={styles.navText}>‹ {t('back')}</Text></Pressable>
+      <BackButton onPress={handleBack} />
       {roll ? <Pressable accessibilityRole="button" accessibilityLabel={t('editRoll')} style={styles.navButton} onPress={() => router.push({ pathname: '/rolls/[id]/edit', params: { id } })}><Text style={styles.editText}>{t('edit')}</Text></Pressable> : null}
     </View>
     {roll ? <View>
@@ -85,7 +87,7 @@ export default function RollDetail() {
     </View> : <View style={styles.notFound}><Text style={styles.title}>{t('rollMissing')}</Text><Text style={styles.description}>{t('rollMissingInfo')}</Text></View>}
   </ScrollView>
     {locationVisible && isValidLocation(roll?.location) ? <LocationPicker mode="view" location={roll.location} onClose={() => setLocationVisible(false)} /> : null}
-    <PhotoViewerModal visible={viewerVisible} photos={photos} initialIndex={selectedPhotoIndex} onClose={() => setViewerVisible(false)} />
+    <PhotoViewerModal visible={viewerVisible} photos={photos} initialIndex={selectedPhotoIndex} title={roll ? (isValidLocation(roll.location) ? locationLabel(roll.location) : roll.filmName) : ''} subtitle={roll ? formatRollMonth(roll.date, language) : undefined} onPhotoChange={(photoId, patch) => updatePhoto(id, photoId, patch)} onClose={() => setViewerVisible(false)} />
   </Screen>;
 }
 

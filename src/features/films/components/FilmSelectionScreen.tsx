@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Image, Pressable, SectionList, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '../../../components/ui/Screen';
-import { IconButton } from '../../../components/ui/IconButton';
+import { BackButton } from '../../../components/ui/BackButton';
 import { SearchBar } from '../../../components/ui/SearchBar';
 import { useThemedStyles } from '../../../constants/theme';
 import { useTranslation } from '../../../i18n/useTranslation';
@@ -33,7 +33,7 @@ export function FilmSelectionScreen() {
     else router.push('/new-roll/details');
   }
   return <Screen><SectionList sections={sections} keyExtractor={(film) => film.id} stickySectionHeadersEnabled={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}
-    ListHeaderComponent={<><IconButton accessibilityLabel={t('back')} icon="‹" circular onPress={() => router.canGoBack() ? router.back() : router.replace('/')} /><Text style={styles.title}>{t('selectFilm')}</Text><SearchBar placeholder={t('searchFilms')} value={query} onChangeText={setQuery} /></>}
+    ListHeaderComponent={<><BackButton onPress={() => router.canGoBack() ? router.back() : router.replace('/')} /><Text style={styles.title}>{t('selectFilm')}</Text><SearchBar placeholder={t('searchFilms')} value={query} onChangeText={setQuery} /></>}
     renderSectionHeader={({ section }) => <Text style={styles.brand}>{section.title}</Text>}
     renderItem={({ item }) => <Pressable accessibilityRole="button" onPress={() => select(item.id)} style={styles.row}>
       {item.imageUri || item.imageUrl ? <Image resizeMode="contain" source={{ uri: item.imageUri ?? item.imageUrl }} style={styles.image} /> : <View style={styles.image}><Text style={styles.secondary}>{t('film')}</Text></View>}

@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
-import { useThemedStyles, type ThemeColors, radii, typography } from '../../constants/theme';
+import { useThemedStyles } from '../../constants/theme';
+import { createFilterChipStyles } from './styles/filter-chip.styles';
 
 type FilterChipProps = {
   label: string;
@@ -9,7 +10,7 @@ type FilterChipProps = {
 };
 
 export function FilterChip({ label, onPress, selected }: FilterChipProps) {
-  const styles = useThemedStyles(createStyles);
+  const styles = useThemedStyles(createFilterChipStyles);
 
   return (
     <Pressable
@@ -22,16 +23,3 @@ export function FilterChip({ label, onPress, selected }: FilterChipProps) {
     </Pressable>
   );
 }
-
-const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  chip: {
-    borderColor: colors.border,
-    borderRadius: radii.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 13,
-    paddingVertical: 7,
-  },
-  selected: { backgroundColor: colors.text, borderColor: colors.text },
-  label: { color: colors.secondaryText, fontSize: typography.size.small, fontWeight: typography.weight.medium },
-  selectedLabel: { color: colors.background },
-});

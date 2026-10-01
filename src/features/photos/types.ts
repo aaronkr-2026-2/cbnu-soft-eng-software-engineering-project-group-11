@@ -1,3 +1,5 @@
+import type { RollLocation } from '../rolls/types';
+
 export type PhotoProviderName = 'apple-photos';
 
 export type PhotoReference = {
@@ -9,7 +11,13 @@ export type PhotoReference = {
   localIdentifier?: string;
   sortOrder: number;
   thumbnailUri?: string;
+  /** Day the photo was taken, as YYYY-MM-DD. */
+  takenAt?: string;
+  location?: RollLocation;
+  note?: string;
 };
+
+export type PhotoDetailsPatch = Partial<Pick<PhotoReference, 'takenAt' | 'location' | 'note'>>;
 
 export type PhotoPickResult =
   | { status: 'cancelled' }
