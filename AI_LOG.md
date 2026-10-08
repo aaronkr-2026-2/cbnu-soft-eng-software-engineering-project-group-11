@@ -307,3 +307,47 @@ Application Settings currently include/planned:
 - Clear Image Cache
 
 The project continues to follow a local-first approach while keeping the architecture ready for persistent local storage and future cloud synchronization.
+
+
+
+
+## FILMER Feature Development and Debugging — 2026-10-07
+
+**Tool(s) used:**  
+ChatGPT, Codex
+
+**What I asked for:**  
+I used AI to review and improve FILMER's existing React Native/Expo implementation, focusing on multi-photo sharing, film catalog presentation, roll/film editing, and the photo archive experience. I requested native iOS Share Sheet behavior for selected images, a compact film-selection layout with cover thumbnails, editable film metadata (name, ISO, type, and cover), and consistent behavior when editing a roll. I also discussed organizing Kodak and Fujifilm film-cover assets and catalog records in the project.
+
+**What I kept as-is:**  
+I retained FILMER's roll-based workflow, the existing compact film thumbnails, the React Native + Expo architecture, and the separation between film catalog metadata and photos belonging to a roll. I kept the requirement that selecting or sharing photos must preserve their roll order.
+
+**What I changed or rejected, and why:**  
+I rejected enlarging film-cover images in the film-selection list because the original compact layout was easier to scan. I requested that tapping the selected film's thumbnail or title open an edit flow resembling the custom-film form, rather than a large detail-only screen. For sharing, I preferred the native iOS Share Sheet rather than a custom sharing interface. I also requested consistent film-cover artwork and metadata for Kodak and Fujifilm entries.
+
+**Something the AI got wrong that I had to catch:**  
+The proposed UI initially enlarged the film artwork even though I wanted to preserve the existing layout. Sharing multiple photos also encountered an environment limitation: Expo Go lacked the native RNShare module, so a native development build was needed to validate that workflow. I learned not to treat simulator/build success as proof that sharing works on a physical iPhone.
+
+**One decision I can explain without AI:**  
+Film metadata and film-cover artwork should be reusable catalog data, while each Roll stores its own camera, date, notes, and photo references. This avoids duplicating film records and makes later catalog updates easier.
+
+**Verification / remaining work:**  
+Confirm the actual code changes and test results in the Git history before marking individual features as complete. Re-test multi-photo sharing in an iOS native build and on a physical device; check that roll editing does not remove attached photos.
+## Sprint 01 Planning — 2026-10-08
+
+**Tool(s) used:** ChatGPT
+
+**What I asked for:**  
+I asked AI to help convert the Agile Software Engineering homework requirements into a one-week sprint plan for FILMER, including a sprint goal, prioritized product backlog, acceptance checks, tasks, estimates, blockers, and a Definition of Done.
+
+**What I kept as-is:**  
+I kept the focus on FILMER's existing MVP workflow: create a roll, import scanned photos, and reopen the archive with saved metadata and photo order.
+
+**What I changed or rejected, and why:**  
+I prioritized stability and testing instead of introducing unrelated new features. I will adjust owners, issue labels, and completion statuses to reflect the actual repository and team work.
+
+**Something the AI got wrong that I had to catch:**  
+AI cannot verify the current repository's implementation or actual team assignments from the assignment slides alone. I must verify the suggested statuses, estimates, and acceptance checks against the real project before submission.
+
+**One decision I can explain without AI:**  
+The sprint prioritizes durable roll creation and photo import because they form FILMER's core user workflow; extra catalog polish can wait until that workflow is reliable.
