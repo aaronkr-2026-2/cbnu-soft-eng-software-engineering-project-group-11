@@ -1,6 +1,6 @@
 import { useTranslation } from '../src/i18n/useTranslation';
 import { createHomeStyles } from '../src/features/home/styles/home.styles';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -13,36 +13,38 @@ import { SearchBar } from '../src/components/ui/SearchBar';
 import { useThemedStyles } from '../src/constants/theme';
 import { RollCard } from '../src/features/rolls/components/RollCard';
 import { useRolls } from '../src/features/rolls/hooks/useRolls';
-import type { RollSearchField } from '../src/features/rolls/types';
+import type { RollBrowseMode } from '../src/features/rolls/types';
+import type { TranslationKey } from '../src/i18n/translations';
 
-type Filter = 'All' | 'Camera' | 'Film';
-
-const filters: Filter[] = ['All', 'Camera', 'Film'];
-const searchFieldByFilter: Record<Filter, RollSearchField> = {
-  All: 'all',
-  Camera: 'camera',
-  Film: 'film',
+const browseModes: RollBrowseMode[] = ['all', 'date', 'film', 'camera', 'location'];
+const modeLabels: Record<RollBrowseMode, TranslationKey> = {
+  all: 'all', date: 'date', film: 'film', camera: 'camera', location: 'location',
+};
+const emptyLabels: Record<RollBrowseMode, TranslationKey> = {
+  all: 'noRollsYet', date: 'noDatedRolls', film: 'noFilmRolls', camera: 'noCameraRolls', location: 'noLocationRolls',
 };
 
 export default function Home() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const styles = useThemedStyles(createHomeStyles);
 
   const router = useRouter();
-  const [activeFilter, setActiveFilter] = useState<Filter>('All');
+  const [browseMode, setBrowseMode] = useState<RollBrowseMode>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const { rolls, totalCount } = useRolls({
+  const resultsScroll = useRef<ScrollView>(null);
+  const { groups, totalCount } = useRolls({
     query: searchQuery,
-    searchField: searchFieldByFilter[activeFilter],
+    browseMode,
+    language,
   });
+
+  useEffect(() => {
+    resultsScroll.current?.scrollTo({ y: 0, animated: false });
+  }, [browseMode]);
 
   return (
     <Screen>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.browseHeader}>
         <View style={styles.header}>
           <Text style={styles.wordmark}>FILMER</Text>
           <View style={styles.headerActions}>
@@ -61,40 +63,49 @@ export default function Home() {
           value={searchQuery}
         />
 
-        <View style={styles.chips}>
-          {filters.map((filter) => (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.browseSelector}
+          keyboardShouldPersistTaps="handled" contentContainerStyle={styles.chips}>
+          {browseModes.map((mode) => (
             <FilterChip
-              key={filter}
-              label={t(filter === 'All' ? 'all' : filter === 'Camera' ? 'camera' : 'film')}
-              onPress={() => setActiveFilter(filter)}
-              selected={filter === activeFilter}
+              key={mode}
+              label={t(modeLabels[mode])}
+              onPress={() => setBrowseMode(mode)}
+              selected={mode === browseMode}
             />
           ))}
-        </View>
+        </ScrollView>
+      </View>
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('recentRolls')}</Text>
-          <Text style={styles.rollCount}>{totalCount} {t('rolls')}</Text>
-        </View>
-
-        <View style={styles.rollList}>
-          {rolls.length > 0 ? (
-            rolls.map((roll) => (
-              <RollCard
-                key={roll.id}
-                onPress={() =>
-                  router.push({ pathname: '/rolls/[id]', params: { id: roll.id } })
-                }
-                roll={roll}
-              />
-            ))
-          ) : (
+      <ScrollView
+        ref={resultsScroll}
+        style={styles.resultsScroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {groups.length > 0 ? groups.map((group) => (
+          <View key={group.key}>
+            <View style={styles.sectionHeader}>
+              <Text accessibilityRole="header" style={styles.sectionTitle}>{group.title}</Text>
+              <Text style={styles.rollCount}>
+                {t(group.rolls.length === 1 ? 'rollCountOne' : 'rollCountOther', { count: group.rolls.length })}
+              </Text>
+            </View>
+            <View style={styles.rollList}>
+              {group.rolls.map((roll) => (
+                <RollCard key={roll.id} roll={roll}
+                  onPress={() => router.push({ pathname: '/rolls/[id]', params: { id: roll.id } })} />
+              ))}
+            </View>
+          </View>
+        )) : (
+          <View style={styles.emptyState}>
             <EmptyState
-              description={t('trySearch')}
-              title={t('noRolls')}
+              description={t(totalCount === 0 && !searchQuery.trim() ? 'createRollToStart' : 'trySearch')}
+              title={t(emptyLabels[browseMode])}
             />
-          )}
-        </View>
+          </View>
+        )}
       </ScrollView>
 
       <View style={styles.newRollButton}>

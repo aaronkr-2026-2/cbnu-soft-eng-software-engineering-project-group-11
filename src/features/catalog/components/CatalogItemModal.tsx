@@ -1,6 +1,6 @@
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useState, type ReactNode } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, type ImageSourcePropType } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 import { SelectionChip } from '../../../components/ui/SelectionChip';
@@ -55,7 +55,7 @@ export function CatalogFormatField({ value, onChange }: { value: NonNullable<Cam
   return <CatalogChoices label={t('requiredFormat')}>{(['35mm', '120', '110'] as const).map((item) => <SelectionChip key={item} label={item} onPress={() => onChange(item)} selected={value === item} />)}</CatalogChoices>;
 }
 
-export function CatalogImageField({ label, imageUri, onChange }: { label: string; imageUri?: string; onChange: (uri: string | undefined) => void }) {
+export function CatalogImageField({ label, imageUri, onChange, previewSource, onRemove }: { label: string; imageUri?: string; onChange: (uri: string | undefined) => void; previewSource?: ImageSourcePropType; onRemove?: () => void }) {
   const { t } = useTranslation();
   const styles = useThemedStyles(createCatalogItemModalStyles);
 
@@ -74,5 +74,6 @@ export function CatalogImageField({ label, imageUri, onChange }: { label: string
       setPicking(false);
     }
   }
-  return <><Text style={styles.label}>{label}</Text><Pressable accessibilityRole="button" accessibilityLabel={imageUri ? t('changeImage') : t('chooseImage')} disabled={picking} onPress={chooseImage} style={styles.imageButton}>{imageUri ? <Image source={{ uri: imageUri }} resizeMode="contain" style={styles.image} /> : <Text style={styles.imageText}>{picking ? t('openingPhotos') : t('chooseImage')}</Text>}</Pressable></>;
+  const source = imageUri ? { uri: imageUri } : previewSource;
+  return <><Text style={styles.label}>{label}</Text><Pressable accessibilityRole="button" accessibilityLabel={source ? t('changeImage') : t('chooseImage')} disabled={picking} onPress={chooseImage} style={styles.imageButton}>{source ? <Image source={source} resizeMode="contain" style={styles.image} /> : <Text style={styles.imageText}>{picking ? t('openingPhotos') : t('chooseImage')}</Text>}</Pressable>{source && onRemove ? <Pressable accessibilityRole="button" onPress={onRemove}><Text style={styles.cancelText}>{t('removeFilmPhoto')}</Text></Pressable> : null}</>;
 }

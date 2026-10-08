@@ -2,10 +2,15 @@ import { StyleSheet } from 'react-native';
 import { type ThemeColors, spacing, typography } from '../../../constants/theme';
 
 export const createHomeStyles = (colors: ThemeColors) => StyleSheet.create({
+  browseHeader: {
+    flexShrink: 0,
+    paddingHorizontal: spacing.screen,
+    paddingTop: 18,
+  },
+  resultsScroll: { flex: 1 },
   scrollContent: {
     paddingBottom: 104,
     paddingHorizontal: spacing.screen,
-    paddingTop: 18,
   },
   header: {
     alignItems: 'baseline',
@@ -26,7 +31,8 @@ export const createHomeStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: typography.weight.semibold,
     letterSpacing: 1.1,
   },
-  chips: { flexDirection: 'row', gap: spacing.sm, marginTop: 14 },
+  browseSelector: { height: 44, flexGrow: 0, flexShrink: 0, marginTop: 14 },
+  chips: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 1 },
   sectionHeader: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -39,6 +45,8 @@ export const createHomeStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: typography.size.small,
     fontWeight: typography.weight.bold,
     letterSpacing: 1.25,
+    flex: 1,
+    marginRight: spacing.sm,
   },
   rollCount: {
     color: colors.secondaryText,
@@ -47,6 +55,7 @@ export const createHomeStyles = (colors: ThemeColors) => StyleSheet.create({
     letterSpacing: 0.8,
   },
   rollList: { gap: spacing.md },
+  emptyState: { marginTop: 31 },
   newRollButton: {
     bottom: 22,
     left: spacing.screen,

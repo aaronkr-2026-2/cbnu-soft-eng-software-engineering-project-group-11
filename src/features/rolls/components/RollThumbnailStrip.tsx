@@ -3,6 +3,7 @@ import { Image, Text, View } from 'react-native';
 
 import { useThemedStyles } from '../../../constants/theme';
 import type { PhotoReference } from '../../photos/types';
+import { resolvePhotoUri } from '../../photos/utils/resolvePhotoUri';
 import { createRollThumbnailStripStyles } from '../styles/roll-thumbnail-strip.styles';
 
 type RollThumbnailStripProps = {
@@ -25,18 +26,21 @@ export function RollThumbnailStrip({ photos }: RollThumbnailStripProps) {
 
   return (
     <View style={styles.container}>
-      {visible.map((photo, index) => (
-        <View key={photo.id} style={styles.thumbnail}>
-          {photo.thumbnailUri ? (
-            <Image source={{ uri: photo.thumbnailUri }} style={styles.image} />
-          ) : (
-            <Text style={styles.unavailable}>{t('unavailable')}</Text>
-          )}
-          {hidden > 0 && index === visible.length - 1 ? (
-            <View style={styles.moreOverlay}><Text style={styles.moreText}>+{hidden}</Text></View>
-          ) : null}
-        </View>
-      ))}
+      {visible.map((photo, index) => {
+        const uri = resolvePhotoUri(photo);
+        return (
+          <View key={photo.id} style={styles.thumbnail}>
+            {uri ? (
+              <Image source={{ uri }} style={styles.image} />
+            ) : (
+              <Text style={styles.unavailable}>{t('unavailable')}</Text>
+            )}
+            {hidden > 0 && index === visible.length - 1 ? (
+              <View style={styles.moreOverlay}><Text style={styles.moreText}>+{hidden}</Text></View>
+            ) : null}
+          </View>
+        );
+      })}
       {Array.from({ length: visibleCount - visible.length }, (_, index) => <View key={`spacer-${index}`} style={styles.spacer} />)}
     </View>
   );

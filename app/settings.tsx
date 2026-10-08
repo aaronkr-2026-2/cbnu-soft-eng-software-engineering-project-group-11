@@ -33,8 +33,8 @@ export default function Settings() {
     Alert.alert(t('clearTitle'), t('clearMessage'), [
       { text: t('cancel'), style: 'cancel' },
       { text: t('clear'), style: 'destructive', onPress: async () => {
-        await ImageCacheService.clear();
-        Alert.alert(t('clearImageCache'), t('cacheEmpty'));
+        const result = await ImageCacheService.clear();
+        Alert.alert(t('clearImageCache'), result.deletedFiles > 0 ? t('imageCacheCleared', { count: result.deletedFiles }) : t('cacheNothingExpired'));
       } },
     ]);
   }
@@ -46,7 +46,6 @@ export default function Settings() {
       <Row label={t('importPhotos')} value={t(settings.importMode)} onPress={() => setSelector('importMode')} />
       <Row label={t('clearImageCache')} destructive onPress={clearCache} />
     </Group>
-    {settings.importMode === 'copy' ? <Text style={styles.note}>{t('copyUnavailable')}</Text> : null}
   </ScrollView>
     {selector === 'language' ? <SettingsSelectModal title={t('language')} value={settings.language} options={(['vi', 'en', 'ko'] as const).map((value) => ({ value, label: languageLabels[value] }))} onSelect={(value) => select(() => settings.setLanguage(value))} onClose={() => setSelector(null)} /> : null}
     {selector === 'appearance' ? <SettingsSelectModal title={t('appearance')} value={settings.appearance} options={(['light', 'dark'] as const).map((value) => ({ value, label: t(value) }))} onSelect={(value) => select(() => settings.setAppearance(value))} onClose={() => setSelector(null)} /> : null}

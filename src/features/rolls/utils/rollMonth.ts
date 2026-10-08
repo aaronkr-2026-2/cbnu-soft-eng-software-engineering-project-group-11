@@ -1,7 +1,7 @@
-export function formatRollMonth(value: string, language = 'en'): string {
+export function formatRollMonth(value: string, language = 'en', monthStyle: 'short' | 'long' = 'short'): string {
   const parsed = parseRollMonth(value);
   return new Date(parsed.year, parsed.month - 1).toLocaleDateString(language, {
-    month: 'short',
+    month: monthStyle,
     year: 'numeric',
   });
 }

@@ -10,6 +10,7 @@ import { BackButton } from '../../../components/ui/BackButton';
 import { photoViewerModalStyles as styles } from '../styles/photo-viewer-modal.styles';
 import type { PhotoDetailsPatch, PhotoReference } from '../types';
 import { formatPhotoDate } from '../utils/photoDate';
+import { resolvePhotoUri } from '../utils/resolvePhotoUri';
 import { PhotoInfoSheet } from './PhotoInfoSheet';
 
 // Gap between photos while paging, as in the Photos app.
@@ -53,7 +54,7 @@ export function PhotoViewerModal({ visible, ...props }: PhotoViewerModalProps) {
   if (!visible) return null;
 
   return (
-    <Modal visible transparent animationType="fade" presentationStyle="overFullScreen" onRequestClose={props.onClose} statusBarTranslucent>
+    <Modal visible transparent animationType="none" presentationStyle="overFullScreen" onRequestClose={props.onClose} statusBarTranslucent>
       <GestureHandlerRootView style={styles.root}>
         <SafeAreaProvider>
           <Viewer {...props} />
@@ -97,6 +98,7 @@ function Viewer({ photos, initialIndex, title, subtitle, onClose, onPhotoChange 
   const [chromeHidden, setChromeHidden] = useState(false);
 
   const current = photos[index];
+  const currentUri = current ? resolvePhotoUri(current) : undefined;
   const rotation = current ? rotations[current.id] ?? 0 : 0;
   const fitted = fitSize(current ? naturalSizes[current.id] : undefined, stage, rotation);
 
@@ -139,7 +141,7 @@ function Viewer({ photos, initialIndex, title, subtitle, onClose, onPhotoChange 
 
   function rotate() {
     if (!current) return;
-    scale.value = withTiming(1); tx.value = withTiming(0); ty.value = withTiming(0);
+    scale.value = withTiming(1, { duration: 140 }); tx.value = withTiming(0, { duration: 140 }); ty.value = withTiming(0, { duration: 140 });
     setRotations((state) => ({ ...state, [current.id]: ((state[current.id] ?? 0) + 90) % 360 }));
   }
 
@@ -266,7 +268,7 @@ function Viewer({ photos, initialIndex, title, subtitle, onClose, onPhotoChange 
     })
     .onUpdate((event) => {
       if (!pinching.value) return;
-      const next = clamp(startScale.value * event.scale, 0.6, maxScale * 1.5);
+      const next = clamp(startScale.value * event.scale, 1, maxScale);
       const ratio = next / startScale.value;
       // Keep the point between the fingers under the fingers, and follow them as they move.
       tx.value = event.focalX - stageW.value / 2 - (originX.value - startX.value) * ratio;
@@ -281,9 +283,9 @@ function Viewer({ photos, initialIndex, title, subtitle, onClose, onPhotoChange 
       const ratio = target / scale.value;
       const bx = boundX(target);
       const by = boundY(target);
-      scale.value = withSpring(target, settleSpring);
-      tx.value = withSpring(clamp(tx.value * ratio, -bx, bx), settleSpring);
-      ty.value = withSpring(clamp(ty.value * ratio, -by, by), settleSpring);
+      scale.value = withTiming(target, { duration: 140 });
+      tx.value = withTiming(clamp(tx.value * ratio, -bx, bx), { duration: 140 });
+      ty.value = withTiming(clamp(ty.value * ratio, -by, by), { duration: 140 });
     });
 
   const doubleTap = Gesture.Tap()
@@ -292,15 +294,15 @@ function Viewer({ photos, initialIndex, title, subtitle, onClose, onPhotoChange 
     .onEnd((event) => {
       if (closing.value || sheetOpenSV.value) return;
       if (scale.value > 1.01) {
-        scale.value = withTiming(1); tx.value = withTiming(0); ty.value = withTiming(0);
+        scale.value = withTiming(1, { duration: 140 }); tx.value = withTiming(0, { duration: 140 }); ty.value = withTiming(0, { duration: 140 });
         return;
       }
       // Zoom in on the tapped spot.
       const bx = boundX(doubleTapScale);
       const by = boundY(doubleTapScale);
-      scale.value = withTiming(doubleTapScale);
-      tx.value = withTiming(clamp(-(event.x - stageW.value / 2) * (doubleTapScale - 1), -bx, bx));
-      ty.value = withTiming(clamp(-(event.y - stageH.value / 2) * (doubleTapScale - 1), -by, by));
+      scale.value = withTiming(doubleTapScale, { duration: 140 });
+      tx.value = withTiming(clamp(-(event.x - stageW.value / 2) * (doubleTapScale - 1), -bx, bx), { duration: 140 });
+      ty.value = withTiming(clamp(-(event.y - stageH.value / 2) * (doubleTapScale - 1), -by, by), { duration: 140 });
     });
 
   const singleTap = Gesture.Tap()
@@ -338,8 +340,8 @@ function Viewer({ photos, initialIndex, title, subtitle, onClose, onPhotoChange 
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - sheet.value) * (sheetH.value + 40) }] }));
 
   async function share() {
-    if (!current?.thumbnailUri) return;
-    try { await Share.share({ url: current.thumbnailUri }); } catch { /* The share sheet reports its own errors. */ }
+    if (!currentUri) return;
+    try { await Share.share({ url: currentUri }); } catch { /* The share sheet reports its own errors. */ }
   }
 
   const position = photos.length ? `${index + 1} / ${photos.length}` : '0 / 0';
@@ -377,7 +379,7 @@ function Viewer({ photos, initialIndex, title, subtitle, onClose, onPhotoChange 
             {dateLabel ? `${dateLabel} · ${position}` : position}
           </Text>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel={t('sharePhoto')} disabled={!current?.thumbnailUri} onPress={share} style={styles.circleButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('sharePhoto')} disabled={!currentUri} onPress={share} style={styles.circleButton}>
           <ShareIcon />
         </Pressable>
       </Animated.View>
@@ -414,8 +416,7 @@ function PhotoSlot({ photo, photoIndex, stage, rotation, natural, onNaturalSize,
 }) {
   const { t } = useTranslation();
   const [failedUri, setFailedUri] = useState<string>();
-  // The existing photo provider stores the picker display URI on the reference.
-  const uri = photo.thumbnailUri;
+  const uri = resolvePhotoUri(photo);
   const fitted = fitSize(natural, stage, rotation);
   const sideways = rotation % 180 !== 0;
   const { indexSV, scale, tx, ty, dismissX, dismissY, sheet, sheetH } = shared;
@@ -429,7 +430,7 @@ function PhotoSlot({ photo, photoIndex, stage, rotation, natural, onNaturalSize,
         { translateX: dismissX.value },
         // The photo rises with the info sheet so its upper part stays in view.
         { translateY: dismissY.value - sheet.value * Math.min(sheetH.value, stageHeight) * 0.35 },
-        { scale: interpolate(Math.max(0, dismissY.value), [0, stageHeight], [1, 0.6], Extrapolation.CLAMP) },
+        { scale: 1 },
       ],
     };
   });

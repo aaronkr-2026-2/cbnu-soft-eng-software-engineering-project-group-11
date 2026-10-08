@@ -12,7 +12,7 @@ type FilmState = {
 export const useFilmStore = create<FilmState>((set) => ({
   films: builtInFilms,
   addCustomFilm: (input) => {
-    const film: Film = { ...input, id: 'custom-film-' + Date.now(), isCustom: true };
+    const film: Film = { ...input, id: 'custom-film-' + Date.now(), isCustom: true, source: 'custom' };
     set((state) => ({ films: [...state.films, film] }));
     return film;
   },

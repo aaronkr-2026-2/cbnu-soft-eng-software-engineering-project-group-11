@@ -1,6 +1,7 @@
 export type RollFormat = '35mm' | '120' | '110' | 'other';
 
 import type { PhotoReference } from '../photos/types';
+import type { FilmOverride } from '../../types/models';
 
 export type RollLocation = {
   latitude: number;
@@ -12,15 +13,17 @@ export type RollLocation = {
 export type Roll = {
   id: string;
   filmId: string;
+  filmOverride?: FilmOverride;
   filmName: string;
   cameraId: string;
   cameraName: string;
   format: RollFormat;
   date: string;
+  frameCount?: number;
   location?: RollLocation;
   lab?: string;
   notes?: string;
   photos: PhotoReference[];
 };
 
-export type RollSearchField = 'all' | 'camera' | 'film';
+export type RollBrowseMode = 'all' | 'date' | 'film' | 'camera' | 'location';

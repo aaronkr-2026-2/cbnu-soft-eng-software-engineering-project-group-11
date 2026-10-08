@@ -1,5 +1,7 @@
+import { FilmImage } from '../../films/components/FilmImage';
+import { resolveRollFilm } from '../../films/utils/resolveRollFilm';
 import { useTranslation } from '../../../i18n/useTranslation';
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { Card } from '../../../components/ui/Card';
 import { useThemedStyles } from '../../../constants/theme';
@@ -18,8 +20,7 @@ type RollCardProps = {
 export function RollCard({ onPress, roll }: RollCardProps) {
   const { t, language } = useTranslation();
   const styles = useThemedStyles(createRollCardStyles);
-  const film = useFilmStore((state) => state.films.find((item) => item.id === roll.filmId));
-  const filmImage = film?.imageUri ?? film?.imageUrl;
+  const film = useFilmStore((state) => resolveRollFilm(state.films, roll));
   const format = roll.format === 'other' ? t('other') : roll.format;
   const when = [formatRollMonth(roll.date, language), isValidLocation(roll.location) ? locationLabel(roll.location) : null]
     .filter(Boolean)
@@ -34,10 +35,10 @@ export function RollCard({ onPress, roll }: RollCardProps) {
     >
       <View style={styles.topRow}>
         <View style={styles.filmImage}>
-          {filmImage ? <Image source={{ uri: filmImage }} resizeMode="cover" style={styles.filmImageFill} /> : <Text style={styles.filmImageText}>{format}</Text>}
+          <FilmImage film={film} style={styles.filmImageFill} placeholderStyle={styles.filmImageText} placeholder={format} />
         </View>
         <View style={styles.titleBlock}>
-          <Text numberOfLines={1} style={styles.filmName}>{roll.filmName}</Text>
+          <Text numberOfLines={1} style={styles.filmName}>{film ? `${film.brand} ${film.name}` : roll.filmName}</Text>
           <Text numberOfLines={1} style={styles.subtitle}>{roll.cameraName} · {format}</Text>
           <Text numberOfLines={1} style={styles.subtitle}>{when}</Text>
         </View>

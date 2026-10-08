@@ -19,7 +19,7 @@ export function FilterChip({ label, onPress, selected }: FilterChipProps) {
       onPress={onPress}
       style={[styles.chip, selected && styles.selected]}
     >
-      <Text style={[styles.label, selected && styles.selectedLabel]}>{label}</Text>
+      <Text numberOfLines={1} style={[styles.label, selected && styles.selectedLabel]}>{label}</Text>
     </Pressable>
   );
 }

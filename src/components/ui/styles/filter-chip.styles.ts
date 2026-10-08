@@ -3,6 +3,8 @@ import { type ThemeColors, radii, typography } from '../../../constants/theme';
 
 export const createFilterChipStyles = (colors: ThemeColors) => StyleSheet.create({
   chip: {
+    flexShrink: 0,
+    alignSelf: 'center',
     borderColor: colors.border,
     borderRadius: radii.pill,
     borderWidth: StyleSheet.hairlineWidth,

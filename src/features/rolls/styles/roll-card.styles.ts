@@ -13,7 +13,7 @@ export const createRollCardStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background,
     borderRadius: radii.sm,
-    height: 52,
+    aspectRatio: 1.23,
     justifyContent: 'center',
     overflow: 'hidden',
     width: 52,

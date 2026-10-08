@@ -1,7 +1,12 @@
+import { usePreventRemove } from 'expo-router/react-navigation';
+import { isRollDraftDirty, isValidRollDraft } from '../utils/rollDraft';
+import { FilmImage } from '../../films/components/FilmImage';
+import { resolveRollFilm } from '../../films/utils/resolveRollFilm';
+import { FilmForm } from '../../films/components/FilmForm';
 import { LocationPicker } from '../../location/components/LocationPicker';
 import { locationLabel } from '../../location/services/locationService';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
-import { useState } from 'react';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
 import { Redirect, useRouter } from 'expo-router';
 import { Screen } from '../../../components/ui/Screen';
 import { BackButton } from '../../../components/ui/BackButton';
@@ -28,46 +33,65 @@ export function RollInformationScreen({ editingId }: { editingId?: string }) {
   const reset = draftState.reset;
   const original = useRollStore((state) => state.rolls.find((roll) => roll.id === editingId));
   const updateRoll = useRollStore((state) => state.updateRoll);
-  const film = useFilmStore((state) => state.films.find((item) => item.id === draft.filmId));
+  const film = useFilmStore((state) => resolveRollFilm(state.films, draft));
   const camera = useCameraStore((state) => state.cameras.find((item) => item.id === draft.cameraId) ?? (editingId ? undefined : state.cameras[0]));
   const createRoll = useRollStore((state) => state.createRoll);
-  const [editor, setEditor] = useState<'format' | 'date' | 'lab' | 'location' | 'notes' | null>(null);
+  const [editor, setEditor] = useState<'film' | 'frameCount' | 'format' | 'date' | 'lab' | 'location' | 'notes' | null>(null);
   const [error, setError] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [leaving, setLeaving] = useState<'save' | 'cancel' | null>(null);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const dirty = !!original && isRollDraftDirty(draft, original);
+  function requestDiscard() {
+    if (!dirty) { setLeaving('cancel'); return; }
+    Alert.alert(t('discardChanges'), undefined, [
+      { text: t('keepEditing'), style: 'cancel' },
+      { text: t('discard'), style: 'destructive', onPress: () => setLeaving('cancel') },
+    ]);
+  }
+  usePreventRemove(!!editingId && dirty && !leaving, requestDiscard);
+  useEffect(() => {
+    if (editingId && leaving) router.dismissTo({ pathname: '/rolls/[id]', params: { id: editingId, ...(leaving === 'save' ? { saved: String(Date.now()) } : {}) } });
+  }, [leaving, editingId, router]);
   const filmName = film ? `${film.brand} ${film.name}` : original?.filmName;
   const cameraName = camera ? `${camera.brand} ${camera.model}` : original?.cameraName;
   function closeEditor() {
+    if (editingId) { requestDiscard(); return; }
     if (router.canGoBack()) router.back();
-    else if (editingId) router.replace({ pathname: '/rolls/[id]', params: { id: editingId } });
     else router.replace('/new-roll');
   }
   if (!filmName) return creating ? null : <Redirect href="/new-roll" />;
   function submit() {
     if (creating) return;
-    if (!draft.filmId || !(camera?.id ?? original?.cameraId) || !filmName || !cameraName || !/^\d{4}-(0[1-9]|1[0-2])$/.test(draft.date)) { setError(true); return; }
-    setCreating(true);
+    if (!draft.filmId || !(camera?.id ?? original?.cameraId) || !filmName || !cameraName || !isValidRollDraft(draft)) { setError(true); return; }
+    setCreating(true); setSaveFailed(false);
+    try {
     const input = { ...draft, filmId: draft.filmId, filmName, cameraId: camera?.id ?? original!.cameraId, cameraName, lab: draft.lab.trim() || undefined, notes: draft.notes.trim() || undefined };
     if (editingId) {
       updateRoll(editingId, input);
-      closeEditor();
+      setLeaving('save');
       return;
     }
     const roll = createRoll(input);
     router.dismissAll();
     router.push({ pathname: '/rolls/[id]', params: { id: roll.id } });
     reset();
+    } catch { setCreating(false); setSaveFailed(true); }
   }
   return <Screen><ScrollView contentContainerStyle={styles.content}>
-    <BackButton onPress={closeEditor} />
+    {editingId ? <Pressable accessibilityRole="button" onPress={closeEditor}><Text style={styles.label}>{t('cancel')}</Text></Pressable> : <BackButton onPress={closeEditor} />}
     <Text style={styles.title}>{t(editingId ? 'editRoll' : 'rollInfo')}</Text>
     <View style={styles.film}>
-      {film?.imageUri || film?.imageUrl ? <Image source={{ uri: film.imageUri ?? film.imageUrl }} resizeMode="contain" style={styles.image} /> : <View style={styles.image}><Text style={styles.secondary}>{t('film')}</Text></View>}
+      <Pressable disabled={!film} accessibilityRole="button" accessibilityLabel={t('editFilm')} onPress={() => setEditor('film')} style={({ pressed }) => [styles.filmEdit, pressed && { opacity: 0.7 }]}>
+      <FilmImage film={film} style={styles.image} placeholderStyle={styles.secondary} />
       <View style={styles.filmText}><Text style={styles.name}>{filmName}</Text>{film ? <Text style={styles.secondary}>ISO {film.iso} · {t(film.type)}</Text> : null}</View>
+      </Pressable>
       <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: '/films', params: { change: '1', ...(editingId ? { edit: editingId } : {}) } })}><Text style={styles.label}>{t('change')} ›</Text></Pressable>
     </View>
     <Text style={styles.heading}>{t('basicInfo')}</Text><View style={styles.group}>
       <Row label={t('camera')} value={cameraName ?? '—'} onPress={() => router.push({ pathname: '/cameras', params: editingId ? { edit: editingId } : { select: '1' } })} />
       <Row label={t('format')} value={draft.format} onPress={() => setEditor('format')} />
+      <Row label={t('frameCount')} value={draft.frameCount === undefined ? '—' : String(draft.frameCount)} onPress={() => setEditor('frameCount')} />
     </View>
     <Text style={styles.heading}>{t('rollSection')}</Text><View style={styles.group}>
       <Row label={t('date')} value={formatRollMonth(draft.date, language)} onPress={() => setEditor('date')} />
@@ -76,9 +100,12 @@ export function RollInformationScreen({ editingId }: { editingId?: string }) {
       <Row label={t('notes')} value={draft.notes || '—'} onPress={() => setEditor('notes')} />
     </View>
     {draft.location ? <Pressable accessibilityRole="button" style={styles.cancel} onPress={() => update({ location: undefined })}><Text style={styles.secondary}>{t('removeLocation')}</Text></Pressable> : null}
+    {saveFailed ? <Text accessibilityRole="alert" style={styles.error}>{t('rollSaveError')}</Text> : null}
     {error ? <Text style={styles.error}>{t('invalidRoll')}</Text> : null}
-    <View style={styles.action}><PrimaryButton disabled={creating} label={t(editingId ? 'saveChanges' : 'createRoll')} onPress={submit} /></View>
+    <View style={styles.action}><PrimaryButton disabled={creating || (!!editingId && !dirty)} label={t(editingId ? 'saveChanges' : 'createRoll')} onPress={submit} /></View>
   </ScrollView>
+    {editor === 'film' && film ? <FilmForm mode="edit" initialValues={film} visible onClose={() => setEditor(null)} onSubmit={filmOverride => update({ filmOverride })} /> : null}
+    {editor === 'frameCount' ? <RollTextEditor title={t('frameCount')} numeric value={draft.frameCount === undefined ? '' : String(draft.frameCount)} onClose={() => setEditor(null)} onSave={value => update({ frameCount: Number(value) })} /> : null}
     {editor === 'format' ? <SettingsSelectModal title={t('format')} options={(['35mm', '120', '110'] as const).map((value) => ({ value, label: value }))} value={draft.format} onClose={() => setEditor(null)} onSelect={(format) => { update({ format }); setEditor(null); }} /> : null}
     {editor === 'lab' || editor === 'notes' ? <RollTextEditor key={editor} title={t(editor)} value={draft[editor]} multiline={editor === 'notes'} onClose={() => setEditor(null)} onSave={(value) => update({ [editor]: value })} /> : null}
     {editor === 'location' ? <LocationPicker mode="select" location={draft.location} onClose={() => setEditor(null)} onConfirm={(location) => { update({ location }); setEditor(null); }} /> : null}

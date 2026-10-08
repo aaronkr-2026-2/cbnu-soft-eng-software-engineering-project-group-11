@@ -1,20 +1,24 @@
-import { useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, type SharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedReaction, useAnimatedStyle, useSharedValue, withTiming, type SharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { useThemedStyles } from '../../../constants/theme';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type { PhotoReference } from '../types';
+import { resolvePhotoUri } from '../utils/resolvePhotoUri';
 import { createReorderablePhotoGridStyles, gridGap } from '../styles/reorderable-photo-grid.styles';
+import { usePhotoSelectionGesture } from '../hooks/usePhotoSelectionGesture';
+import { PhotoSelectionOverlay } from './PhotoSelectionOverlay';
 
 const columns = 3;
 // How long a finger must rest on a photo before it lifts for reordering, and how far it may drift meanwhile.
 const liftDelay = 250;
 const liftSlop = 10;
-const slotSpring = { damping: 20, stiffness: 220 };
+const emptySelection: ReadonlySet<string> = new Set();
+const ignoreRange = (_start: number, _end: number) => {};
 
 type Positions = Record<string, number>;
 
@@ -25,6 +29,11 @@ type Props = {
   onDraggingChange: (dragging: boolean) => void;
   onAdd: () => void;
   adding?: boolean;
+  selectionMode?: boolean;
+  selectedIds?: ReadonlySet<string>;
+  onToggleSelection?: (id: string) => void;
+  onSelectRange?: (start: number, end: number) => void;
+  interactionDisabled?: boolean;
 };
 
 function positionsOf(photos: PhotoReference[]): Positions {
@@ -50,68 +59,101 @@ function movePosition(positions: Positions, from: number, to: number): Positions
   return next;
 }
 
-export function ReorderablePhotoGrid({ photos, onPhotoPress, onReorder, onDraggingChange, onAdd, adding = false }: Props) {
+export function ReorderablePhotoGrid({ photos, onPhotoPress, onReorder, onDraggingChange, onAdd, adding = false,
+  selectionMode = false, selectedIds = emptySelection, onToggleSelection, onSelectRange = ignoreRange, interactionDisabled = false }: Props) {
   const styles = useThemedStyles(createReorderablePhotoGridStyles);
   const { t } = useTranslation();
   const [width, setWidth] = useState(0);
   const size = Math.max(0, (width - gridGap * (columns - 1)) / columns);
   const positions = useSharedValue<Positions>(positionsOf(photos));
-  const rows = Math.ceil((photos.length + 1) / columns);
+  const rows = Math.ceil((photos.length + (selectionMode ? 0 : 1)) / columns);
   const addOrigin = slotOrigin(photos.length, size);
+  const selectionGesture = usePhotoSelectionGesture(selectionMode && !interactionDisabled, size, photos.length, onSelectRange, onDraggingChange);
 
   // Follow the store once a reorder is saved, or when photos are added.
   useEffect(() => { positions.value = positionsOf(photos); }, [photos, positions]);
 
-  function commit(next: Positions) {
+  const commit = useCallback((next: Positions) => {
     const ids = Object.keys(next).sort((left, right) => next[left] - next[right]);
     if (ids.some((id, index) => photos[index]?.id !== id)) onReorder(ids);
-  }
+  }, [photos, onReorder]);
 
-  function moveBy(index: number, offset: number) {
+  const moveBy = useCallback((index: number, offset: number) => {
     const to = Math.max(0, Math.min(photos.length - 1, index + offset));
     if (to === index) return;
     const ids = photos.map((photo) => photo.id);
     const [id] = ids.splice(index, 1);
     ids.splice(to, 0, id);
     onReorder(ids);
-  }
+  }, [photos, onReorder]);
 
   return <>
-    <Text style={styles.hint}>{t(photos.length ? 'reorderHint' : 'attachPhotos')}</Text>
-    <View onLayout={(event) => setWidth(event.nativeEvent.layout.width)} style={[styles.grid, { height: size > 0 ? rows * size + (rows - 1) * gridGap : 0 }]}>
+    <Text style={styles.hint}>{t(selectionMode ? 'selectionDragHint' : photos.length ? 'reorderHint' : 'attachPhotos')}</Text>
+    <GestureDetector gesture={selectionGesture}>
+    <View onLayout={(event) => setWidth(event.nativeEvent.layout.width)} style={[styles.grid, { height: size > 0 && rows > 0 ? rows * size + (rows - 1) * gridGap : 0 }]}>
       {size > 0 ? photos.map((photo, index) => <PhotoTile
         key={photo.id}
         photo={photo}
+        initialIndex={index}
         size={size}
         count={photos.length}
         positions={positions}
-        onPress={() => onPhotoPress(photo, index)}
+        onPhotoPress={onPhotoPress}
+        selecting={selectionMode}
+        selected={selectedIds.has(photo.id)}
+        onToggleSelection={onToggleSelection}
+        selectionGesture={selectionGesture}
+        interactionDisabled={interactionDisabled}
         onDraggingChange={onDraggingChange}
         onDrop={commit}
-        onAccessibleMove={(offset) => moveBy(index, offset)}
+        onAccessibleMove={moveBy}
       />) : null}
-      {size > 0 ? <Pressable accessibilityRole="button" accessibilityLabel={t('addPhotos')} disabled={adding} onPress={onAdd}
+      {size > 0 && !selectionMode ? <Pressable accessibilityRole="button" accessibilityLabel={t('addPhotos')} disabled={adding} onPress={onAdd}
         style={({ pressed }) => [styles.addTile, { width: size, height: size, left: addOrigin.x, top: addOrigin.y }, pressed && styles.addTilePressed]}>
         {adding ? <ActivityIndicator color={styles.addIcon.color} /> : <Text style={styles.addIcon}>+</Text>}
       </Pressable> : null}
     </View>
+    </GestureDetector>
   </>;
 }
 
-function PhotoTile({ photo, size, count, positions, onPress, onDraggingChange, onDrop, onAccessibleMove }: {
-  photo: PhotoReference; size: number; count: number; positions: SharedValue<Positions>;
-  onPress: () => void; onDraggingChange: (dragging: boolean) => void; onDrop: (positions: Positions) => void; onAccessibleMove: (offset: number) => void;
+const PhotoTile = memo(function PhotoTile({ photo, initialIndex, size, count, positions, onPhotoPress, onDraggingChange, onDrop, onAccessibleMove,
+  selecting, selected, onToggleSelection, selectionGesture, interactionDisabled }: {
+  photo: PhotoReference; initialIndex: number; size: number; count: number; positions: SharedValue<Positions>;
+  onPhotoPress: (photo: PhotoReference, index: number) => void; onDraggingChange: (dragging: boolean) => void; onDrop: (positions: Positions) => void;
+  onAccessibleMove: (index: number, offset: number) => void;
+  selecting: boolean; selected: boolean; onToggleSelection?: (id: string) => void;
+  selectionGesture: ReturnType<typeof Gesture.Pan>; interactionDisabled: boolean;
 }) {
   const styles = useThemedStyles(createReorderablePhotoGridStyles);
   const { t } = useTranslation();
   const [failed, setFailed] = useState(false);
   const id = photo.id;
+  const uri = useMemo(() => resolvePhotoUri(photo), [photo]);
+  const onPress = useCallback(() => {
+    if (interactionDisabled) return;
+    if (selecting) onToggleSelection?.(id);
+    else onPhotoPress(photo, initialIndex);
+  }, [interactionDisabled, selecting, onToggleSelection, id, onPhotoPress, photo, initialIndex]);
   const lifted = useSharedValue(false);
   const dragging = useSharedValue(false);
-  const x = useSharedValue(0);
-  const y = useSharedValue(0);
+  // Imported tiles start in their final slots instead of springing out of slot zero.
+  const initialOrigin = slotOrigin(initialIndex, size);
+  const x = useSharedValue(initialOrigin.x);
+  const y = useSharedValue(initialOrigin.y);
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
+  const touchStartX = useSharedValue(0);
+  const touchStartY = useSharedValue(0);
+
+  useAnimatedReaction(
+    () => slotOrigin(positions.value[id] ?? initialIndex, size),
+    (origin, previous) => {
+      if (lifted.value || (previous && origin.x === previous.x && origin.y === previous.y)) return;
+      x.value = previous ? withTiming(origin.x, { duration: 120 }) : origin.x;
+      y.value = previous ? withTiming(origin.y, { duration: 120 }) : origin.y;
+    },
+  );
 
   function lift() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -130,13 +172,14 @@ function PhotoTile({ photo, size, count, positions, onPress, onDraggingChange, o
     if (!lifted.value) return;
     lifted.value = false;
     const origin = slotOrigin(positions.value[id] ?? 0, size);
-    x.value = withSpring(origin.x, slotSpring);
-    y.value = withSpring(origin.y, slotSpring);
+    x.value = withTiming(origin.x, { duration: 120 });
+    y.value = withTiming(origin.y, { duration: 120 });
     scheduleOnRN(drop, positions.value);
   }
 
   // Hold to lift the photo; only then does dragging reorder. Moving earlier leaves the drag to the page scroll.
   const hold = Gesture.LongPress()
+    .enabled(!selecting && !interactionDisabled)
     .minDuration(liftDelay)
     .maxDistance(liftSlop)
     .onStart(() => {
@@ -150,9 +193,26 @@ function PhotoTile({ photo, size, count, positions, onPress, onDraggingChange, o
     .onFinalize(() => { if (!dragging.value) release(); });
 
   const drag = Gesture.Pan()
+    .enabled(!selecting && !interactionDisabled)
     .manualActivation(true)
-    .onTouchesMove((_event, state) => {
-      if (lifted.value) state.activate();
+    .onTouchesDown((event) => {
+      const touch = event.allTouches[0];
+      if (!touch) return;
+      touchStartX.value = touch.absoluteX;
+      touchStartY.value = touch.absoluteY;
+    })
+    .onTouchesMove((event, state) => {
+      if (lifted.value) {
+        state.activate();
+        return;
+      }
+      const touch = event.allTouches[0];
+      if (!touch) return;
+      // The hold fails at this same distance. Fail its simultaneous pan too,
+      // so it cannot remain pending and delay the parent ScrollView.
+      if (Math.hypot(touch.absoluteX - touchStartX.value, touch.absoluteY - touchStartY.value) > liftSlop) {
+        state.fail();
+      }
     })
     .onStart(() => { dragging.value = true; })
     .onUpdate((event) => {
@@ -171,42 +231,44 @@ function PhotoTile({ photo, size, count, positions, onPress, onDraggingChange, o
     })
     .onFinalize(() => { dragging.value = false; release(); });
 
-  const tap = Gesture.Tap().maxDistance(liftSlop).onEnd(() => { scheduleOnRN(onPress); });
+  const tap = Gesture.Tap().enabled(!interactionDisabled).maxDistance(selecting ? 6 : liftSlop)
+    .onEnd((_event, success) => { if (success) scheduleOnRN(onPress); });
 
-  const gesture = Gesture.Exclusive(Gesture.Simultaneous(hold, drag), tap);
+  const gesture = selecting ? tap.requireExternalGestureToFail(selectionGesture)
+    : Gesture.Exclusive(Gesture.Simultaneous(hold, drag), tap);
 
   const style = useAnimatedStyle(() => {
-    const origin = slotOrigin(positions.value[id] ?? 0, size);
     const active = lifted.value;
     return {
       zIndex: active ? 10 : 0,
       transform: [
         // At rest a photo glides to its slot; while held it sits exactly under the finger.
-        { translateX: active ? x.value : withSpring(origin.x, slotSpring) },
-        { translateY: active ? y.value : withSpring(origin.y, slotSpring) },
-        { scale: withTiming(active ? 1.08 : 1, { duration: 150 }) },
+        { translateX: x.value },
+        { translateY: y.value },
       ],
-      opacity: withTiming(active ? 0.92 : 1, { duration: 150 }),
-      shadowOpacity: withTiming(active ? 0.3 : 0, { duration: 150 }),
-      elevation: active ? 10 : 0,
+      opacity: 1,
+      shadowOpacity: active ? 0.12 : 0,
+      elevation: active ? 3 : 0,
     };
   });
 
   return <GestureDetector gesture={gesture}>
     <Animated.View
       accessible
-      accessibilityRole="button"
-      accessibilityLabel={t('openPhoto')}
-      accessibilityHint={t('reorderHint')}
-      accessibilityActions={[{ name: 'activate' }, { name: 'increment', label: t('moveLater') }, { name: 'decrement', label: t('moveEarlier') }]}
+      accessibilityRole={selecting ? 'checkbox' : 'button'}
+      accessibilityState={selecting ? { checked: selected, disabled: interactionDisabled } : undefined}
+      accessibilityLabel={t(selecting ? selected ? 'deselectPhoto' : 'selectPhoto' : 'openPhoto')}
+      accessibilityHint={t(selecting ? 'selectionDragHint' : 'reorderHint')}
+      accessibilityActions={selecting ? [{ name: 'activate' }] : [{ name: 'activate' }, { name: 'increment', label: t('moveLater') }, { name: 'decrement', label: t('moveEarlier') }]}
       onAccessibilityAction={(event) => {
         const action = event.nativeEvent.actionName;
         if (action === 'activate') onPress();
-        else onAccessibleMove(action === 'increment' ? 1 : -1);
+        else if (!selecting && !interactionDisabled) onAccessibleMove(initialIndex, action === 'increment' ? 1 : -1);
       }}
       style={[styles.tile, styles.lifted, { width: size, height: size }, style]}
     >
-      {photo.thumbnailUri && !failed ? <Image source={{ uri: photo.thumbnailUri }} onError={() => setFailed(true)} style={styles.image} /> : <Text style={styles.hint}>{t('unavailable')}</Text>}
+      {uri && !failed ? <Image source={{ uri }} onError={() => setFailed(true)} style={styles.image} /> : <Text style={styles.hint}>{t('unavailable')}</Text>}
+      {selecting ? <PhotoSelectionOverlay selected={selected} /> : null}
     </Animated.View>
   </GestureDetector>;
-}
+});

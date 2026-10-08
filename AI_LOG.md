@@ -214,6 +214,42 @@
 - Large `StyleSheet.create()` blocks continued to be generated inside route files, so I decided to separate screen styles into feature-owned style files.
 - Some early New Roll designs became too long as more metadata was added, so I changed the workflow to Film Selection first and a compact Roll Information screen second.
 
+## FILMER Photo Viewer, Roll Cards and TestFlight Preparation — 2026-10-01
+
+**Tool(s) used:**
+- Claude Code
+- Visual Studio Code
+- Expo
+- iOS Simulator
+- Git / GitHub
+
+**What I asked for:**
+- Remove the Frame Count field and show the number of photos in the Roll instead.
+- Replace the large "Add Photos" button with a "+" tile after the last photo in the grid.
+- Restyle the Home roll cards so each Roll stands out as its own block.
+- Improve the Photo Viewer with swipe, pinch-zoom, swipe-to-dismiss, rotate and share.
+- Add per-photo details: date taken, location and note.
+- Get a step-by-step guide for publishing FILMER to TestFlight for testers.
+
+**What I kept as-is:**
+- The Photo Viewer as an overlay on Roll Detail.
+- Long press and drag to reorder photos.
+- The feature-owned `styles/*.styles.ts` structure.
+- Expo EAS as the build and submit path for TestFlight.
+
+**What I changed or rejected, and why:**
+- Removed `frameCount` from the Roll model, because the real photo count is more useful than the nominal frame count.
+- Changed Roll cards to show the film image, camera, format, month, location and photo count.
+- Rebuilt photo gestures with `react-native-gesture-handler` and `react-native-reanimated` so dragging and zooming stay smooth; added haptic feedback when reordering.
+- Took the default "date taken" from EXIF but kept it editable.
+- Moved all remaining `StyleSheet.create` blocks out of components into separate style files.
+- Changed dark mode to an iOS-style palette (true black background).
+
+**Something the AI got wrong that I had to catch:**
+- The AI again put `StyleSheet.create` inside component files, against the project's style-file convention, so I moved the styles out.
+- The AI used `StyleSheet.absoluteFillObject`, which the installed React Native version does not provide; it was replaced with `StyleSheet.absoluteFill` after the TypeScript check failed.
+- The TestFlight guide pointed out that `app.json` still has no `bundleIdentifier`, `eas.json` or app icon, which must be added before the first build.
+
 
 ## Current FILMER Architecture
 
