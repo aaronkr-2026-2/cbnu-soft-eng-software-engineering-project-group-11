@@ -29,7 +29,7 @@
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = FILMER/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* FILMER-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "FILMER-Bridging-Header.h"; path = "FILMER/FILMER-Bridging-Header.h"; sourceTree = "<group>"; };
-		F4E7D5E418E968BE175C6C79 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = FILMER/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		F4E7D5E418E968BE175C6C79 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = FILMER/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,7 +111,6 @@
 				3313043E2740C58C9FFD00F2 /* Pods-FILMER.debug.xcconfig */,
 				5A2D906C9582A5D1AD36F21B /* Pods-FILMER.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
