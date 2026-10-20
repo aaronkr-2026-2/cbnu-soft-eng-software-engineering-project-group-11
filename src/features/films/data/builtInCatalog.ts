@@ -1,4 +1,5 @@
 import type { Film } from '../../../types/models';
+import { additionalFilms } from './additionalCatalog';
 
 type Definition = [id: string, name: string, iso: number, type: Film['type'], process: string,
   status: NonNullable<Film['status']>, formats: NonNullable<Film['formats']>, aliases?: string[]];
@@ -60,5 +61,6 @@ export const builtInCatalog: Film[] = [
     ['sensia-200', 'Sensia 200', 200, 'slide', 'E-6', 'discontinued', ['35mm']],
   ]),
   { id: 'ilford-hp5-plus', brand: 'Ilford', name: 'HP5 Plus', iso: 400, type: 'black-and-white',
-    format: '35mm', formats: ['35mm', '120'], process: 'B&W', status: 'current', source: 'builtin', isCustom: false },
+    format: '35mm', formats: ['35mm', '120'], process: 'B&W', status: 'current', source: 'builtin', imageKey: 'ilford-hp5-plus', isCustom: false },
+  ...additionalFilms,
 ];

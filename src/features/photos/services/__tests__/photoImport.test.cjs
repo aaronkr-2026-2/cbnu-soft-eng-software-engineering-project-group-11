@@ -14,11 +14,11 @@ function runtime(previous) {
     kv: new Map([['filmer.rolls.v1', JSON.stringify([seedRoll])]]), files: new Map(),
     failUris: new Set(), shortUris: new Set(), documentRoot: 'file:///app/Documents',
     permission: true, selection: { canceled: true }, copyCalls: [], deleted: [], pickerOptions: [],
-    yieldCount: 0, failSave: false,
+    yieldCount: 0, failSave: false, writes: [],
     saveFailUris: new Set(), savedUris: [], exportedBytes: [], shareCalls: [], permissionChecks: [], permissionRequests: [],
     shareImports: 0, missingShareModule: false,
     directories: new Set(), logs: [], shareCancelled: false, shareError: null,
-    assetUris: new Map(), assetReads: [],
+    assetUris: new Map(), assetReads: [], assetStatus: new Map(), legacyCopyFixture: true, failRead: false, nativeRequests: [],
   };
   const uri = parts => parts.map(p => typeof p === 'string' ? p : p.uri).join('/');
   class Directory {
@@ -54,14 +54,33 @@ function runtime(previous) {
       if (!bytes) throw new Error('Source missing');
       state.files.set(destination.uri, Buffer.from(state.shortUris.has(this.uri) ? bytes.subarray(0, 1) : bytes));
     }
+    write(content) { if (state.failRecoveryExport) throw new Error('Export disk full'); state.files.set(this.uri,Buffer.from(content)); }
     delete() { state.deleted.push(this.uri); state.files.delete(this.uri); }
   }
+  const native = {
+    async pick(single, labels, dark) { (state.nativePicks ??= []).push({ single, labels, dark }); state.pickerOptions.push({ allowsMultipleSelection: !single }); return state.selection; },
+    async verify(id) {
+      if (!state.permission) return { status: 'permission-denied' };
+      if (state.assetStatus.has(id)) return { status: state.assetStatus.get(id) };
+      return { status: state.assetUris.has(id) && state.files.has(state.assetUris.get(id)) ? 'ready' : state.limited ? 'limited' : 'unavailable' };
+    },
+    async resolve(id, full, pixels) {
+      state.nativeRequests.push({ id, full, pixels }); state.assetReads.push(id);
+      if (state.offline) return { status: 'temporary-error' };
+      const access = await this.verify(id);
+      return access.status === 'ready' ? { status: 'ready', uri: state.assetUris.get(id) } : access;
+    },
+    async clearRenders() {},
+  };
   const mocks = {
+    'expo-sharing': { isAvailableAsync: async () => !state.noSharing, shareAsync: async (uri,options) => { state.rawExport={uri,options}; } },
+    'expo-modules-core': { requireOptionalNativeModule: () => native },
+    'react-native': { Linking: { openSettings: async () => { state.settingsOpened=true; } }, AppState: { addEventListener: (_event, fn) => { state.activeListener = fn; return { remove() {} }; } } },
     'expo-file-system': { File, Directory, Paths: { get document() { return new Directory(state.documentRoot); },
       get cache() { return new Directory('file:///app/Cache'); } } },
     'expo-sqlite/kv-store': {
-      getItemSync: key => state.kv.get(key) ?? null,
-      setItemSync: (key, value) => { if (state.failSave) throw new Error('Disk full'); state.kv.set(key, value); },
+      getItemSync: key => { if (state.failRead) throw new Error('SQLite unavailable'); return state.kv.get(key) ?? null; },
+      setItemSync: (key, value) => { if (state.failSave) throw new Error('Disk full'); state.writes.push(key); state.kv.set(key, value); },
     },
     'expo-image-picker': {
       requestMediaLibraryPermissionsAsync: async () => ({ granted: state.permission }),
@@ -69,7 +88,9 @@ function runtime(previous) {
       UIImagePickerPreferredAssetRepresentationMode: { Current: 'current' },
     },
     'expo-media-library': {
-      getPermissionsAsync: async (...args) => { state.permissionChecks.push(args); return { granted: state.permission, canAskAgain: true }; },
+      addListener: fn => { state.libraryListener = fn; return { remove() {} }; },
+      presentPermissionsPicker: async () => { state.limitedPicker = true; },
+      getPermissionsAsync: async (...args) => { state.permissionChecks.push(args); return { granted: state.permission, canAskAgain: true, accessPrivileges: state.limited ? 'limited' : 'all' }; },
       requestPermissionsAsync: async (...args) => { state.permissionRequests.push(args); return { granted: state.permission }; },
       Asset: class Asset {
         constructor(id) { this.id = id; }
@@ -111,22 +132,38 @@ function runtime(previous) {
   const app = load('store/app-store.ts').useAppStore;
   const store = load('features/rolls/store/rollStore.ts').useRollStore;
   const service = load('features/photos/services/PhotoImportService.ts').PhotoImportService;
+  const provider = load('features/photos/providers/ApplePhotosProvider.ts').applePhotosProvider;
+  const pickReference = provider.pickMultiplePhotos.bind(provider);
+  provider.pickMultiplePhotos = async (rollId, single) => {
+    if (state.legacyCopyFixture && app.getState().importMode === 'copy') {
+      // Test-only fixture creation for postponed Copy compatibility, never a production import path.
+      if (!load('features/rolls/store/rollStore.ts').getRollById(rollId)) throw new Error('Roll not found');
+      if (!state.permission) return { status: 'permission-denied' };
+      if (state.selection.canceled) return { status: 'cancelled' };
+      state.pickerOptions.push({ quality: 1, preferredAssetRepresentationMode: 'current' });
+      return { status: 'selected', ...await load('features/photos/services/PhotoCopyService.ts').PhotoCopyService.copySelected(rollId, state.selection.assets) };
+    }
+    return pickReference(rollId, single);
+  };
   const storage = load('features/photos/services/PhotoStorageService.ts').PhotoStorageService;
-  const resolve = load('features/photos/utils/resolvePhotoUri.ts').resolvePhotoUri;
+  const resolveCopy = load('features/photos/utils/resolvePhotoUri.ts').resolvePhotoUri;
+  // Native fixture URI for byte-level share/export checks; production reference resolution is async.
+  const resolve = photo => photo.provider === 'filmer-copy' ? resolveCopy(photo) : state.assetUris.get(photo.localIdentifier ?? photo.assetId);
   function select(count, extension = 'jpg') {
     const assets = Array.from({ length: count }, (_, index) => {
       const asset = { uri: `file:///picker/${index}.${extension}`, assetId: `asset-${index}`, fileName: `same.${extension}`, width: 100, height: 100,
-        exif: { DateTimeOriginal: '2026:10:06 12:00:00' } };
+        takenAt: '2026-10-06', exif: { DateTimeOriginal: '2026:10:06 12:00:00' } };
+      state.assetUris.set(asset.assetId, asset.uri);
       state.files.set(asset.uri, Buffer.from(`original-image-${index}`));
       return asset;
     });
     state.selection = { canceled: false, assets };
     return assets;
   }
-  return { state, app, store, service, storage, resolve, select, load };
+  return { state, app, store, service, storage, resolve, select, load, provider, pickReference };
 }
 
-test('Reference imports preserve identifiers, picker URIs, metadata and picker options', async () => {
+test('Reference imports preserve verified identifiers and metadata without persisting picker URIs', async () => {
   const r = runtime();
   const assets = r.select(3);
   const result = await r.service.addToRoll('r1');
@@ -137,13 +174,13 @@ test('Reference imports preserve identifiers, picker URIs, metadata and picker o
     assert.equal(p.storageMode, 'reference');
     assert.equal(p.assetId, assets[i].assetId);
     assert.equal(p.localIdentifier, assets[i].assetId);
-    assert.equal(r.resolve(p), assets[i].uri);
+    assert.equal(p.thumbnailUri, undefined);
+    assert.equal(r.load('features/photos/utils/resolvePhotoUri.ts').resolvePhotoUri(p), undefined);
     assert.equal(p.takenAt, '2026-10-06');
     assert.equal(p.id, `apple-photos-asset-${i}-${i}`);
   });
   assert.equal(r.state.copyCalls.length, 0);
-  assert.equal(r.state.pickerOptions[0].quality, 1);
-  assert.equal(r.state.pickerOptions[0].preferredAssetRepresentationMode, undefined);
+  assert.equal(r.state.pickerOptions[0].allowsMultipleSelection, true);
 });
 
 test('Copy imports persistent byte-identical files with unique names, without asset IDs', async () => {
@@ -299,7 +336,9 @@ test('Extension resolution follows selected representation and safely handles co
 
 test('Corrupt saved archives are not silently overwritten with mock Rolls', () => {
   const r = runtime(); r.state.kv.set('filmer.rolls.v1', '{broken-json');
-  assert.throws(() => runtime(r.state));
+  const restarted = runtime(r.state);
+  assert.equal(restarted.store.getState().archive.status, 'recovery');
+  assert.throws(() => restarted.store.getState().createRoll(seedRoll), /recovery/);
   assert.equal(r.state.kv.get('filmer.rolls.v1'), '{broken-json');
 });
 
@@ -388,7 +427,7 @@ test('Batch Share uses native multiple file URLs in persisted order for Referenc
   assert.equal(options.urls[10], r.resolve(photos[11]));
   assert.equal(options.urls.length, 11);
   assert.equal(options.failOnCancel, false);
-  assert.equal(r.state.permissionChecks.length, 0);
+  assert.ok(r.state.permissionChecks.every(args => args[0] === false));
   await service.sharePhotos([photos[0]]);
   assert.equal(r.state.shareCalls[1].urls.length, 1);
   r.state.files.delete(r.resolve(photos[1]));
@@ -406,7 +445,7 @@ test('Batch Save preserves selected source bytes, orders by sortOrder and report
   assert.deepEqual(result, { savedCount: 2, failedCount: 1 });
   assert.deepEqual(r.state.savedUris, [r.resolve(photos[0]), r.resolve(photos[4])]);
   assert.deepEqual(r.state.exportedBytes, r.state.savedUris.map(uri => r.state.files.get(uri)));
-  assert.deepEqual(r.state.permissionChecks, [[true, ['photo']]]);
+  assert.deepEqual(r.state.permissionChecks.filter(args => args[0] === true), [[true, ['photo']]]);
   assert.equal(r.state.permissionRequests.length, 0);
   assert.equal(r.state.deleted.length, 0);
   assert.equal(r.store.getState().rolls[0].photos.length, 5);
@@ -414,7 +453,7 @@ test('Batch Save preserves selected source bytes, orders by sortOrder and report
 
 test('Batch Save requests permission only on Save and does not report denied or missing files as saved', async () => {
   const r = runtime(); r.select(2); await r.service.addToRoll('r1');
-  assert.equal(r.state.permissionChecks.length, 0);
+  assert.ok(r.state.permissionChecks.every(args => args[0] === false));
   const service = r.load('features/photos/services/PhotoExportService.ts').PhotoExportService;
   const photos = r.store.getState().rolls[0].photos;
   r.state.permission = false;
@@ -429,15 +468,15 @@ test('Batch Save requests permission only on Save and does not report denied or 
   assert.equal(r.state.permissionChecks.length, checked);
 });
 
-test('Reimporting a Reference after removal cannot duplicate surviving photo IDs', async () => {
+test('Reimporting an already present Reference does not duplicate a surviving frame', async () => {
   const r = runtime(); r.select(3); await r.service.addToRoll('r1');
   const before = r.store.getState().rolls[0].photos;
   r.store.getState().removePhotos('r1', new Set([before[0].id]));
   r.state.selection = { canceled: false, assets: [r.state.selection.assets[2]] };
   await r.service.addToRoll('r1');
   const photos = r.store.getState().rolls[0].photos;
-  assert.equal(photos.length, 3);
-  assert.equal(new Set(photos.map(photo => photo.id)).size, 3);
+  assert.equal(photos.length, 2);
+  assert.equal(new Set(photos.map(photo => photo.id)).size, 2);
   assert.equal(photos[1].id, before[2].id);
 });
 
@@ -614,4 +653,381 @@ test('Film override participates in edit dirty state and removing/changing it le
  const r=runtime();const {isRollDraftDirty}=r.load('features/rolls/utils/rollDraft.ts');
  const original={...seedRoll};const draft={...seedRoll,lab:'',notes:'',filmOverride:{brand:'My',name:'Film',iso:160,type:'color',format:'35mm'}};
  assert.equal(isRollDraftDirty(draft,original),true);
+});
+
+// MVP Reference path below uses the production picker unchanged, including a saved Copy preference.
+test('MVP import ignores a legacy Copy preference and relaunch resolves only a verified Photos ID', async () => {
+  const r = runtime(); r.state.legacyCopyFixture = false;
+  r.app.getState().setImportMode('copy'); r.select(1);
+  await r.service.addToRoll('r1');
+  const photo = r.store.getState().rolls[0].photos[0];
+  assert.equal(photo.provider, 'apple-photos'); assert.equal(photo.thumbnailUri, undefined);
+  assert.equal(r.state.copyCalls.length,0);
+  const restarted = runtime(r.state);
+  const result = await restarted.load('features/photos/services/PhotoReferenceService.ts').resolvePhoto(photo);
+  assert.equal(result.status,'ready'); assert.equal(restarted.state.nativeRequests.at(-1).full,false);
+  assert.equal(restarted.state.nativeRequests.at(-1).pixels,512);
+});
+
+test('Deleted asset cannot use a warm cached image, stale picker URI or share/export fallback', async () => {
+  const r = runtime(); r.select(1); await r.service.addToRoll('r1');
+  const photo = { ...r.store.getState().rolls[0].photos[0], thumbnailUri:'file:///stale.jpg' };
+  r.state.files.set(photo.thumbnailUri,Buffer.from('stale'));
+  const api = r.load('features/photos/services/PhotoReferenceService.ts');
+  assert.equal((await api.resolvePhoto(photo)).status,'ready');
+  r.state.assetUris.delete(photo.assetId);
+  assert.deepEqual(await api.resolvePhoto(photo),{status:'unavailable'});
+  await assert.rejects(r.load('features/photos/services/PhotoShareService.ts').PhotoShareService.sharePhotos([photo]),/No selected photo/);
+  assert.equal(r.store.getState().rolls[0].photos.length,1);
+});
+
+test('Album removal does not change library identity or frame order', async () => {
+  const r = runtime(); r.select(2); await r.service.addToRoll('r1');
+  const photos = r.store.getState().rolls[0].photos;
+  r.state.albumMembers = new Set(); // Only album membership changed; the native library still contains both IDs.
+  const api = r.load('features/photos/services/PhotoReferenceService.ts');
+  for (const photo of photos) assert.equal((await api.resolvePhoto(photo)).status,'ready');
+  assert.deepEqual(r.store.getState().rolls[0].photos,photos);
+});
+
+test('Denied, limited inaccessible, limited accessible and temporary errors remain distinct', async () => {
+  const r = runtime(); r.select(1); await r.service.addToRoll('r1');
+  const photo = r.store.getState().rolls[0].photos[0];
+  const api = r.load('features/photos/services/PhotoReferenceService.ts');
+  await api.resolvePhoto(photo); r.state.permission=false;
+  assert.equal((await api.resolvePhoto(photo)).status,'permission-denied');
+  r.state.permission=true; r.state.limited=true;
+  assert.equal((await api.resolvePhoto(photo)).status,'ready');
+  r.state.assetStatus.set(photo.assetId,'limited');
+  assert.equal((await api.resolvePhoto(photo)).status,'limited');
+  r.state.assetStatus.set(photo.assetId,'temporary-error');
+  assert.equal((await api.resolvePhoto(photo)).status,'temporary-error');
+  assert.equal(r.store.getState().rolls[0].photos[0],photo);
+});
+
+test('iCloud resolution fails offline, retries successfully, and requests full size only explicitly', async () => {
+  const r = runtime(); r.select(1); await r.service.addToRoll('r1');
+  const photo = r.store.getState().rolls[0].photos[0];
+  const api = r.load('features/photos/services/PhotoReferenceService.ts');
+  r.state.offline=true; assert.equal((await api.resolvePhoto(photo)).status,'temporary-error');
+  r.state.offline=false; api.invalidatePhotoRenders();
+  assert.equal((await api.resolvePhoto(photo)).status,'ready');
+  assert.equal(r.state.nativeRequests.at(-1).full,false);
+  assert.equal((await api.resolvePhoto(photo,'full')).status,'ready');
+  assert.equal(r.state.nativeRequests.at(-1).full,true);
+});
+
+test('Null, empty, URI and unverified picker identifiers are never imported', async () => {
+  const r = runtime(); r.state.legacyCopyFixture=false;
+  const selected = r.select(5);
+  [null,'','file:///picker/2.jpg','ph://fake','not-in-library'].forEach((assetId,i)=>selected[i].assetId=assetId);
+  const before = r.state.kv.get('filmer.rolls.v1');
+  assert.deepEqual(await r.service.addToRoll('r1'),{status:'selected',addedCount:0,failedCount:5});
+  assert.equal(r.store.getState().rolls[0].photos.length,0);
+  assert.equal(r.state.copyCalls.length,0);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'),before);
+});
+
+test('Relink retains frame ID, ordering, Roll metadata and photo details across restart', async () => {
+  const r = runtime(); r.state.legacyCopyFixture=false; r.select(2); await r.service.addToRoll('r1');
+  const photo = r.store.getState().rolls[0].photos[1];
+  r.store.getState().updatePhoto('r1',photo.id,{note:'keep',takenAt:'2026-10-01',location:{latitude:1,longitude:2}});
+  const original = r.store.getState().rolls[0].photos[1];
+  const selected = r.select(1); selected[0].assetId='replacement'; r.state.assetUris.set('replacement',selected[0].uri);
+  await r.load('features/photos/services/PhotoRelinkService.ts').relinkPhoto('r1',photo.id);
+  const changed = r.store.getState().rolls[0].photos[1];
+  assert.deepEqual(changed,{...original,assetId:'replacement',localIdentifier:'replacement'});
+  assert.equal(r.state.pickerOptions.at(-1).allowsMultipleSelection,false);
+  assert.deepEqual(runtime(r.state).store.getState().rolls[0].photos[1],changed);
+});
+
+test('Relink cancellation, failed verification and failed save leave archive unchanged', async () => {
+  const r = runtime(); r.state.legacyCopyFixture=false; r.select(1); await r.service.addToRoll('r1');
+  const photo = r.store.getState().rolls[0].photos[0], raw = r.state.kv.get('filmer.rolls.v1');
+  const service = r.load('features/photos/services/PhotoRelinkService.ts');
+  r.state.selection={canceled:true}; await service.relinkPhoto('r1',photo.id);
+  r.state.selection={canceled:false,assets:[{assetId:null,uri:'file:///picker/invalid.jpg'}]};
+  await assert.rejects(service.relinkPhoto('r1',photo.id));
+  r.select(1); r.state.failSave=true;
+  await assert.rejects(service.relinkPhoto('r1',photo.id),/Disk full/);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'),raw); assert.equal(r.store.getState().rolls[0].photos[0],photo);
+});
+
+test('App activation and library changes invalidate derived caches and notify observers', async () => {
+  const r = runtime(); r.select(1); await r.service.addToRoll('r1');
+  const api = r.load('features/photos/services/PhotoReferenceService.ts'); let updates=0;
+  const remove=api.observePhotoLibrary(()=>updates++);
+  await api.resolvePhoto(r.store.getState().rolls[0].photos[0]);
+  r.state.activeListener('active'); r.state.libraryListener(); assert.equal(updates,2);
+  await api.clearPhotoRenders(); assert.equal(updates,3); remove();
+});
+
+test('Malformed, invalid paths, duplicate IDs and future archives enter write-protected recovery', () => {
+  const cases = ['{bad', JSON.stringify({schemaVersion:99,rolls:[seedRoll]}), JSON.stringify([seedRoll,seedRoll]),
+    JSON.stringify([{...seedRoll,photos:[{id:'p',provider:'filmer-copy',storageMode:'copy',sortOrder:0,localUri:'file:///old.jpg',documentPath:'photos/../original.jpg'}]}]),
+    JSON.stringify([{...seedRoll,photos:[{id:'p',provider:'apple-photos',assetId:'a',sortOrder:-1}]}]),
+    JSON.stringify([{...seedRoll,photos:[{id:'p',provider:'apple-photos',assetId:'a',sortOrder:0},{id:'p',provider:'apple-photos',assetId:'b',sortOrder:1}]}]),
+    JSON.stringify([{...seedRoll,filmOverride:{brand:'B',name:'N',iso:-1,type:'color',format:'35mm'}}])];
+  for (const raw of cases) {
+    const r=runtime(); r.state.kv.set('filmer.rolls.v1',raw); const restarted=runtime(r.state);
+    assert.equal(restarted.store.getState().archive.status,'recovery');
+    assert.equal(restarted.store.getState().archive.raw,raw);
+    assert.throws(()=>restarted.store.getState().createRoll(seedRoll),/recovery/);
+    assert.equal(r.state.kv.get('filmer.rolls.v1'),raw);
+  }
+});
+
+test('SQLite startup failure, retry failure and successful recovery never replace stored archive', () => {
+  const r=runtime(), raw=r.state.kv.get('filmer.rolls.v1'); r.state.failRead=true;
+  const restarted=runtime(r.state); assert.equal(restarted.store.getState().archive.status,'recovery');
+  restarted.store.getState().retryLoad(); assert.equal(restarted.store.getState().archive.status,'recovery');
+  assert.equal(r.state.kv.get('filmer.rolls.v1'),raw);
+  r.state.failRead=false; restarted.store.getState().retryLoad();
+  assert.equal(restarted.store.getState().archive.status,'ready'); assert.equal(restarted.store.getState().rolls[0].id,'r1');
+});
+
+test('Valid legacy URI references and v1 envelopes preserve unknown catalog metadata without migration', async () => {
+  const r=runtime();
+  const roll={...seedRoll,photos:[{id:'legacy',provider:'apple-photos',assetId:'file:///expired.jpg',thumbnailUri:'file:///stale.jpg',sortOrder:4}]};
+  const archive={schemaVersion:1,rolls:[roll],customFilms:[{id:'custom-f'}],customCameras:[{id:'custom-c',cover:'keep'}]};
+  const raw=JSON.stringify(archive); r.state.kv.set('filmer.rolls.v1',raw);
+  const restarted=runtime(r.state); assert.equal(restarted.store.getState().archive.status,'ready');
+  assert.equal(r.state.kv.get('filmer.rolls.v1'),raw);
+  assert.equal((await restarted.load('features/photos/services/PhotoReferenceService.ts').resolvePhoto(roll.photos[0])).status,'unavailable');
+  restarted.store.getState().updatePhoto('r1','legacy',{note:'kept'});
+  const saved=JSON.parse(r.state.kv.get('filmer.rolls.v1')); assert.deepEqual(saved.customFilms,archive.customFilms); assert.deepEqual(saved.customCameras,archive.customCameras);
+  assert.equal(saved.rolls[0].photos[0].sortOrder,4);
+});
+
+test('A fresh install starts empty without publishing mock Rolls or writing storage', () => {
+  const r=runtime(); r.state.kv.delete('filmer.rolls.v1'); const restarted=runtime(r.state);
+  assert.equal(restarted.store.getState().archive.status,'ready'); assert.deepEqual(restarted.store.getState().rolls,[]);
+  assert.equal(r.state.kv.has('filmer.rolls.v1'),false);
+});
+
+test('Storage corruption or read failure after startup locks writes before any archive replacement', () => {
+  for (const failRead of [false,true]) {
+    const r=runtime(), raw=r.state.kv.get('filmer.rolls.v1');
+    if (failRead) r.state.failRead=true; else r.state.kv.set('filmer.rolls.v1','{damaged');
+    assert.throws(()=>r.store.getState().updateRoll('r1',{...seedRoll,notes:'must not commit'}));
+    assert.equal(r.store.getState().archive.status,'recovery');
+    assert.equal(r.store.getState().rolls[0].notes,undefined);
+    assert.equal(r.state.kv.get('filmer.rolls.v1'),failRead?raw:'{damaged');
+  }
+});
+
+test('Archive validation rejects traversal, invalid providers, duplicate order and malformed optional metadata', () => {
+  const r=runtime(); const {validateRollArchive}=r.load('features/rolls/data/validateRollArchive.ts');
+  const photo={id:'p',provider:'apple-photos',assetId:'a',sortOrder:0};
+  for (const patch of [{sortOrder:1.5},{sortOrder:NaN},{provider:'unknown'},{note:5},{takenAt:'2026-02-30'},{location:{latitude:0,longitude:181}}]) {
+    assert.throws(()=>validateRollArchive([{...seedRoll,photos:[{...photo,...patch}]}]));
+  }
+  assert.throws(()=>validateRollArchive([{...seedRoll,photos:[photo,{...photo,id:'p2'}]}]));
+  for (const documentPath of ['photos/r1/../photo-a.jpg','photos/r1/%2e%2e/photo-a.jpg','/photos/r1/photo-a.jpg','photos\\r1\\photo-a.jpg']) {
+    assert.throws(()=>validateRollArchive([{...seedRoll,photos:[{...photo,provider:'filmer-copy',storageMode:'copy',localUri:'file:///legacy.jpg',documentPath}]}]));
+  }
+  assert.throws(()=>validateRollArchive([{...seedRoll,filmOverride:{brand:'B',name:'N',iso:100,type:'color',format:'35mm',imageDocumentPath:'film-covers/../original.jpg'}}]));
+});
+
+test('Resolution coalesces concurrent full image requests and survives a purged render file', async () => {
+  const r=runtime(); r.select(1); await r.service.addToRoll('r1');
+  const photo=r.store.getState().rolls[0].photos[0];
+  const api=r.load('features/photos/services/PhotoReferenceService.ts');
+  const results=await Promise.all([api.resolvePhoto(photo,'full'),api.resolvePhoto(photo,'full')]);
+  assert.ok(results.every(result=>result.status==='ready')); assert.equal(r.state.nativeRequests.length,1);
+  api.invalidatePhotoRenders(); await api.resolvePhoto(photo,'full'); assert.equal(r.state.nativeRequests.length,2);
+});
+
+test('Roll creation at an identical timestamp keeps IDs distinct and deletion isolated', () => {
+  const r=runtime(), now=Date.now; Date.now=()=>123456789;
+  try {
+    const a=r.store.getState().createRoll(seedRoll), b=r.store.getState().createRoll(seedRoll);
+    assert.notEqual(a.id,b.id); r.store.getState().deleteRoll(a.id);
+    assert.ok(r.store.getState().rolls.some(roll=>roll.id===b.id));
+  } finally { Date.now=now; }
+});
+
+test('Emergency raw export preserves malformed text exactly and cannot change the archive', async () => {
+  const r=runtime(), raw=' {invalid archive\nTiếng Việt · 한국어';
+  r.state.kv.set('filmer.rolls.v1',raw); const restarted=runtime(r.state);
+  const service=restarted.load('features/rolls/services/ArchiveRecoveryService.ts');
+  await service.exportRawArchive(restarted.store.getState().archive.raw);
+  assert.equal(r.state.files.get(r.state.rawExport.uri).toString(),raw);
+  assert.ok(r.state.rawExport.uri.startsWith('file:///app/Cache/filmer-recovery-'));
+  assert.equal(r.state.kv.get('filmer.rolls.v1'),raw);
+  r.state.noSharing=true; await assert.rejects(service.exportRawArchive(raw),/Sharing unavailable/);
+  r.state.noSharing=false; r.state.failRecoveryExport=true; await assert.rejects(service.exportRawArchive(raw),/disk full/);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'),raw);
+});
+
+test('Recoverable access action uses limited selection or iOS Settings without changing frame data', async () => {
+  const r=runtime(), raw=r.state.kv.get('filmer.rolls.v1');
+  r.state.limited=true; await r.provider.manageAccess(); assert.equal(r.state.limitedPicker,true);
+  r.state.limited=false; r.state.permission=false; await r.provider.manageAccess(); assert.equal(r.state.settingsOpened,true);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'),raw);
+});
+
+test('Custom catalogs persist every field across restart with stable Roll relationships and no archive rewrite on load', async () => {
+  const r=runtime();
+  const films=r.load('features/films/store/filmStore.ts').useFilmStore;
+  const cameras=r.load('features/cameras/store/cameraStore.ts').useCameraStore;
+  const film=films.getState().addCustomFilm({brand:'My Film',name:'Special',iso:200,type:'color',format:'120',formats:['120','35mm'],process:'C-41',aliases:['Custom'],shortDescription:{en:'Keep description'},extraField:{keep:1}});
+  const source='file:///picker/camera.jpg'; r.state.files.set(source,Buffer.from('camera cover'));
+  const camera=await cameras.getState().addCustomCamera({brand:'My Camera',model:'Prototype',format:'120',imageUri:source,extraField:{keep:2}});
+  const roll=r.store.getState().createRoll({...seedRoll,filmId:film.id,filmName:film.brand+' '+film.name,cameraId:camera.id,cameraName:camera.brand+' '+camera.model});
+  const raw=r.state.kv.get('filmer.rolls.v1'); const restarted=runtime(r.state);
+  assert.deepEqual(restarted.load('features/films/store/filmStore.ts').useFilmStore.getState().films.find(f=>f.id===film.id),film);
+  assert.deepEqual(restarted.load('features/cameras/store/cameraStore.ts').useCameraStore.getState().cameras.find(c=>c.id===camera.id),camera);
+  assert.equal(restarted.store.getState().rolls.find(item=>item.id===roll.id).cameraId,camera.id);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'),raw);
+  assert.match(camera.imageDocumentPath,/^camera-covers\/cover-/);
+  assert.ok(r.state.files.has(source));
+  const old=r.state.documentRoot; r.state.documentRoot='file:///updated-app/Documents';
+  const uri=restarted.load('features/cameras/services/CameraCoverStorage.ts').cameraImageUri(camera);
+  assert.ok(uri.startsWith(r.state.documentRoot)); assert.ok(!uri.startsWith(old));
+});
+
+test('Custom catalog save failures do not publish entries and Camera rollback protects shared source files', async () => {
+  const r=runtime(); const films=r.load('features/films/store/filmStore.ts').useFilmStore;
+  const cameras=r.load('features/cameras/store/cameraStore.ts').useCameraStore;
+  const source='file:///app/Documents/camera-covers/cover-shared.jpg'; r.state.files.set(source,Buffer.from('shared cover'));
+  const first=await cameras.getState().addCustomCamera({brand:'B',model:'First',format:'35mm',imageUri:source});
+  const before=r.state.kv.get('filmer.cameras.v1'), count=cameras.getState().cameras.length;
+  r.state.failSave=true;
+  await assert.rejects(cameras.getState().addCustomCamera({brand:'B',model:'Second',format:'35mm',imageUri:first.imageUri}),/Disk full/);
+  assert.equal(cameras.getState().cameras.length,count); assert.equal(r.state.kv.get('filmer.cameras.v1'),before);
+  assert.ok(r.state.files.has(source)); assert.ok(r.state.files.has(first.imageUri));
+  assert.equal(r.state.deleted.length,1);
+  const filmCount=films.getState().films.length;
+  assert.throws(()=>films.getState().addCustomFilm({brand:'B',name:'N',iso:100,type:'color',format:'35mm'}),/Disk full/);
+  assert.equal(films.getState().films.length,filmCount); assert.equal(r.state.kv.has('filmer.films.v1'),false);
+});
+
+test('Partial Camera cover copies are rolled back without deleting originals or writing a catalog', async () => {
+  const r=runtime(); const cameras=r.load('features/cameras/store/cameraStore.ts').useCameraStore;
+  const source='file:///picker/partial.jpg';r.state.files.set(source,Buffer.from('original'));r.state.failUris.add(source);
+  await assert.rejects(cameras.getState().addCustomCamera({brand:'B',model:'N',format:'35mm',imageUri:source}),/Native copy failed/);
+  assert.ok(r.state.files.has(source));assert.equal(r.state.kv.has('filmer.cameras.v1'),false);assert.equal(r.state.deleted.length,1);
+});
+
+test('Corrupt or future catalog data enters recovery and stays byte-identical through failed load/save/retry', async () => {
+  for (const key of ['filmer.films.v1','filmer.cameras.v1']) for (const raw of ['{invalid',JSON.stringify({schemaVersion:99,films:[],cameras:[]})]) {
+    const r=runtime();r.state.kv.set(key,raw);
+    const restarted=runtime(r.state);
+    const store=key.includes('films')?restarted.load('features/films/store/filmStore.ts').useFilmStore:restarted.load('features/cameras/store/cameraStore.ts').useCameraStore;
+    assert.equal(store.getState().archive.status,'recovery');assert.equal(store.getState().archive.raw,raw);
+    store.getState().retryLoad();assert.equal(r.state.kv.get(key),raw);
+    if(key.includes('films')) assert.throws(()=>store.getState().addCustomFilm({brand:'B',name:'N',iso:100,type:'color',format:'35mm'}),/recovery/);
+    else await assert.rejects(store.getState().addCustomCamera({brand:'B',model:'N',format:'35mm'}),/recovery/);
+    assert.equal(r.state.kv.get(key),raw);
+    r.state.kv.set(key,'[]');store.getState().retryLoad();assert.equal(store.getState().archive.status,'ready');
+  }
+});
+
+test('Custom IDs and Film cover destinations cannot collide at identical timestamps and randomness', async () => {
+  const r=runtime(), now=Date.now, random=Math.random;Date.now=()=>123;Math.random=()=>0.25;
+  try {
+    const films=r.load('features/films/store/filmStore.ts').useFilmStore;
+    const cameras=r.load('features/cameras/store/cameraStore.ts').useCameraStore;
+    const input={brand:'B',name:'N',iso:100,type:'color',format:'35mm'};
+    assert.notEqual(films.getState().addCustomFilm(input).id,films.getState().addCustomFilm(input).id);
+    assert.notEqual((await cameras.getState().addCustomCamera({brand:'B',model:'N',format:'35mm'})).id,(await cameras.getState().addCustomCamera({brand:'B',model:'N',format:'35mm'})).id);
+    const source='file:///picker/cover.jpg';r.state.files.set(source,Buffer.from('original'));
+    const service=r.load('features/films/services/FilmCoverStorage.ts').FilmCoverStorage;
+    const a=await service.copy(source),b=await service.copy(source);
+    assert.notEqual(a.imageDocumentPath,b.imageDocumentPath);assert.ok(r.state.files.has(a.imageUri));assert.ok(r.state.files.has(b.imageUri));assert.equal(r.state.deleted.length,0);
+  } finally {Date.now=now;Math.random=random;}
+});
+
+test('Deleting a Roll never deletes shared Camera covers or custom catalog entries', async () => {
+  const r=runtime(), cameras=r.load('features/cameras/store/cameraStore.ts').useCameraStore;
+  const source='file:///picker/shared.jpg';r.state.files.set(source,Buffer.from('shared'));
+  const camera=await cameras.getState().addCustomCamera({brand:'B',model:'N',format:'35mm',imageUri:source});
+  const a=r.store.getState().createRoll({...seedRoll,cameraId:camera.id}),b=r.store.getState().createRoll({...seedRoll,cameraId:camera.id});
+  r.store.getState().deleteRoll(a.id);assert.ok(r.state.files.has(camera.imageUri));
+  const restarted=runtime(r.state);assert.equal(restarted.store.getState().rolls.find(roll=>roll.id===b.id).cameraId,camera.id);
+  assert.ok(restarted.load('features/cameras/store/cameraStore.ts').useCameraStore.getState().cameras.some(c=>c.id===camera.id));
+});
+
+test('Catalog SQLite failures are recoverable at cold startup and do not write empty defaults', () => {
+ const r=runtime(); const before=new Map(r.state.kv); r.state.failRead=true;
+ const restarted=runtime(r.state);
+ const films=restarted.load('features/films/store/filmStore.ts').useFilmStore;
+ const cameras=restarted.load('features/cameras/store/cameraStore.ts').useCameraStore;
+ assert.equal(films.getState().archive.status,'recovery');assert.equal(cameras.getState().archive.status,'recovery');
+ assert.deepEqual(r.state.kv,before);
+ r.state.failRead=false;films.getState().retryLoad();cameras.getState().retryLoad();
+ assert.equal(films.getState().archive.status,'ready');assert.equal(cameras.getState().archive.status,'ready');assert.deepEqual(r.state.kv,before);
+});
+
+test('Catalog duplicates/traversal are rejected and v1 envelope metadata remains intact', () => {
+ const r=runtime();const {createCatalogRepository,validCustomFilm}=r.load('features/catalog/data/CatalogRepository.ts');
+ const film={id:'custom-kept',brand:'B',name:'N',iso:100,type:'color',format:'35mm',isCustom:true};
+ for(const entries of [[film,film],[{...film,imageDocumentPath:'film-covers/../original.jpg'}]]) {
+  const raw=JSON.stringify(entries);r.state.kv.set('filmer.films.v1',raw);
+  const repository=createCatalogRepository('filmer.films.v1','films',validCustomFilm,new Set());
+  assert.equal(repository.load().status,'recovery');assert.throws(()=>repository.save([]),/recovery/);assert.equal(r.state.kv.get('filmer.films.v1'),raw);
+ }
+ r.state.kv.set('filmer.films.v1',JSON.stringify({schemaVersion:1,films:[film],extra:{keep:1}}));
+ const repository=createCatalogRepository('filmer.films.v1','films',validCustomFilm,new Set());
+ assert.equal(repository.load().status,'ready');repository.save([{...film,name:'Edited'}]);
+ assert.deepEqual(JSON.parse(r.state.kv.get('filmer.films.v1')).extra,{keep:1});
+});
+
+test('Import appends after valid legacy sortOrder gaps without changing existing frame identity/order', async () => {
+ const r=runtime();const original=[{id:'old-a',provider:'apple-photos',assetId:'old-asset-a',sortOrder:4,note:'keep'},{id:'old-b',provider:'apple-photos',assetId:'old-asset-b',sortOrder:9}];
+ r.state.kv.set('filmer.rolls.v1',JSON.stringify([{...seedRoll,photos:original}]));
+ const restarted=runtime(r.state);restarted.select(2);await restarted.service.addToRoll('r1');
+ const photos=restarted.store.getState().rolls[0].photos;
+ assert.deepEqual(photos.slice(0,2),original);assert.deepEqual(photos.map(photo=>photo.sortOrder),[4,9,10,11]);
+ assert.deepEqual(runtime(r.state).store.getState().rolls[0].photos,photos);
+});
+
+test('36-photo selection imports once in selection order and survives a cold relaunch', async () => {
+ const r=runtime();r.state.legacyCopyFixture=false;
+ const assets=r.select(36);r.state.selection.assets=[...assets.slice(18),...assets.slice(0,18)];
+ const expected=r.state.selection.assets.map(asset=>asset.assetId), before=r.state.writes.filter(key=>key==='filmer.rolls.v1').length;
+ const result=await r.service.addToRoll('r1');assert.equal(result.addedCount,36);
+ assert.equal(r.state.writes.filter(key=>key==='filmer.rolls.v1').length,before+1);
+ const restarted=runtime(r.state), photos=restarted.store.getState().rolls[0].photos;
+ assert.deepEqual(photos.map(photo=>photo.assetId),expected);assert.deepEqual(photos.map(photo=>photo.sortOrder),Array.from({length:36},(_,i)=>i));
+ assert.ok(photos.every(photo=>photo.thumbnailUri===undefined && photo.localIdentifier===photo.assetId));
+ assert.equal(r.state.copyCalls.length,0);
+});
+
+test('Duplicate picker identifiers and already imported assets cannot add duplicate frames or overwrite metadata', async () => {
+ const r=runtime();r.state.legacyCopyFixture=false;const assets=r.select(4);
+ r.state.selection.assets=[assets[2],assets[0],assets[2]];
+ assert.equal((await r.service.addToRoll('r1')).addedCount,2);
+ const original=r.store.getState().rolls[0].photos;
+ r.store.getState().updatePhoto('r1',original[0].id,{note:'keep note'});
+ r.state.selection.assets=[assets[2],assets[1],assets[0],assets[3]];
+ assert.deepEqual(await r.service.addToRoll('r1'),{status:'selected',addedCount:2,failedCount:0,duplicateCount:2});
+ const before=r.state.kv.get('filmer.rolls.v1');
+ assert.equal((await r.service.addToRoll('r1')).addedCount,0);assert.equal(r.state.kv.get('filmer.rolls.v1'),before);
+ const photos=r.store.getState().rolls[0].photos;assert.equal(photos.length,4);assert.equal(photos[0].note,'keep note');assert.equal(photos[0].id,original[0].id);
+ assert.deepEqual(photos.map(photo=>photo.assetId),[assets[2],assets[0],assets[1],assets[3]].map(asset=>asset.assetId));
+});
+
+test('Cancelled native selection does not write a Roll archive', async () => {
+ const r=runtime();r.state.legacyCopyFixture=false;
+ const before=r.state.kv.get('filmer.rolls.v1'), writes=r.state.writes.length;
+ assert.deepEqual(await r.service.addToRoll('r1'),{status:'cancelled'});
+ assert.equal(r.state.kv.get('filmer.rolls.v1'),before);assert.equal(r.state.writes.length,writes);
+});
+
+test('Native import receives localized count/actions and appearance, while Relink requests a single picker', async () => {
+ const r=runtime();r.state.legacyCopyFixture=false;r.app.getState().setLanguage('vi');r.app.getState().setAppearance('dark');
+ r.select(1);await r.provider.pickMultiplePhotos('r1');const pick=r.state.nativePicks.at(-1);
+ assert.equal(pick.single,false);assert.equal(pick.dark,true);assert.equal(pick.labels.title,'Thêm ảnh');assert.ok(pick.labels.countMany.includes('{count}'));
+ await r.provider.pickMultiplePhotos('r1',true);assert.equal(r.state.nativePicks.at(-1).single,true);
+});
+
+test('Import deduplication uses the same verified-identifier fallback as legacy Reference resolution', async () => {
+ const r=runtime();r.select(1);await r.service.addToRoll('r1');
+ const roll=r.store.getState().rolls[0], photo=roll.photos[0];
+ r.state.kv.set('filmer.rolls.v1',JSON.stringify([{...roll,photos:[{...photo,localIdentifier:'file:///expired-picker.jpg'}]}]));
+ const restarted=runtime(r.state);restarted.select(1);
+ const result=await restarted.service.addToRoll('r1');assert.equal(result.addedCount,0);assert.equal(result.duplicateCount,1);
+ assert.equal(restarted.store.getState().rolls[0].photos[0].id,photo.id);
 });

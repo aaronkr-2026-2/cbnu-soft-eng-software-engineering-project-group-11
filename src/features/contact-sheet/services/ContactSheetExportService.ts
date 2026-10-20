@@ -15,11 +15,14 @@ export function captureContactSheet(view: View, layout: ContactSheetLayout): Pro
 }
 
 /** One image per preview session; retry failed generation and release temporary files on close. */
-export function createContactSheetExportSession(generate: () => Promise<string>) {
+export function createContactSheetExportSession(generate: () => Promise<string>, validateSources?: () => Promise<void>) {
   let image: Promise<string> | undefined;
   let disposed = false;
-  function getImage(): Promise<string> {
+  async function getImage(): Promise<string> {
     if (disposed) return Promise.reject(new Error('Contact sheet preview is closed'));
+    // A cached export is still gated by current source availability/permissions.
+    if (validateSources) await validateSources();
+    if (disposed) throw new Error('Contact sheet preview is closed');
     if (!image) image = generate().catch(error => { image = undefined; throw error; });
     return image;
   }

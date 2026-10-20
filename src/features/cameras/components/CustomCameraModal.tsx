@@ -1,5 +1,5 @@
 import { useTranslation } from '../../../i18n/useTranslation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { CatalogField, CatalogFormatField, CatalogImageField, CatalogItemModal } from '../../catalog/components/CatalogItemModal';
 import type { Camera } from '../../../types/models';
 import { useCameraStore } from '../store/cameraStore';
@@ -13,19 +13,25 @@ export function CustomCameraModal({ onAdded, onClose, visible }: CustomCameraMod
   const [model, setModel] = useState('');
   const [format, setFormat] = useState<NonNullable<Camera['format']>>('35mm');
   const [imageUri, setImageUri] = useState<string>();
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const busy = useRef(false);
+  function close() { if (!busy.current) onClose(); }
 
-  function addCamera() {
+  async function addCamera() {
+    if (busy.current) return;
     if (!brand.trim() || !model.trim()) {
-      setError(true);
+      setError(t('invalidCamera'));
       return;
     }
-    const camera = addCustomCamera({ brand, model, format, imageUri });
-    onAdded(camera.id);
-    onClose();
+    busy.current = true; setError(null);
+    try {
+      const camera = await addCustomCamera({ brand, model, format, imageUri });
+      onAdded(camera.id); onClose();
+    } catch { setError(t('saveError')); }
+    finally { busy.current = false; }
   }
 
-  return <CatalogItemModal title={t('addCustomCamera')} actionLabel={t('addCamera')} visible={visible} onClose={onClose} onSubmit={addCamera} error={error ? t('invalidCamera') : null}>
+  return <CatalogItemModal title={t('addCustomCamera')} actionLabel={t('addCamera')} visible={visible} onClose={close} onSubmit={() => void addCamera()} error={error}>
     <CatalogField label={t('brand')} value={brand} onChangeText={setBrand} placeholder="Contax" />
     <CatalogField label={t('model')} value={model} onChangeText={setModel} placeholder="T2" />
     <CatalogFormatField value={format} onChange={setFormat} />

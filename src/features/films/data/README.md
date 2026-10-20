@@ -6,7 +6,10 @@ used. Custom films remain separate in the existing store. Unknown archived stock
 Roll's saved filmName; no Roll data is rewritten. Matching former IDs resolve in Roll Detail,
 Roll cards, Roll editing and Home search through legacyIds.
 
-The current selection includes 26 Kodak and 20 Fujifilm stocks, plus the original Ilford HP5 Plus.
+The catalog now contains 259 films across 22 brands. The original 47 entries (26 Kodak,
+20 Fujifilm and Ilford HP5 Plus) retain their IDs. The 2026-10-15 import adds 212 entries
+and 213 local covers, including the previously missing HP5 Plus cover. See
+`assets/films/source/INVENTORY.md` for preserved source files, metadata references and exclusions.
 Formats include supported archival formats rather than interpreting the artwork's printed 35mm
 labels as authoritative. Double-X 5222 is ISO 250 daylight/200 tungsten, not ISO 5222.
 
@@ -16,9 +19,10 @@ Intentionally excluded artwork:
   interchangeable stocks; FP-100C/Instax mini: unsupported instant formats; generic Cinema ECN-2
   250D/500T and Premium 200: insufficiently identified stock names.
 
-46 covers (26 Kodak, 20 Fujifilm) are cropped inside printed card edges without sheet borders,
+The original 46 covers (26 Kodak, 20 Fujifilm) are cropped inside printed card edges without sheet borders,
 shadow margins or white padding. Thumbnail openings use a 1.23 landscape aspect ratio and
-aspect-fill with rounded clipping. `filmAssets.ts` supplies static references to FilmImage in
+full-frame scaling (`stretch`) for bundled artwork, preserving the entire card with no empty margins.
+User-selected URI covers retain their existing default crop. `filmAssets.ts` supplies static references to FilmImage in
 selection, Film cards, Roll cards, Roll Detail and Roll information. The source sheets are not
 bundled as runtime images. Regenerate with `node scripts/crop-kodak-covers.mjs` on macOS;
 the script reads `assets/films/source/kodak.png` and `fuji.png`.
@@ -64,3 +68,38 @@ references. Failed Roll persistence protects the saved cover and leaves the draf
 Tests cover compact row selection, shared-form save/cancel, immutable catalog metadata, override
 restart persistence, relative cover rebasing, discarded/replaced cover cleanup and Home search.
 Native picker behavior, back gestures, safe-area layout and light/dark appearance remain device checks.
+
+## Additional artwork import (2026-10-15)
+
+`additionalCatalog.ts` and `additionalFilmAssets.ts` are generated from
+`scripts/film-cover-manifest.json` using `node scripts/import-film-covers.mjs`.
+This uses the existing macOS `sips` crop workflow; no new dependencies. The manifest
+preserves original sheet filenames, SHA-256 values and reviewed crop rectangles.
+All 25 full source sheets have descriptive ASCII filenames under `assets/films/source/`;
+mixed sheets live in `collections`, single-brand sheets in their brand directory.
+213 individual covers use `<brand>/<stock>.png`. Source sheets are not runtime imports.
+
+The artwork contains inaccurate color/process/format text. Catalog metadata takes
+precedence; unverified names, unsupported instant/camera/APS products and duplicate
+packaging are excluded rather than guessed. Full inventory and rationale:
+`assets/films/source/INVENTORY.md`. Pocket stocks use the existing 110 format.
+Historical entries are archive metadata, not a guarantee of current availability.
+No persisted Rolls, overrides, custom entries, photo imports or app navigation are rewritten.
+
+Verification: TypeScript, all 88 automated tests, static require/PNG/source checksums,
+and iOS Metro export passed. No real-iPhone visual testing was performed.
+
+## Cover framing correction
+
+Bundled covers use `stretch` in the shared FilmImage component, so both wide
+and portrait cards fill the existing frame in Selection, Film cards and Roll views.
+The full source rectangle is scaled in both dimensions; no edge text is cropped
+and there are no letterbox margins. Typography follows the frame proportions.
+Existing frame dimensions and custom-photo crops remain unchanged. The 51 newly
+imported Kodak covers were recropped from their original sheets using full card
+bounds, restoring footer text lost by the previous fixed-height rectangles.
+Regeneration uses the corrected manifest; original source image hashes are unchanged.
+
+All 259 bundled PNG covers are normalized to 492 × 400 (1.23:1) using full-card resampling, without cropping or padding. Both crop generators apply this step automatically. To normalize existing generated covers only: `node scripts/normalize-film-covers.mjs`. Source sheets and custom user covers are untouched. This intentionally adjusts artwork proportions to fit the thumbnail opening.
+
+Yes!Star follow-up: the preserved `source/yesstar/print-sheet.png` adds Yes!Star 200 and 400 with full-frame covers under `assets/films/yes-star/`. The Quickfun concept label is retained in the source only; no ISO is invented. Current totals: 261 films, 26 source sheets, 215 manifest covers.

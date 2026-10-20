@@ -12,8 +12,8 @@ function load(filename) {
 const { builtInFilms, getFilmById } = load(path.resolve(__dirname, '../../data/films.ts'));
 const { filterFilms } = load(path.resolve(__dirname, '../filterFilms.ts'));
 test('Built-in catalog retains IDs, distinguishes specialty/history, and contains no external images', () => {
- assert.equal(builtInFilms.length, 47);
- assert.equal(new Set(builtInFilms.map(f => f.id)).size, 47);
+ assert.equal(builtInFilms.length, 261);
+ assert.equal(new Set(builtInFilms.map(f => f.id)).size, 261);
  for (const f of builtInFilms) {
   assert.ok(f.iso > 0 && f.formats.length); assert.equal(f.source, 'builtin');
   assert.equal(f.imageUrl, undefined); assert.equal(f.isCustom, false);
@@ -89,4 +89,111 @@ test('Shared FilmForm saves an isolated override with a persistent cover and can
  assert.equal(submitted[0].imageDocumentPath,'film-covers/cover-test.jpg');
  assert.equal(submitted[0].imageKey,null);assert.equal(closed,1);
  assert.equal(JSON.stringify(initial),before);
+});
+
+test('New catalog uses reviewed metadata instead of erroneous artwork labels', () => {
+ for (const [id, iso, type, process] of [
+  ['ilford-fp4-plus',125,'black-and-white','B&W'],
+  ['ilford-ortho-plus',80,'black-and-white','B&W'],
+  ['ilford-xp2-super',400,'black-and-white','C-41'],
+  ['adox-cms-20-ii',20,'black-and-white','ADOTECH IV'],
+  ['rollei-retro-80s',80,'black-and-white','B&W'],
+  ['rollei-cr-200',200,'slide','E-6'],
+  ['orwo-un54',100,'black-and-white','B&W'],
+  ['reflx-lab-diablo-100',100,'color','C-41'],
+  ['ferrania-p30',80,'black-and-white','B&W'],
+  ['ferrania-p33',160,'black-and-white','B&W'],
+  ['cinestill-bwxx',250,'black-and-white','B&W'],
+  ['kodak-vision3-200t',200,'cinema','ECN-2'],
+  ['reflx-lab-500t',500,'cinema','ECN-2'],
+  ['reflx-lab-640t-ahu',640,'color','C-41 / ECN-2'],
+ ]) {
+  const film=getFilmById(id); assert.ok(film,id);
+  assert.deepEqual([film.iso,film.type,film.process],[iso,type,process],id);
+ }
+ for (const id of ['lomography-orca-100','lomography-tiger-200','lomography-lobster-redscale-200']) assert.deepEqual(getFilmById(id).formats,['110']);
+ for (const id of ['kodak-vision3-200t','kodak-exr-500t-5298','fujifilm-eterna-500t']) assert.match(getFilmById(id).shortDescription.en,/Tungsten-balanced/);
+ assert.match(getFilmById('fujifilm-eterna-250d').shortDescription.en,/Daylight-balanced/);
+});
+
+test('Every catalog image resolves to a local per-brand PNG and preserved source sheets are byte-identical', () => {
+ const crypto=require('node:crypto'); const root=path.resolve(__dirname,'../../../../..');
+ const manifest=JSON.parse(fs.readFileSync(path.join(root,'scripts/film-cover-manifest.json'),'utf8'));
+ const { additionalFilms }=load(path.resolve(__dirname,'../../data/additionalCatalog.ts'));
+ assert.equal(additionalFilms.length,214); assert.equal(manifest.sheets.length,26);
+ const assets={};
+ for (const name of ['filmAssets.ts','additionalFilmAssets.ts']) {
+  const source=fs.readFileSync(path.resolve(__dirname,'../../data',name),'utf8');
+  for (const [,id,file] of source.matchAll(/'([^']+)': require\('([^']+)'\)/g)) {
+   assert.ok(!assets[id],id); assert.doesNotMatch(file,/\/source\//);
+   const target=path.resolve(__dirname,'../../data',file);
+   assert.ok(fs.existsSync(target),target); assert.ok(fs.statSync(target).size>100,id);
+   assets[id]=target;
+  }
+ }
+ for (const film of builtInFilms) {
+  assert.ok(assets[film.imageKey],film.id);
+  const png=fs.readFileSync(assets[film.imageKey]);
+  assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)],[492,400],film.id);
+ }
+ for (const sheet of manifest.sheets) assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root,sheet.path))).digest('hex'),sheet.sha256,sheet.path);
+ for (const film of manifest.films) {
+  const png=fs.readFileSync(assets[film.id]);
+  assert.deepEqual([png.readUInt32BE(16),png.readUInt32BE(20)],[492,400],film.id);
+  assert.ok(assets[film.id].includes('/'+film.brand.toLowerCase().replace(/[^a-z0-9]+/g,'-')+'/'),film.id);
+ }
+});
+
+test('Film artwork fills the whole frame without cropping or empty margins', () => {
+ const filename=path.resolve(__dirname,'../../components/FilmImage.tsx');
+ const jsx=(type,props)=>({type,props});
+ const mocks={react:{useState:()=>[undefined,()=>{}]},'react/jsx-runtime':{jsx,jsxs:jsx},
+  'react-native':{Image:'Image',Text:'Text',View:'View'},
+  '../services/FilmCoverStorage':{filmImageUri:film=>film?.imageUri},
+  '../../../i18n/useTranslation':{useTranslation:()=>({t:key=>key})},
+  '../data/filmAssets':{FILM_ASSETS:{'kodak-exr-100t-5248':1,'fujifilm-provia-400x':2,'lomography-color-negative-100':3}}};
+ const exports={};
+ new Function('exports','require',ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)(exports,name=>mocks[name]??{});
+ const frame={width:64,aspectRatio:1.23};
+ for (const frame of [{width:64,aspectRatio:1.23},{width:136,height:112},{width:60,aspectRatio:1.23}])
+ for (const imageKey of Object.keys(mocks['../data/filmAssets'].FILM_ASSETS)) {
+  const image=exports.FilmImage({film:{imageKey},style:frame});
+  assert.equal(image.type,'Image');assert.equal(image.props.resizeMode,'stretch');assert.equal(image.props.style,frame);
+ }
+ const custom={imageUri:'file:///Documents/film-covers/owned.jpg'};
+ assert.equal(exports.FilmImage({film:custom,style:frame}).props.resizeMode,'cover');
+ assert.equal(exports.FilmImage({film:custom,style:frame,resizeMode:'contain'}).props.resizeMode,'contain');
+ assert.equal(exports.FilmImage({film:{imageKey:'fujifilm-provia-400x'},style:frame,resizeMode:'cover'}).props.resizeMode,'cover');
+});
+
+ test('Yes!Star sheet adds searchable 200/400 stocks without inventing Quickfun metadata', () => {
+  for (const iso of [200,400]) {
+   const film=getFilmById(`yes-star-${iso}`);
+   assert.equal(film.brand,'Yes!Star'); assert.equal(film.iso,iso);
+   assert.equal(film.type,'color'); assert.equal(film.process,'C-41');
+   assert.deepEqual(film.formats,['35mm']); assert.equal(film.imageKey,film.id);
+   for (const q of [`yesstar ${iso}`,`yes star ${iso}`,`Yes!Star ${iso}`]) assert.ok(filterFilms(builtInFilms,q).some(f=>f.id===film.id),q);
+  }
+  assert.equal(filterFilms(builtInFilms,'Quickfun').length,0);
+ });
+
+test('Film form rollback cannot delete a cover after catalog commit or a completed submit', async () => {
+ const filename=path.resolve(__dirname,'../../components/FilmForm.tsx');
+ for(const failure of ['save','navigation','close']) {
+  const values=[],saved=[];let cursor=0,deleted=false;
+  const jsx=(type,props)=>({type,props});
+  const cover={imageUri:'file:///Documents/film-covers/cover-new.jpg',imageDocumentPath:'film-covers/cover-new.jpg'};
+  const mocks={react:{useRef:value=>({current:value}),useState:value=>{const i=cursor++;if(!(i in values))values[i]=value;return[values[i],v=>values[i]=v];}},
+   'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{Alert:{alert(){}}},
+   '../../../i18n/useTranslation':{useTranslation:()=>({t:key=>key})},
+   '../../../components/ui/SelectionChip':{},'../../catalog/components/CatalogItemModal':{CatalogItemModal:'Form'},'../data/filmAssets':{FILM_ASSETS:{}},
+   '../store/filmStore':{useFilmStore:{getState:()=>({films:saved})}},
+   '../services/FilmCoverStorage':{filmImageUri:()=>undefined,FilmCoverStorage:{copy:async()=>cover,removeUnreferenced:(_paths,retained)=>{if(!retained.has(cover.imageDocumentPath))deleted=true;}}},
+  };
+  const exports={};new Function('exports','require',ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)(exports,name=>mocks[name]??{});
+  const props={mode:'create',visible:true,initialValues:{brand:'B',name:'N',iso:100,type:'color',format:'35mm'},onClose:()=>{if(failure==='close')throw new Error('close');},onSubmit:value=>{if(failure==='save')throw new Error('Disk full');if(failure==='navigation'){saved.push(value);throw new Error('navigation');}}};
+  let form=exports.FilmForm(props);form.props.children[6].props.onChange('file:///picker/new.jpg');cursor=0;form=exports.FilmForm(props);
+  form.props.onSubmit();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(deleted,failure==='save',failure);
+ }
 });

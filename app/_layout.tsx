@@ -1,3 +1,7 @@
+import { useFilmStore } from '../src/features/films/store/filmStore';
+import { useCameraStore } from '../src/features/cameras/store/cameraStore';
+import { useRollStore } from '../src/features/rolls/store/rollStore';
+import { ArchiveRecoveryScreen } from '../src/features/rolls/components/ArchiveRecoveryScreen';
 import { useEffect } from 'react';
 import { Appearance } from 'react-native';
 import { Stack } from 'expo-router';
@@ -10,11 +14,15 @@ import { useAppStore } from '../src/store/app-store';
 export const unstable_settings = { initialRouteName: 'index' };
 
 export default function RootLayout() {
+  const archive = useRollStore(state => state.archive);
+  const filmArchive = useFilmStore(state => state.archive);
+  const cameraArchive = useCameraStore(state => state.archive);
+  const catalogArchive = filmArchive.status === 'recovery' ? filmArchive : cameraArchive.status === 'recovery' ? cameraArchive : undefined;
   const colors = useTheme();
   const appearance = useAppStore((state) => state.appearance);
   useEffect(() => { Appearance.setColorScheme(appearance); }, [appearance]);
-  return <GestureHandlerRootView style={rootLayoutStyles.root}><StatusBar style={appearance === 'dark' ? 'light' : 'dark'} /><Stack initialRouteName="index" screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+  return <GestureHandlerRootView style={rootLayoutStyles.root}><StatusBar style={appearance === 'dark' ? 'light' : 'dark'} />{archive.status === 'recovery' ? <ArchiveRecoveryScreen /> : catalogArchive ? <ArchiveRecoveryScreen catalog archiveOverride={catalogArchive} onRetry={() => { useFilmStore.getState().retryLoad(); useCameraStore.getState().retryLoad(); }} /> : <Stack initialRouteName="index" screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
     <Stack.Screen name="index" />
     <Stack.Screen name="settings" />
-  </Stack></GestureHandlerRootView>;
+  </Stack>}</GestureHandlerRootView>;
 }

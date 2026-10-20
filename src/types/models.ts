@@ -23,6 +23,8 @@ export type FilmOverride = Pick<Film, 'brand' | 'name' | 'iso' | 'type' | 'forma
   Pick<Film, 'formats' | 'process' | 'imageUri' | 'imageDocumentPath'> & { imageKey?: string | null };
 
 export type Camera = {
+  /** App Documents-relative custom cover; survives iOS container relocation. */
+  imageDocumentPath?: string;
   id: string;
   brand: string;
   model: string;

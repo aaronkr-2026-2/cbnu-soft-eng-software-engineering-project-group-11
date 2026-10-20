@@ -16,7 +16,7 @@ export const createRollCardStyles = (colors: ThemeColors) => StyleSheet.create({
     aspectRatio: 1.23,
     justifyContent: 'center',
     overflow: 'hidden',
-    width: 52,
+    width: 64,
   },
   filmImageFill: { height: '100%', width: '100%' },
   filmImageText: { color: colors.secondaryText, fontSize: typography.size.caption, fontWeight: typography.weight.semibold },

@@ -1,3 +1,4 @@
+import { resolvePhoto } from '../../photos/services/PhotoReferenceService';
 import { effectiveFilmName } from '../../films/utils/resolveRollFilm';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, PixelRatio, Pressable, SafeAreaView, Text, View } from 'react-native';
@@ -6,14 +7,14 @@ import { Toast } from '../../../components/ui/Toast';
 import { useTheme, useThemedStyles } from '../../../constants/theme';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type { TranslationKey } from '../../../i18n/translations';
-import { resolvePhotoUri } from '../../photos/utils/resolvePhotoUri';
+import { useResolvedPhotos } from '../../photos/hooks/useResolvedPhotos';
 import type { Roll } from '../../rolls/types';
 import { formatRollMonth } from '../../rolls/utils/rollMonth';
 import { isRollMonth } from '../../rolls/utils/groupRolls';
 import { captureContactSheet, ContactSheetExportError, createContactSheetExportSession } from '../services/ContactSheetExportService';
 import { createContactSheetStyles } from '../styles/contact-sheet.styles';
 import { contactSheetRows, getContactSheetLayout, orderedContactPhotos } from '../utils/contactSheetLayout';
-import { ContactSheetCanvas } from './ContactSheetCanvas';
+import { type ContactSheetFrame, ContactSheetCanvas } from './ContactSheetCanvas';
 
 type Props = { roll: Roll; onClose: () => void };
 type PendingRender = { resolve: () => void; reject: (error: Error) => void; timeout: ReturnType<typeof setTimeout> };
@@ -33,7 +34,9 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
   const pending = useRef<PendingRender | null>(null);
   const photos = useMemo(() => orderedContactPhotos(roll), [roll]);
   const layout = useMemo(() => getContactSheetLayout(roll.format, photos.length), [roll.format, photos.length]);
-  const rows = useMemo(() => contactSheetRows(photos.map((photo, index) => ({ id: photo.id, uri: resolvePhotoUri(photo), number: index + 1 })), layout.columns), [photos, layout.columns]);
+  const resolved = useResolvedPhotos(photos);
+  const rows = useMemo(() => contactSheetRows(photos.map((photo, index) => ({ id: photo.id, uri: resolved.items[index]?.uri, number: index + 1 })), layout.columns), [photos, layout.columns, resolved.items]);
+  const [exportRows, setExportRows] = useState<ContactSheetFrame[][]>([]);
   const header = {
     left: isRollMonth(roll.date) ? formatRollMonth(roll.date, language) : '',
     center: roll.cameraName || '',
@@ -43,6 +46,13 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
   const session = useRef<ReturnType<typeof createContactSheetExportSession> | null>(null);
   const generate = useCallback(async () => {
     try {
+      const images = [];
+      for (const [index, photo] of photos.entries()) {
+        const result = await resolvePhoto(photo, 'thumbnail', 1200);
+        if (result.status !== 'ready' || !result.uri) throw new Error('Contact sheet photo unavailable');
+        images.push({ id: photo.id, uri: result.uri, number: index + 1 });
+      }
+      setExportRows(contactSheetRows(images, layout.columns));
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => { pending.current = null; reject(new Error('Contact sheet images timed out')); }, 30000);
         pending.current = { resolve, reject, timeout };
@@ -53,7 +63,7 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
     } finally {
       if (mounted.current) setRenderExport(false);
     }
-  }, [layout]);
+  }, [layout, photos]);
 
   const ready = useCallback(() => {
     if (!pending.current) return;
@@ -68,7 +78,12 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
 
   useEffect(() => {
     mounted.current = true;
-    const exportSession = createContactSheetExportSession(generate);
+    const exportSession = createContactSheetExportSession(generate, async () => {
+      for (const photo of photos) {
+        const result = await resolvePhoto(photo, 'thumbnail', 1200);
+        if (result.status !== 'ready' || !result.uri) throw new Error('Contact sheet photo unavailable');
+      }
+    });
     session.current = exportSession;
     return () => {
       mounted.current = false;
@@ -76,7 +91,7 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
       exportSession.dispose();
       if (session.current === exportSession) session.current = null;
     };
-  }, [generate]);
+  }, [generate, photos]);
 
   async function perform(action: 'save' | 'share') {
     if (busyRef.current) return;
@@ -119,7 +134,7 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
       </View>
       {saved > 0 ? <Toast key={saved} message={t('contactSheetSaved')} /> : null}
       {renderExport ? <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.exportLayer}>
-        <ContactSheetCanvas canvasRef={exportView} layout={layout} rows={rows} header={header}
+        <ContactSheetCanvas canvasRef={exportView} layout={layout} rows={exportRows} header={header}
           width={layout.width / PixelRatio.get()} unavailableLabel={t('unavailable')} onReady={ready} onFailure={failed} />
       </View> : null}
     </SafeAreaView>

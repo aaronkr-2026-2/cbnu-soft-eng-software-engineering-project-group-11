@@ -1,7 +1,7 @@
 PODS:
-  - EXConstants (57.0.21):
+  - EXConstants (57.0.22):
     - ExpoModulesCore
-  - Expo (57.0.27):
+  - Expo (57.0.29):
     - ExpoModulesCore
     - ExpoModulesJSI
     - hermes-engine
@@ -27,7 +27,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - ExpoAsset (57.0.19):
+  - ExpoAsset (57.0.20):
     - ExpoModulesCore
   - ExpoDomWebView (57.0.1):
     - ExpoModulesCore
@@ -43,16 +43,16 @@ PODS:
     - ExpoModulesCore
   - ExpoKeepAwake (57.0.2):
     - ExpoModulesCore
-  - ExpoLinking (57.0.12):
+  - ExpoLinking (57.0.13):
     - ExpoModulesCore
-  - ExpoLocation (57.0.20):
+  - ExpoLocation (57.0.21):
     - ExpoModulesCore
   - ExpoLogBox (57.0.4):
     - React-Core
   - ExpoMediaLibrary (57.0.5):
     - ExpoModulesCore
     - React-Core
-  - ExpoModulesCore (57.0.21):
+  - ExpoModulesCore (57.0.23):
     - ExpoModulesJSI
     - hermes-engine
     - RCTRequired
@@ -76,31 +76,33 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - ExpoModulesJSI (57.1.1):
+  - ExpoModulesJSI (57.1.2):
     - React-Core
     - ReactCommon
-  - ExpoModulesWorklets (57.0.21):
+  - ExpoModulesWorklets (57.0.23):
     - ExpoModulesCore
     - ExpoModulesJSI
-  - ExpoModulesWorkletsAdapter (57.0.21):
+  - ExpoModulesWorkletsAdapter (57.0.23):
     - ExpoModulesCore
     - ExpoModulesJSI
     - ExpoModulesWorklets
     - RNWorklets
-  - ExpoRouter (57.0.25):
+  - ExpoRouter (57.0.27):
     - ExpoModulesCore
     - RNScreens
-  - ExpoSharing (57.0.22):
+  - ExpoSharing (57.0.23):
     - ExpoModulesCore
   - ExpoSQLite (57.0.4):
     - ExpoModulesCore
   - ExpoSymbols (57.0.3):
     - ExpoModulesCore
-  - ExpoUI (57.0.22):
+  - ExpoUI (57.0.24):
     - ExpoModulesCore
     - ExpoModulesWorklets
     - React-RCTFabric
   - FBLazyVector (0.86.3)
+  - FilmerPhotos (1.0.0):
+    - ExpoModulesCore
   - hermes-engine (250829098.0.17):
     - hermes-engine/Pre-built (= 250829098.0.17)
   - hermes-engine/Pre-built (250829098.0.17)
@@ -2372,6 +2374,7 @@ DEPENDENCIES:
   - ExpoSymbols (from `../node_modules/expo-symbols/ios`)
   - "ExpoUI (from `../node_modules/@expo/ui/ios`)"
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
+  - FilmerPhotos (from `../modules/filmer-photos/ios`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
   - RCTRequired (from `../node_modules/react-native/Libraries/Required`)
@@ -2506,6 +2509,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@expo/ui/ios"
   FBLazyVector:
     :path: "../node_modules/react-native/Libraries/FBLazyVector"
+  FilmerPhotos:
+    :path: "../modules/filmer-photos/ios"
   hermes-engine:
     :podspec: "../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec"
     :tag: hermes-v250829098.0.17
@@ -2675,9 +2680,9 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
-  EXConstants: b4e9051547ee9b8337155565fbdbe66036865120
-  Expo: ad082d060a56d674d482aa528689e7eda8d8480f
-  ExpoAsset: 78dbecc7bc9f60d839fb37ba8b10317b64779685
+  EXConstants: 8a0eb5e2553569c0e6710b73a8d90d1ce358c153
+  Expo: 3bf13bf01a4cd154996b137478cef3e62528d889
+  ExpoAsset: 2581425f9b581b4fce3c83ffc9f28528d1c4ee68
   ExpoDomWebView: beaec034e51bd028428b98bb1f2633ab79c6d095
   ExpoFileSystem: 28778f942725170102f7c6cf4dee05a526ddacd0
   ExpoFont: f8198a952ba2ff53c9b393b5269ea435f232cfc3
@@ -2685,20 +2690,21 @@ SPEC CHECKSUMS:
   ExpoHaptics: 32efd02d88953d30a5c2ff796c0fce692e7bcd2e
   ExpoImagePicker: 661e13a7616fbcea630cfb9409b7483094978e02
   ExpoKeepAwake: 72af0b3be3615e59bc819d26061ff4e06b155ee0
-  ExpoLinking: d6e69c2972e62a9c439e021d0ece176d301d0574
-  ExpoLocation: 52c126a493087ac247cf213ef9f737c5b298c1d4
+  ExpoLinking: b2f2952392549ef78f9c4b37fad836e4180de4e4
+  ExpoLocation: 7b878272a650957859fb04770b30db78a8e5bf79
   ExpoLogBox: 80957303325cd4439137765c90a87d7f22aaf2ff
   ExpoMediaLibrary: 341321256621e7bf220b6272c42fedcb095607d0
-  ExpoModulesCore: b7255acafc9e9b28f147860fd0e1e23f15e593ae
-  ExpoModulesJSI: 383849017851b1ebacbd78cfaa32b18b6152585e
-  ExpoModulesWorklets: 1916bfde983876e6caf849398b91a0b492b73869
-  ExpoModulesWorkletsAdapter: 85697593f57f6fd1375621d545c596dcd59dac1f
-  ExpoRouter: 72006aae54ac9e2b17b7211214fe3c7c29a39e97
-  ExpoSharing: 5cc46810cfba71e331f649d947660213082094c1
+  ExpoModulesCore: 172e4ab826d1e3b54a638fbbe7fc6e624a37bded
+  ExpoModulesJSI: b767422763350d2b248fb218f71bbb286fd2ee77
+  ExpoModulesWorklets: 22d1898cfa60b815ffc7421c775e2e6a1bd8dc82
+  ExpoModulesWorkletsAdapter: 9d1e55ef8c1efc403c1cde5e716451f77ec05019
+  ExpoRouter: 8f1eb1bf8ac978f760f1c24bd1d14e4933022afd
+  ExpoSharing: a717847b4fff66f008f884329f1af9fe74c7f4ce
   ExpoSQLite: 1aa77d01fba0d1377b969d24f9845972d8fb0500
   ExpoSymbols: 37a3a6e5847edb08b83a5ee04d3b46525e205f00
-  ExpoUI: 04f60b7b9789e2cdc337747546b892e3dd8c17d6
+  ExpoUI: 7d535e830f98dceeac73a3b1d6b4f5fe3b516695
   FBLazyVector: 2138c6c2ab66c31bf5754dc18097fbc498a49c7f
+  FilmerPhotos: 794f1c52d558b6eae317a9806bf575bc8a4ec4fc
   hermes-engine: 63c5db7d529c36335fada6582fd293ae2a105d77
   RCTDeprecation: 96f68ebf33f8762466b01d57d6e873c4f30efb07
   RCTRequired: 166eed8ad6d8440e73e56d09a9090366609823d2

@@ -1,3 +1,4 @@
+import { useFilmStore } from '../store/filmStore';
 import { useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import type { Film, FilmOverride } from '../../../types/models';
@@ -37,6 +38,7 @@ export function FilmForm({ mode, initialValues, visible, onClose, onSubmit }: {
     const parsedIso = Number(iso);
     if (!brand.trim() || !name.trim() || !Number.isFinite(parsedIso) || parsedIso <= 0 || !formats.length) { setError(t('invalidFilm')); return; }
     busy.current = true; setError(null);
+    let submitted = false;
     let copied: Awaited<ReturnType<typeof FilmCoverStorage.copy>> | undefined;
     try {
       if (imageUri && (imageUri !== initialUri || !initialValues?.imageDocumentPath)) copied = await FilmCoverStorage.copy(imageUri);
@@ -44,8 +46,15 @@ export function FilmForm({ mode, initialValues, visible, onClose, onSubmit }: {
         process: process.trim() || undefined, imageKey,
         imageUri: copied?.imageUri ?? imageUri,
         imageDocumentPath: copied?.imageDocumentPath ?? (imageUri === initialUri ? initialValues?.imageDocumentPath : undefined) });
+      submitted = true;
       onClose();
-    } catch { if (copied) FilmCoverStorage.removeUnreferenced([copied.imageDocumentPath], new Set()); setError(t('filmSaveError')); }
+    } catch {
+      if (copied && !submitted) {
+        const retained = new Set(useFilmStore.getState().films.flatMap(film => film.imageDocumentPath ? [film.imageDocumentPath] : []));
+        FilmCoverStorage.removeUnreferenced([copied.imageDocumentPath], retained);
+      }
+      setError(t('filmSaveError'));
+    }
     finally { busy.current = false; }
   }
   return <CatalogItemModal title={t(mode === 'edit' ? 'editFilm' : 'addCustomFilm')} actionLabel={t(mode === 'edit' ? 'saveChanges' : 'addFilm')} visible={visible} onClose={close} onSubmit={() => void submit()} error={error}>

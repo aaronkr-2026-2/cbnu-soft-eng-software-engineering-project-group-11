@@ -1,7 +1,7 @@
-export type RollFormat = '35mm' | '120' | '110' | 'other';
-
 import type { PhotoReference } from '../photos/types';
 import type { FilmOverride } from '../../types/models';
+
+export type RollFormat = '35mm' | '120' | '110' | 'other';
 
 export type RollLocation = {
   latitude: number;

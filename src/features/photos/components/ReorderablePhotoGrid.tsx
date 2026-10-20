@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -8,7 +8,8 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { useThemedStyles } from '../../../constants/theme';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type { PhotoReference } from '../types';
-import { resolvePhotoUri } from '../utils/resolvePhotoUri';
+import { useResolvedPhoto } from '../hooks/useResolvedPhoto';
+import { PhotoResolutionStatus } from './PhotoResolutionStatus';
 import { createReorderablePhotoGridStyles, gridGap } from '../styles/reorderable-photo-grid.styles';
 import { usePhotoSelectionGesture } from '../hooks/usePhotoSelectionGesture';
 import { PhotoSelectionOverlay } from './PhotoSelectionOverlay';
@@ -127,9 +128,9 @@ const PhotoTile = memo(function PhotoTile({ photo, initialIndex, size, count, po
 }) {
   const styles = useThemedStyles(createReorderablePhotoGridStyles);
   const { t } = useTranslation();
-  const [failed, setFailed] = useState(false);
   const id = photo.id;
-  const uri = useMemo(() => resolvePhotoUri(photo), [photo]);
+  const resolution = useResolvedPhoto(photo);
+  const { uri } = resolution;
   const onPress = useCallback(() => {
     if (interactionDisabled) return;
     if (selecting) onToggleSelection?.(id);
@@ -267,7 +268,7 @@ const PhotoTile = memo(function PhotoTile({ photo, initialIndex, size, count, po
       }}
       style={[styles.tile, styles.lifted, { width: size, height: size }, style]}
     >
-      {uri && !failed ? <Image source={{ uri }} onError={() => setFailed(true)} style={styles.image} /> : <Text style={styles.hint}>{t('unavailable')}</Text>}
+      {uri ? <Image source={{ uri }} onError={resolution.failed} style={styles.image} /> : <PhotoResolutionStatus status={resolution.status} />}
       {selecting ? <PhotoSelectionOverlay selected={selected} /> : null}
     </Animated.View>
   </GestureDetector>;

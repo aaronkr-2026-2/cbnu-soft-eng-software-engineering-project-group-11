@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressable, Text, View } from 'react-native';
 import MapView, { Marker, type Region } from 'react-native-maps';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -35,10 +35,11 @@ export function LocationPicker(props: Props) {
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userMovedMap = useRef(false);
   const alive = useRef(true);
+  const invalidateRequests = useCallback(() => { reverseRequest.current++; currentRequest.current++; }, []);
   useEffect(() => { alive.current = true; return () => {
-    alive.current = false; reverseRequest.current++; currentRequest.current++;
+    alive.current = false; invalidateRequests();
     if (debounce.current) clearTimeout(debounce.current);
-  }; }, []);
+  }; }, [invalidateRequests]);
 
   function choose(location: RollLocation, animate = false) {
     if (!isValidLocation(location)) return;

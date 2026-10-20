@@ -1,3 +1,4 @@
+import { normalizeFilmCover } from './normalize-film-covers.mjs';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -20,6 +21,7 @@ for (let row=0; row<rows.length; row++) for (let column=0; column<6; column++) {
  const name=rows[row][column]; if (!name) continue;
  execFileSync('sips',['-c',String(heights[row]),'214','--cropOffset',String(ys[row]),String(xs[column]),source,
   '--out',resolve(target,name+'.png')],{stdio:'ignore'});
+ normalizeFilmCover(resolve(target,name+'.png'));
  entries.push(`  'kodak-${name}': require('../../../../assets/films/kodak/${name}.png'),`);
 }
 const fujiSource = resolve(root, 'assets/films/source/fuji.png');
@@ -37,9 +39,10 @@ if (existsSync(fujiSource)) {
   const name=fujiRows[row][column]; if (!name) continue;
   execFileSync('sips', ['-c','170','208','--cropOffset',String(fujiYs[row]),String(fujiXs[column]),fujiSource,
    '--out',resolve(fujiTarget,name+'.png')], { stdio: 'ignore' });
+  normalizeFilmCover(resolve(fujiTarget,name+'.png'));
   entries.push(`  'fujifilm-${name}': require('../../../../assets/films/fujifilm/${name}.png'),`);
  }
 }
 writeFileSync(resolve(root,'src/features/films/data/filmAssets.ts'),
- `import type { ImageSourcePropType } from 'react-native';\n\n// Static references let Metro bundle only individual covers.\nexport const FILM_ASSETS: Readonly<Record<string, ImageSourcePropType>> = {\n${entries.join('\n')}\n};\n`);
+ `import type { ImageSourcePropType } from 'react-native';\nimport { ADDITIONAL_FILM_ASSETS } from './additionalFilmAssets';\n\n// Static references let Metro bundle only individual covers.\nexport const FILM_ASSETS: Readonly<Record<string, ImageSourcePropType>> = {\n  ...ADDITIONAL_FILM_ASSETS,\n${entries.join('\n')}\n};\n`);
 console.log('Cropped '+entries.length+' film covers');

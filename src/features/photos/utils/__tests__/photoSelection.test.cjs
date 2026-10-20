@@ -25,7 +25,7 @@ function load(relative, mocks = {}) {
 
 // Deterministic hook/callback checks, not a substitute for native recognizer arbitration tests.
 function hookRunner() {
-  const values = [], dependencies = []; let cursor = 0, effects = [];
+  const values = [], dependencies = [], cleanups = []; let cursor = 0, effects = [];
   const changed = (i, deps) => !dependencies[i] || !deps || deps.some((value, index) => !Object.is(value, dependencies[i][index]));
   const hooks = {
     useState(initial) { const i = cursor++; if (!(i in values)) values[i] = typeof initial === 'function' ? initial() : initial;
@@ -33,7 +33,7 @@ function hookRunner() {
     useRef(initial) { const i = cursor++; if (!(i in values)) values[i] = { current: initial }; return values[i]; },
     useMemo(fn, deps) { const i = cursor++; if (changed(i, deps)) { values[i] = fn(); dependencies[i] = deps; } return values[i]; },
     useCallback(fn, deps) { return hooks.useMemo(() => fn, deps); },
-    useEffect(fn, deps) { const i = cursor++; if (changed(i, deps)) { dependencies[i] = deps; effects.push(fn); } },
+    useEffect(fn, deps) { const i = cursor++; if (changed(i, deps)) { dependencies[i] = deps; effects.push(() => { cleanups[i]?.(); cleanups[i] = fn(); }); } },
     memo: fn => fn,
   };
   return { hooks, render(fn) { cursor = 0; effects = []; const result = fn(); effects.forEach(effect => effect()); return result; } };
@@ -107,7 +107,8 @@ function gestureRuntime() {
     'expo-haptics': { ImpactFeedbackStyle: { Medium: 'medium' }, impactAsync: () => Promise.resolve(), selectionAsync: () => Promise.resolve() },
     '../../../constants/theme': { useThemedStyles: () => ({}), spacing: { sm: 8 } },
     '../../../i18n/useTranslation': { useTranslation: () => ({ t: key => key }) },
-    '../utils/resolvePhotoUri': { resolvePhotoUri: () => { resolutions++; return 'file:///photo.jpg'; } },
+    '../hooks/useResolvedPhoto': { useResolvedPhoto: () => { runner.hooks.useMemo(() => { resolutions++; }, []); return { uri: 'file:///photo.jpg', status: 'ready', failed() {} }; } },
+    './PhotoResolutionStatus': { PhotoResolutionStatus: 'status' },
   };
   return { runner, mocks, load: relative => load(relative, mocks), render(fn) { gestures = []; return runner.render(fn); },
     get gestures() { return gestures; }, get resolutions() { return resolutions; } };
@@ -188,4 +189,30 @@ test('Browse retains successful photo taps and early-failing reorder Pan; busy s
   assert.equal(failed, 1);
   r.render(() => PhotoTile({ ...props, selecting: true, interactionDisabled: true }));
   assert.equal(r.gestures.find(g => g.kind === 'tap').enabled, false);
+});
+
+test('Photo resolution UI clears stale images on library change, ignores old requests and allows Retry', async () => {
+  const runner=hookRunner(); const pending=[]; let changed;
+  const api={
+    observePhotoLibrary: listener=>{changed=listener;return ()=>{};},
+    invalidatePhotoRenders: ()=>changed(),
+    resolvePhoto: (_photo,size)=>new Promise(resolve=>pending.push({resolve,size})),
+  };
+  const {useResolvedPhoto}=load('features/photos/hooks/useResolvedPhoto.ts',{
+    react:runner.hooks,'../services/PhotoReferenceService':api,
+  });
+  const photo={id:'p',provider:'apple-photos',assetId:'asset',sortOrder:0};
+  const render=()=>runner.render(()=>useResolvedPhoto(photo,'thumbnail'));
+  assert.equal(render().status,'loading'); assert.equal(pending[0].size,'thumbnail');
+  pending[0].resolve({status:'ready',uri:'file:///render.jpg'}); await Promise.resolve();
+  assert.equal(render().uri,'file:///render.jpg');
+  changed(); assert.equal(render().uri,undefined); assert.equal(render().status,'loading');
+  // A second library notification cancels the obsolete pending result.
+  changed(); render(); pending[2].resolve({status:'unavailable'}); await Promise.resolve();
+  pending[1].resolve({status:'ready',uri:'file:///obsolete.jpg'}); await Promise.resolve();
+  const unavailable=render(); assert.equal(unavailable.status,'unavailable'); assert.equal(unavailable.uri,undefined);
+  unavailable.retry(); assert.equal(render().status,'loading');
+  pending[3].resolve({status:'ready',uri:'file:///relinked.jpg'}); await Promise.resolve();
+  assert.equal(render().uri,'file:///relinked.jpg');
+  render().failed(); assert.equal(render().status,'temporary-error'); assert.equal(render().uri,undefined);
 });

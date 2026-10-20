@@ -1,7 +1,6 @@
 import { File, type Directory } from 'expo-file-system';
-import { Asset } from 'expo-media-library';
 import type { PhotoReference } from '../types';
-import { resolvePhotoUri } from '../utils/resolvePhotoUri';
+import { resolvePhoto } from './PhotoReferenceService';
 import { PhotoShareCacheService } from './PhotoShareCacheService';
 
 export type PhotoShareResult = { preparedCount: number; failedCount: number; cancelled: boolean };
@@ -11,7 +10,7 @@ function log(event: string, detail: Record<string, unknown>) {
 }
 
 async function resolveShareSource(photo: PhotoReference, index: number): Promise<File> {
-  const uri = resolvePhotoUri(photo);
+  const { uri } = await resolvePhoto(photo, 'full');
   try {
     const source = uri ? new File(uri) : undefined;
     const exists = source?.exists ?? false;
@@ -20,14 +19,6 @@ async function resolveShareSource(photo: PhotoReference, index: number): Promise
   } catch (error) {
     log('source-unreadable', { index, provider: photo.provider, exists: false,
       reason: error instanceof Error ? error.message : String(error) });
-  }
-  if (photo.provider === 'apple-photos') {
-    // Recover an accessible original when a picker display URI has expired or is provider-only.
-    // Asset.getUri reads through the existing Photos access; it never edits/deletes the asset.
-    const recoveredUri = await new Asset(photo.localIdentifier ?? photo.assetId).getUri();
-    const recovered = new File(recoveredUri);
-    log('source-recovered', { index, provider: photo.provider, scheme: recoveredUri.split(':')[0], exists: recovered.exists });
-    if (recovered.exists && recovered.size > 0) return recovered;
   }
   throw new Error('Photo file is missing or empty');
 }

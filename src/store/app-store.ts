@@ -15,9 +15,9 @@ const storageKey = 'filmer.settings.v1';
 const defaults: AppSettings = { language: 'en', appearance: 'light', importMode: 'reference' };
 
 function readSettings(): AppSettings {
-  const raw = Storage.getItemSync(storageKey);
-  if (!raw) return defaults;
   try {
+    const raw = Storage.getItemSync(storageKey);
+    if (!raw) return defaults;
     const saved: unknown = JSON.parse(raw);
     if (!saved || typeof saved !== 'object') return defaults;
     return {

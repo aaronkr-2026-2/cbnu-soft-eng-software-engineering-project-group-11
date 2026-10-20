@@ -1,11 +1,12 @@
-// Picker URIs are live catalog/roll references, not disposable FILMER cache files.
-// Only expired, FILMER-owned share cache files are disposable here.
-// Copy imports live in Documents/photos (user data), and must never be cleared here.
+import { clearPhotoRenders } from './PhotoReferenceService';
+// Only derived PhotoKit renders and expired share files are disposable.
+// Documents/photos and custom covers remain user data.
 import { PhotoShareCacheService } from './PhotoShareCacheService';
 
 export const ImageCacheService = {
   async clear(): Promise<{ status: 'empty' | 'cleared'; deletedFiles: number }> {
-    const deletedFiles = PhotoShareCacheService.clearExpired();
+    const renders = await clearPhotoRenders();
+    const deletedFiles = renders + PhotoShareCacheService.clearExpired();
     return { status: deletedFiles > 0 ? 'cleared' : 'empty', deletedFiles };
   },
 };

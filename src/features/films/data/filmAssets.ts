@@ -1,7 +1,9 @@
 import type { ImageSourcePropType } from 'react-native';
+import { ADDITIONAL_FILM_ASSETS } from './additionalFilmAssets';
 
 // Static references let Metro bundle only individual covers.
 export const FILM_ASSETS: Readonly<Record<string, ImageSourcePropType>> = {
+  ...ADDITIONAL_FILM_ASSETS,
   'kodak-portra-160': require('../../../../assets/films/kodak/portra-160.png'),
   'kodak-portra-400': require('../../../../assets/films/kodak/portra-400.png'),
   'kodak-portra-800': require('../../../../assets/films/kodak/portra-800.png'),

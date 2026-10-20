@@ -6,19 +6,24 @@
     "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "lint": "eslint app src",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test",
+    "check:ios-config": "node scripts/verify-ios-config.cjs",
+    "test:native-selection": "swiftc -module-cache-path /private/tmp/filmer-swift-selection-cache modules/filmer-photos/ios/OrderedPhotoSelection.swift scripts/native-selection-tests/main.swift -o /private/tmp/filmer-selection-tests && /private/tmp/filmer-selection-tests"
   },
   "dependencies": {
-    "expo": "~57.0.27",
-    "expo-constants": "~57.0.18",
+    "expo": "~57.0.29",
+    "expo-constants": "~57.0.22",
     "expo-file-system": "~57.0.7",
     "expo-haptics": "~57.0.3",
     "expo-image-picker": "~57.0.20",
-    "expo-linking": "~57.0.12",
-    "expo-location": "~57.0.20",
+    "expo-linking": "~57.0.13",
+    "expo-location": "~57.0.21",
     "expo-media-library": "~57.0.5",
-    "expo-router": "~57.0.25",
-    "expo-sharing": "~57.0.22",
+    "expo-router": "~57.0.27",
+    "expo-sharing": "~57.0.23",
     "expo-sqlite": "~57.0.4",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
@@ -36,6 +41,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.0",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~57.0.2",
     "typescript": "~6.0.3"
   },
   "private": true

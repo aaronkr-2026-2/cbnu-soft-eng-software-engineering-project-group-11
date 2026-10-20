@@ -1,3 +1,5 @@
+import { applePhotosProvider } from '../../src/features/photos/providers/ApplePhotosProvider';
+import { invalidatePhotoRenders } from '../../src/features/photos/services/PhotoReferenceService';
 import { FilmImage } from '../../src/features/films/components/FilmImage';
 import { resolveRollFilm } from '../../src/features/films/utils/resolveRollFilm';
 import { LocationPicker } from '../../src/features/location/components/LocationPicker';
@@ -5,7 +7,7 @@ import { isValidLocation, locationLabel } from '../../src/features/location/serv
 import { createRollDetailStyles } from '../../src/features/rolls/styles/roll-detail.styles';
 import { useTranslation } from '../../src/i18n/useTranslation';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Image, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
@@ -54,32 +56,34 @@ export default function RollDetail() {
   const [dragging, setDragging] = useState(false);
   const [message, setMessage] = useState<TranslationKey | null>(null);
   const [addedCount, setAddedCount] = useState<number | null>(null);
-  const [failedCopyCount, setFailedCopyCount] = useState(0);
   const [isPickingPhotos, setIsPickingPhotos] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [batchBusy, setBatchBusy] = useState(false);
+  const rollPhotos = roll?.photos;
   const photos = useMemo(
-    () => roll ? [...roll.photos].sort((left, right) => left.sortOrder - right.sortOrder) : [],
-    [roll?.photos],
+    () => rollPhotos ? [...rollPhotos].sort((left, right) => left.sortOrder - right.sortOrder) : [],
+    [rollPhotos],
   );
   const selection = usePhotoSelection(photos);
   usePreventRemove(selection.selectionMode, () => { if (!batchBusy) selection.exit(); });
+  const isSelecting = selection.isSelecting;
   const openPhoto = useCallback((_photo: PhotoReference, index: number) => {
-    if (selection.isSelecting()) return;
+    if (isSelecting()) return;
     setSelectedPhotoIndex(index); setViewerVisible(true);
-  }, [selection.isSelecting]);
+  }, [isSelecting, setSelectedPhotoIndex, setViewerVisible]);
   const reorder = useCallback((ids: string[]) => reorderPhotos(id, ids), [id, reorderPhotos]);
 
   async function handleAddPhotos() {
     if (isPickingPhotos) return;
-    setIsPickingPhotos(true); setMessage(null); setAddedCount(null); setFailedCopyCount(0);
+    setIsPickingPhotos(true); setMessage(null); setAddedCount(null);
     try {
       const result = await PhotoImportService.addToRoll(id);
       if (result.status === 'permission-denied') setMessage('photoPermission');
       if (result.status === 'selected') {
         if (result.addedCount > 0) setAddedCount(result.addedCount);
-        setFailedCopyCount(result.failedCount);
+        if (result.duplicateCount && !result.addedCount && !result.failedCount) setMessage('photosAlreadyAdded');
+        if (result.failedCount > 0) setMessage('photoAccessHelp');
       }
     } catch { setMessage('photoImportError'); }
     finally { setIsPickingPhotos(false); }
@@ -120,7 +124,9 @@ export default function RollDetail() {
       </View>
       <Text style={styles.photoHeading}>{t('photos')} · {photos.length}</Text>
       {message ? <Text style={styles.message}>{t(message)}</Text> : null}
-      {failedCopyCount > 0 ? <Text style={styles.message}>{t(failedCopyCount === 1 ? 'photoCopyFailureOne' : 'photoCopyFailureOther', { count: failedCopyCount })}</Text> : null}
+      {message === 'photoAccessHelp' || message === 'photoPermission' ? <Pressable accessibilityRole="button" style={{ paddingVertical: 12 }} onPress={() => {
+        void applePhotosProvider.manageAccess().catch(() => Alert.alert(t('photosAccessRequired'), t('photoAccessHelp'))).finally(invalidatePhotoRenders);
+      }}><Text style={styles.message}>{t('managePhotosAccess')}</Text></Pressable> : null}
       <ReorderablePhotoGrid adding={isPickingPhotos} onAdd={handleAddPhotos} onDraggingChange={setDragging} onReorder={reorder}
         onPhotoPress={openPhoto} photos={photos} selectionMode={selection.selectionMode} selectedIds={selection.selectedIds}
         onToggleSelection={selection.toggle} onSelectRange={selection.addRange} interactionDisabled={batchBusy} />
@@ -132,7 +138,7 @@ export default function RollDetail() {
     {addedCount !== null ? <Toast message={t(addedCount === 1 ? 'photoAddedToRoll' : 'photosAddedToRoll', { count: addedCount })} /> : null}
     {contactSheetRoll ? <ContactSheetPreview roll={contactSheetRoll} onClose={() => setContactSheetRoll(null)} /> : null}
     {locationVisible && isValidLocation(roll?.location) ? <LocationPicker mode="view" location={roll.location} onClose={() => setLocationVisible(false)} /> : null}
-    <PhotoViewerModal visible={viewerVisible && !selection.selectionMode} photos={photos} initialIndex={selectedPhotoIndex} title={roll ? (isValidLocation(roll.location) ? locationLabel(roll.location) : roll.filmName) : ''} subtitle={roll ? formatRollMonth(roll.date, language) : undefined} onPhotoChange={(photoId, patch) => updatePhoto(id, photoId, patch)} onClose={() => setViewerVisible(false)} />
+    <PhotoViewerModal rollId={id} visible={viewerVisible && !selection.selectionMode} photos={photos} initialIndex={selectedPhotoIndex} title={roll ? (isValidLocation(roll.location) ? locationLabel(roll.location) : roll.filmName) : ''} subtitle={roll ? formatRollMonth(roll.date, language) : undefined} onPhotoChange={(photoId, patch) => updatePhoto(id, photoId, patch)} onClose={() => setViewerVisible(false)} />
   </Screen>;
 }
 

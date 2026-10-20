@@ -214,3 +214,16 @@ test('A mixed 36-frame Roll uses matching preview/export crops without changing 
   }
   assert.equal(JSON.stringify(images), original);
 });
+
+test('Cached contact-sheet exports revalidate sources before every Save/Share and recover on Retry', async () => {
+  const r=exportRuntime(); let available=true, checks=0, generations=0;
+  const session=r.createContactSheetExportSession(async ()=>{generations++;return 'file:///cache/sheet.png';}, async ()=>{
+    checks++; if (!available) throw new Error('Source unavailable or access revoked');
+  });
+  await session.share(); assert.equal(generations,1); assert.equal(r.state.shares.length,1);
+  available=false;
+  await assert.rejects(session.share(),/Source unavailable/);
+  await assert.rejects(session.save(),/Source unavailable/);
+  assert.equal(r.state.shares.length,1); assert.equal(r.state.saves.length,0); assert.equal(generations,1);
+  available=true; await session.save(); assert.equal(r.state.saves.length,1); assert.equal(checks,4);
+});

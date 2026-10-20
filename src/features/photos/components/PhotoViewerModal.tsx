@@ -1,6 +1,6 @@
 import { useTranslation } from '../../../i18n/useTranslation';
-import { useEffect, useState } from 'react';
-import { Image, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, Share, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Image, Keyboard, Linking, KeyboardAvoidingView, Modal, Platform, Pressable, Text, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withDecay, withSpring, withTiming, type SharedValue } from 'react-native-reanimated';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +10,12 @@ import { BackButton } from '../../../components/ui/BackButton';
 import { photoViewerModalStyles as styles } from '../styles/photo-viewer-modal.styles';
 import type { PhotoDetailsPatch, PhotoReference } from '../types';
 import { formatPhotoDate } from '../utils/photoDate';
-import { resolvePhotoUri } from '../utils/resolvePhotoUri';
+import { useResolvedPhoto } from '../hooks/useResolvedPhoto';
+import { PhotoResolutionStatus } from './PhotoResolutionStatus';
+import { relinkPhoto } from '../services/PhotoRelinkService';
+import { PhotoShareService } from '../services/PhotoShareService';
+import { applePhotosProvider } from '../providers/ApplePhotosProvider';
+import { invalidatePhotoRenders } from '../services/PhotoReferenceService';
 import { PhotoInfoSheet } from './PhotoInfoSheet';
 
 // Gap between photos while paging, as in the Photos app.
@@ -41,6 +46,7 @@ type Size = { width: number; height: number };
 
 type PhotoViewerModalProps = {
   visible: boolean;
+  rollId: string;
   photos: PhotoReference[];
   initialIndex: number;
   title: string;
@@ -87,7 +93,7 @@ function rubberBand(value: number, min: number, max: number) {
   return value;
 }
 
-function Viewer({ photos, initialIndex, title, subtitle, onClose, onPhotoChange }: Omit<PhotoViewerModalProps, 'visible'>) {
+function Viewer({ rollId, photos, initialIndex, title, subtitle, onClose, onPhotoChange }: Omit<PhotoViewerModalProps, 'visible'>) {
   const { t, language } = useTranslation();
   const insets = useSafeAreaInsets();
   const [stage, setStage] = useState<Size>({ width: 0, height: 0 });
@@ -98,7 +104,8 @@ function Viewer({ photos, initialIndex, title, subtitle, onClose, onPhotoChange 
   const [chromeHidden, setChromeHidden] = useState(false);
 
   const current = photos[index];
-  const currentUri = current ? resolvePhotoUri(current) : undefined;
+  const currentResolution = useResolvedPhoto(current, 'full');
+  const currentUri = currentResolution.uri;
   const rotation = current ? rotations[current.id] ?? 0 : 0;
   const fitted = fitSize(current ? naturalSizes[current.id] : undefined, stage, rotation);
 
@@ -341,7 +348,8 @@ function Viewer({ photos, initialIndex, title, subtitle, onClose, onPhotoChange 
 
   async function share() {
     if (!currentUri) return;
-    try { await Share.share({ url: currentUri }); } catch { /* The share sheet reports its own errors. */ }
+    if (!current) return;
+    try { await PhotoShareService.sharePhotos([current]); } catch { Alert.alert(t('sharePhoto'), t('photoTemporaryError')); }
   }
 
   const position = photos.length ? `${index + 1} / ${photos.length}` : '0 / 0';
@@ -359,6 +367,10 @@ function Viewer({ photos, initialIndex, title, subtitle, onClose, onPhotoChange 
             {mounted.map(({ photo, photoIndex }) => <PhotoSlot
               key={photo.id}
               photo={photo}
+              full={photoIndex === index}
+              onRelink={async () => {
+                try { await relinkPhoto(rollId, photo.id); } catch { Alert.alert(t('relinkPhoto'), t('photoRelinkError')); }
+              }}
               photoIndex={photoIndex}
               stage={stage}
               rotation={rotations[photo.id] ?? 0}
@@ -410,13 +422,14 @@ type SlotShared = {
   dismissX: SharedValue<number>; dismissY: SharedValue<number>; sheet: SharedValue<number>; sheetH: SharedValue<number>;
 };
 
-function PhotoSlot({ photo, photoIndex, stage, rotation, natural, onNaturalSize, shared }: {
-  photo: PhotoReference; photoIndex: number; stage: Size; rotation: number; natural?: Size;
+function PhotoSlot({ photo, full, onRelink, photoIndex, stage, rotation, natural, onNaturalSize, shared }: {
+  photo: PhotoReference; full: boolean; onRelink: () => Promise<void>; photoIndex: number; stage: Size; rotation: number; natural?: Size;
   onNaturalSize: (size: Size) => void; shared: SlotShared;
 }) {
   const { t } = useTranslation();
-  const [failedUri, setFailedUri] = useState<string>();
-  const uri = resolvePhotoUri(photo);
+  const relinking = useRef(false);
+  const resolution = useResolvedPhoto(photo, full ? 'full' : 'thumbnail');
+  const { uri } = resolution;
   const fitted = fitSize(natural, stage, rotation);
   const sideways = rotation % 180 !== 0;
   const { indexSV, scale, tx, ty, dismissX, dismissY, sheet, sheetH } = shared;
@@ -443,12 +456,22 @@ function PhotoSlot({ photo, photoIndex, stage, rotation, natural, onNaturalSize,
     <View style={[styles.slot, { width: stage.width, height: stage.height, left: photoIndex * (stage.width + pageGap) }]}>
       <Animated.View style={[styles.fill, { width: stage.width, height: stage.height }, outerStyle]}>
         <Animated.View style={[styles.fill, { width: stage.width, height: stage.height }, zoomStyle]}>
-          {!uri || failedUri === uri ? <Text style={styles.unavailable}>{t('photoUnavailable')}</Text> : (
+          {!uri ? <PhotoResolutionStatus status={resolution.status} retry={() => {
+            if (resolution.status === 'limited') {
+              void applePhotosProvider.manageAccess().catch(() => Alert.alert(t('photoAccessLimited'), t('photoAccessHelp'))).finally(invalidatePhotoRenders);
+            } else if (resolution.status === 'permission-denied') {
+              void Linking.openSettings().catch(() => Alert.alert(t('photosAccessRequired'), t('photoAccessHelp')));
+            } else resolution.retry();
+          }} relink={photo.provider === 'apple-photos' ? () => {
+            if (relinking.current) return;
+            relinking.current = true;
+            void onRelink().finally(() => { relinking.current = false; });
+          } : undefined} /> : (
             <Image
               source={{ uri }}
               resizeMode="contain"
               accessibilityLabel={t('rollPhoto')}
-              onError={() => setFailedUri(uri)}
+              onError={resolution.failed}
               onLoad={(event) => {
                 const { width, height } = event.nativeEvent.source;
                 if (width && height && (natural?.width !== width || natural?.height !== height)) onNaturalSize({ width, height });

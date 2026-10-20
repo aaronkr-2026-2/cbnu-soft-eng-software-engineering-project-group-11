@@ -24,7 +24,7 @@ export default function Settings() {
   const styles = useThemedStyles(createSettingsStyles);
   const { t } = useTranslation();
   const settings = useAppStore();
-  const [selector, setSelector] = useState<'language' | 'appearance' | 'importMode' | null>(null);
+  const [selector, setSelector] = useState<'language' | 'appearance' | null>(null);
   function select(save: () => void) {
     try { save(); setSelector(null); }
     catch { Alert.alert(t('settings'), t('saveError')); }
@@ -33,8 +33,10 @@ export default function Settings() {
     Alert.alert(t('clearTitle'), t('clearMessage'), [
       { text: t('cancel'), style: 'cancel' },
       { text: t('clear'), style: 'destructive', onPress: async () => {
-        const result = await ImageCacheService.clear();
-        Alert.alert(t('clearImageCache'), result.deletedFiles > 0 ? t('imageCacheCleared', { count: result.deletedFiles }) : t('cacheNothingExpired'));
+        try {
+          const result = await ImageCacheService.clear();
+          Alert.alert(t('clearImageCache'), result.deletedFiles > 0 ? t('imageCacheCleared', { count: result.deletedFiles }) : t('cacheNothingExpired'));
+        } catch { Alert.alert(t('clearImageCache'), t('photoTemporaryError')); }
       } },
     ]);
   }
@@ -43,13 +45,12 @@ export default function Settings() {
     <Group title={t('language')}><Row label={t('language')} value={languageLabels[settings.language]} onPress={() => setSelector('language')} /></Group>
     <Group title={t('appearance')}><Row label={t('appearance')} value={t(settings.appearance)} onPress={() => setSelector('appearance')} /></Group>
     <Group title={t('storage')}>
-      <Row label={t('importPhotos')} value={t(settings.importMode)} onPress={() => setSelector('importMode')} />
+      <View style={styles.row}><Text style={styles.label}>{t('importPhotos')}</Text><Text style={styles.value}>{t('reference')}</Text></View>
       <Row label={t('clearImageCache')} destructive onPress={clearCache} />
     </Group>
   </ScrollView>
     {selector === 'language' ? <SettingsSelectModal title={t('language')} value={settings.language} options={(['vi', 'en', 'ko'] as const).map((value) => ({ value, label: languageLabels[value] }))} onSelect={(value) => select(() => settings.setLanguage(value))} onClose={() => setSelector(null)} /> : null}
     {selector === 'appearance' ? <SettingsSelectModal title={t('appearance')} value={settings.appearance} options={(['light', 'dark'] as const).map((value) => ({ value, label: t(value) }))} onSelect={(value) => select(() => settings.setAppearance(value))} onClose={() => setSelector(null)} /> : null}
-    {selector === 'importMode' ? <SettingsSelectModal title={t('importPhotos')} value={settings.importMode} options={(['reference', 'copy'] as const).map((value) => ({ value, label: t(value) }))} onSelect={(value) => select(() => settings.setImportMode(value))} onClose={() => setSelector(null)} /> : null}
   </Screen>;
 }
 function Group({ title, children }: { title: string; children: ReactNode }) {

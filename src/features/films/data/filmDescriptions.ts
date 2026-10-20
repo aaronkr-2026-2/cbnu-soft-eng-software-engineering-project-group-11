@@ -27,12 +27,12 @@ export function getBuiltInFilmDescription(film: Film): NonNullable<Film['shortDe
   else if (film.id === 'fujifilm-pro-400h') note = notes.pro400h;
   else if (film.id.includes('kodachrome')) note = notes.kodachrome;
   else if (film.id === 'kodak-double-x-5222') note = notes.doublex;
-  else if (film.type === 'cinema') note = film.id.endsWith('500t') ? notes.tungstenCinema : notes.daylightCinema;
+  else if (film.type === 'cinema') note = /(?:^|-)\d+t(?:-|$)/i.test(film.id) ? notes.tungstenCinema : notes.daylightCinema;
   else if (film.id === 'fujifilm-velvia-50') note = notes.velvia;
   else if (film.type === 'slide' && film.status !== 'discontinued') note = notes.reversal;
   else if (film.type === 'black-and-white' && film.status !== 'discontinued') note = notes.bw;
   const name = `${film.brand} ${film.name}`;
-  return { en: `${name} is an ISO ${film.iso} film. ${note[0]}`,
-    vi: `${name} là film có độ nhạy ISO ${film.iso}. ${note[1]}`,
-    ko: `${name}은 ISO ${film.iso} 필름입니다. ${note[2]}` };
+  return { en: `${name} is rated at ISO/EI ${film.iso}. ${note[0]}`,
+    vi: `${name} có độ nhạy danh định ISO/EI ${film.iso}. ${note[1]}`,
+    ko: `${name}의 표기 감도는 ISO/EI ${film.iso}입니다. ${note[2]}` };
 }

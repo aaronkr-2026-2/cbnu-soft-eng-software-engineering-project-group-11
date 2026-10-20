@@ -1,0 +1,4256 @@
+{
+  "schemaVersion": 1,
+  "sheets": [
+    {
+      "path": "assets/films/source/fujifilm/catalog-sheet.png",
+      "originalName": "Ảnh ChatGPT 13_48_52 15 thg 10, 2026-1.png",
+      "sha256": "6ad08783bfa4b7179370abdbbc465344a9c738bc3d08e716306a6ff4b7cd0efd"
+    },
+    {
+      "path": "assets/films/source/kodak/catalog-sheet.png",
+      "originalName": "Ảnh ChatGPT 13_48_53 15 thg 10, 2026-2.png",
+      "sha256": "27a2ac4d42e8750f8e03b2c77c68daabfdf5a73856ddead261ef7b0834829e12"
+    },
+    {
+      "path": "assets/films/source/collections/lucky-filmneverdie-foma-nolan-yashica.png",
+      "originalName": "Ảnh ChatGPT 13_48_54 15 thg 10, 2026-3.png",
+      "sha256": "03e395e2dc2cfc998f0cec0c2ad1a97423b7ca7d41dc07283928f0aa00cc1a64"
+    },
+    {
+      "path": "assets/films/source/collections/svema-lfani-617-ferrania.png",
+      "originalName": "Ảnh ChatGPT 13_48_56 15 thg 10, 2026-4.png",
+      "sha256": "eebc1ac4b994b60a9ec8391ed503260e04e206e465998611090eb121281e726c"
+    },
+    {
+      "path": "assets/films/source/collections/agfa-three-film-rolls-tianjiao-harman.png",
+      "originalName": "Ảnh ChatGPT 13_48_57 15 thg 10, 2026-5.png",
+      "sha256": "6b7bd263083674b114d88f5e3eee26b2286317a5ee8fff4c0a4a32c544e1aee4"
+    },
+    {
+      "path": "assets/films/source/collections/takumi-marix-cinemot-cinestill.png",
+      "originalName": "Ảnh ChatGPT 13_48_58 15 thg 10, 2026-6.png",
+      "sha256": "1749e23ca98cbf174ec45b5b503fe3a35c4705d9b966a3779f5d30a95a12b23c"
+    },
+    {
+      "path": "assets/films/source/collections/small-brands-a.png",
+      "originalName": "Ảnh ChatGPT 13_48_59 15 thg 10, 2026-1.png",
+      "sha256": "aa8db3021c9e5d651b289cb43488b3d5e1493ddd4ffaa8376f0b460a0bdb10fe"
+    },
+    {
+      "path": "assets/films/source/collections/reflx-alien-rollei.png",
+      "originalName": "Ảnh ChatGPT 13_48_59 15 thg 10, 2026-7.png",
+      "sha256": "c142601db9a6c532cbedb78c0044cce1664541d689f43edab25bc838d737fb78"
+    },
+    {
+      "path": "assets/films/source/collections/small-brands-b.png",
+      "originalName": "Ảnh ChatGPT 13_49_01 15 thg 10, 2026-2.png",
+      "sha256": "849ab6e5d28033f65c0ab3375a1a663e2528c2b0e7029fef506dbe648e3ff938"
+    },
+    {
+      "path": "assets/films/source/collections/small-brands-c.png",
+      "originalName": "Ảnh ChatGPT 13_49_02 15 thg 10, 2026-3.png",
+      "sha256": "d529182740c0aac00c5fae8dc55e7754e2722360cffeb180280b59fb51de9d08"
+    },
+    {
+      "path": "assets/films/source/collections/yue-orwo-adox.png",
+      "originalName": "Ảnh ChatGPT 13_49_02 15 thg 10, 2026-8.png",
+      "sha256": "6ece4d781eb2dcf5c00c4f5ae2c70c95984aa5450760a0dce569d9b6e328cd5b"
+    },
+    {
+      "path": "assets/films/source/lucky/catalog-sheet.png",
+      "originalName": "Ảnh ChatGPT 13_49_03 15 thg 10, 2026-1.png",
+      "sha256": "a39ef008a42b5560ef85e5e23d78e26d8b1756aed1b7008c247f88863c20c7e8"
+    },
+    {
+      "path": "assets/films/source/collections/small-brands-d.png",
+      "originalName": "Ảnh ChatGPT 13_49_03 15 thg 10, 2026-4.png",
+      "sha256": "e1a7c9ecfbebf6886c6182dd909303ed58a0e8a827d684bfe0b794c4042792e8"
+    },
+    {
+      "path": "assets/films/source/svema/catalog-sheet.png",
+      "originalName": "Ảnh ChatGPT 13_49_04 15 thg 10, 2026-2.png",
+      "sha256": "31c3388e8d31f87a44150ed547bc3ab5538fb0d2e8002b7d28bfacd0a8696c09"
+    },
+    {
+      "path": "assets/films/source/collections/small-brands-e.png",
+      "originalName": "Ảnh ChatGPT 13_49_04 15 thg 10, 2026-5.png",
+      "sha256": "4d9aa7e0a7c92f7f627c309c2f163272e81d8b71c66e650b3963b70b68853f45"
+    },
+    {
+      "path": "assets/films/source/collections/ilford-polaroid-efke.png",
+      "originalName": "Ảnh ChatGPT 13_49_04 15 thg 10, 2026-9.png",
+      "sha256": "e5eb10a49bbf8c939515e29bf522ed0ac7dea11cb8e0ff04f2286ebd4fe9f1e7"
+    },
+    {
+      "path": "assets/films/source/collections/lomography-konica-shanghai.png",
+      "originalName": "Ảnh ChatGPT 13_49_05 15 thg 10, 2026-10.png",
+      "sha256": "0728600719f2e4735bb3762516e7058f5dd4915b65e50f73424041cad5a8c2c9"
+    },
+    {
+      "path": "assets/films/source/takumi/catalog-sheet.png",
+      "originalName": "Ảnh ChatGPT 13_49_05 15 thg 10, 2026-3.png",
+      "sha256": "7e8a7772a666b504e90c2bf74b348d43b95b1796ab3695ea1ddafdef5ac4ed7a"
+    },
+    {
+      "path": "assets/films/source/reflx-lab/catalog-sheet.png",
+      "originalName": "Ảnh ChatGPT 13_49_06 15 thg 10, 2026-4.png",
+      "sha256": "e69c038d28c79e3dc6369e2911ea179c4f090ac498d801e16a851ea4a44d69c7"
+    },
+    {
+      "path": "assets/films/source/yue-crystal/catalog-sheet.png",
+      "originalName": "Ảnh ChatGPT 13_49_07 15 thg 10, 2026-5.png",
+      "sha256": "075e7ff888abb50580c648a072d062abe2a1b961f74c5668602cfdda8a3f8ba0"
+    },
+    {
+      "path": "assets/films/source/orwo/catalog-sheet.png",
+      "originalName": "Ảnh ChatGPT 13_49_08 15 thg 10, 2026-6.png",
+      "sha256": "026a33979dcd3e4befda5a0c36f3244d937b2996a87ce74c92019c0d020c8794"
+    },
+    {
+      "path": "assets/films/source/polaroid/catalog-sheet.png",
+      "originalName": "Ảnh ChatGPT 13_49_09 15 thg 10, 2026-7.png",
+      "sha256": "9d0e94f5706a7b81c163caa0f9693aecf5b2af5631419054ea669950e93f7625"
+    },
+    {
+      "path": "assets/films/source/lomography/catalog-sheet.png",
+      "originalName": "Ảnh ChatGPT 13_49_10 15 thg 10, 2026-8.png",
+      "sha256": "91afd8158d633bcea95f120be5f6bedef2e3e23708627f4704f0e79d908298af"
+    },
+    {
+      "path": "assets/films/source/konica/catalog-sheet.png",
+      "originalName": "Ảnh ChatGPT 13_49_12 15 thg 10, 2026-9.png",
+      "sha256": "5246b1fbad18f378505c29b5f0d8362b8299b944dab7aae51c3b0852de5bb62a"
+    },
+    {
+      "path": "assets/films/source/collections/alien-rollei-adox.png",
+      "originalName": "Ảnh ChatGPT 13_49_13 15 thg 10, 2026-10.png",
+      "sha256": "238d5bec20b39e49278281c3382f05b4487583a06996792c4681149933f50322"
+    },
+    {
+      "path": "assets/films/source/yesstar/print-sheet.png",
+      "originalName": "yesstar-print-sheet.png",
+      "sha256": "1d63889aa24fb598bd12a5efdcf03b06095902179ce4c35665226f8ca0b3ca69"
+    }
+  ],
+  "films": [
+    {
+      "id": "ilford-hp5-plus",
+      "brand": "Ilford",
+      "name": "HP5 Plus",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 15,
+      "crop": [
+        22,
+        84,
+        138,
+        105
+      ],
+      "existing": true
+    },
+    {
+      "id": "ilford-delta-100",
+      "brand": "Ilford",
+      "name": "Delta 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 15,
+      "crop": [
+        317,
+        84,
+        136,
+        105
+      ]
+    },
+    {
+      "id": "ilford-delta-400",
+      "brand": "Ilford",
+      "name": "Delta 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 15,
+      "crop": [
+        463,
+        84,
+        135,
+        105
+      ]
+    },
+    {
+      "id": "ilford-delta-3200",
+      "brand": "Ilford",
+      "name": "Delta 3200",
+      "iso": 3200,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 15,
+      "crop": [
+        608,
+        84,
+        135,
+        106
+      ]
+    },
+    {
+      "id": "ilford-fp4-plus",
+      "brand": "Ilford",
+      "name": "FP4 Plus",
+      "iso": 125,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 15,
+      "crop": [
+        753,
+        84,
+        136,
+        105
+      ]
+    },
+    {
+      "id": "ilford-ortho-plus",
+      "brand": "Ilford",
+      "name": "Ortho Plus",
+      "iso": 80,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 15,
+      "crop": [
+        317,
+        201,
+        136,
+        110
+      ]
+    },
+    {
+      "id": "ilford-pan-f-plus",
+      "brand": "Ilford",
+      "name": "Pan F Plus",
+      "iso": 50,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 15,
+      "crop": [
+        901,
+        202,
+        134,
+        103
+      ]
+    },
+    {
+      "id": "ilford-sfx-200",
+      "brand": "Ilford",
+      "name": "SFX 200",
+      "iso": 200,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 15,
+      "crop": [
+        22,
+        324,
+        138,
+        108
+      ]
+    },
+    {
+      "id": "ilford-xp2-super",
+      "brand": "Ilford",
+      "name": "XP2 Super",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 15,
+      "crop": [
+        170,
+        84,
+        136,
+        105
+      ]
+    },
+    {
+      "id": "ilford-pan-100",
+      "brand": "Ilford",
+      "name": "Pan 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 15,
+      "crop": [
+        464,
+        202,
+        135,
+        110
+      ]
+    },
+    {
+      "id": "ilford-pan-400",
+      "brand": "Ilford",
+      "name": "Pan 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 15,
+      "crop": [
+        610,
+        202,
+        135,
+        110
+      ]
+    },
+    {
+      "id": "foma-fomapan-100",
+      "brand": "Foma",
+      "name": "Fomapan 100 Classic",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 2,
+      "crop": [
+        708,
+        893,
+        158,
+        98
+      ]
+    },
+    {
+      "id": "foma-fomapan-200",
+      "brand": "Foma",
+      "name": "Fomapan 200 Creative",
+      "iso": 200,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 2,
+      "crop": [
+        879,
+        893,
+        159,
+        98
+      ]
+    },
+    {
+      "id": "foma-fomapan-400",
+      "brand": "Foma",
+      "name": "Fomapan 400 Action",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 2,
+      "crop": [
+        534,
+        1002,
+        160,
+        98
+      ]
+    },
+    {
+      "id": "foma-ortho-400",
+      "brand": "Foma",
+      "name": "Ortho 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 2,
+      "crop": [
+        535,
+        893,
+        158,
+        97
+      ]
+    },
+    {
+      "id": "foma-retropan-320",
+      "brand": "Foma",
+      "name": "Retropan 320 Soft",
+      "iso": 320,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 2,
+      "crop": [
+        879,
+        1003,
+        159,
+        97
+      ]
+    },
+    {
+      "id": "foma-fomapan-r-100",
+      "brand": "Foma",
+      "name": "Fomapan R 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W reversal",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 2,
+      "crop": [
+        708,
+        1003,
+        158,
+        97
+      ],
+      "aliases": [
+        "R100"
+      ]
+    },
+    {
+      "id": "kentmere-pan-100",
+      "brand": "Kentmere",
+      "name": "Pan 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 5,
+      "crop": [
+        844,
+        1180,
+        192,
+        102
+      ]
+    },
+    {
+      "id": "kentmere-pan-200",
+      "brand": "Kentmere",
+      "name": "Pan 200",
+      "iso": 200,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 5,
+      "crop": [
+        20,
+        1300,
+        189,
+        121
+      ]
+    },
+    {
+      "id": "kentmere-pan-400",
+      "brand": "Kentmere",
+      "name": "Pan 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 5,
+      "crop": [
+        227,
+        1301,
+        190,
+        120
+      ]
+    },
+    {
+      "id": "rollei-infrared",
+      "brand": "Rollei",
+      "name": "Infrared 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 24,
+      "crop": [
+        228,
+        709,
+        180,
+        203
+      ]
+    },
+    {
+      "id": "rollei-ortho-25",
+      "brand": "Rollei",
+      "name": "Ortho 25 Plus",
+      "iso": 25,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 24,
+      "crop": [
+        424,
+        710,
+        176,
+        201
+      ]
+    },
+    {
+      "id": "rollei-retro-80s",
+      "brand": "Rollei",
+      "name": "Retro 80S",
+      "iso": 80,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 24,
+      "crop": [
+        616,
+        709,
+        180,
+        203
+      ]
+    },
+    {
+      "id": "rollei-retro-400s",
+      "brand": "Rollei",
+      "name": "Retro 400S",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 24,
+      "crop": [
+        811,
+        709,
+        183,
+        203
+      ]
+    },
+    {
+      "id": "rollei-rpx-25",
+      "brand": "Rollei",
+      "name": "RPX 25",
+      "iso": 25,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 24,
+      "crop": [
+        32,
+        932,
+        181,
+        201
+      ]
+    },
+    {
+      "id": "rollei-rpx-100",
+      "brand": "Rollei",
+      "name": "RPX 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 24,
+      "crop": [
+        228,
+        932,
+        179,
+        202
+      ]
+    },
+    {
+      "id": "rollei-rpx-400",
+      "brand": "Rollei",
+      "name": "RPX 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 24,
+      "crop": [
+        424,
+        932,
+        176,
+        199
+      ]
+    },
+    {
+      "id": "rollei-superpan-200",
+      "brand": "Rollei",
+      "name": "Superpan 200",
+      "iso": 200,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 24,
+      "crop": [
+        617,
+        932,
+        179,
+        202
+      ]
+    },
+    {
+      "id": "rollei-cr-200",
+      "brand": "Rollei",
+      "name": "CR 200",
+      "iso": 200,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 24,
+      "crop": [
+        32,
+        709,
+        181,
+        203
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "adox-chs-100-ii",
+      "brand": "ADOX",
+      "name": "CHS 100 II",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 24,
+      "crop": [
+        32,
+        1232,
+        223,
+        191
+      ]
+    },
+    {
+      "id": "adox-cms-20-ii",
+      "brand": "ADOX",
+      "name": "CMS 20 II",
+      "iso": 20,
+      "type": "black-and-white",
+      "process": "ADOTECH IV",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 24,
+      "crop": [
+        275,
+        1232,
+        226,
+        191
+      ]
+    },
+    {
+      "id": "adox-hr-50",
+      "brand": "ADOX",
+      "name": "HR-50",
+      "iso": 50,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 24,
+      "crop": [
+        522,
+        1232,
+        220,
+        191
+      ]
+    },
+    {
+      "id": "adox-scala-50",
+      "brand": "ADOX",
+      "name": "Scala 50",
+      "iso": 50,
+      "type": "black-and-white",
+      "process": "B&W reversal",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 24,
+      "crop": [
+        762,
+        1231,
+        230,
+        192
+      ]
+    },
+    {
+      "id": "kodak-bw400cn",
+      "brand": "Kodak",
+      "name": "BW400CN",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        757,
+        61,
+        137,
+        88
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektacolor-pro-160",
+      "brand": "Kodak",
+      "name": "Ektacolor Pro 160",
+      "iso": 160,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        459,
+        362,
+        137,
+        91
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektacolor-pro-400",
+      "brand": "Kodak",
+      "name": "Ektacolor Pro 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        758,
+        362,
+        135,
+        91
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektacolor-pro-800",
+      "brand": "Kodak",
+      "name": "Ektacolor Pro 800",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        905,
+        362,
+        136,
+        91
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektapress-gold-400",
+      "brand": "Kodak",
+      "name": "Ektapress Gold 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        16,
+        464,
+        135,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektapress-pj800",
+      "brand": "Kodak",
+      "name": "Ektapress PJ800",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        162,
+        464,
+        137,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektar-25",
+      "brand": "Kodak",
+      "name": "Ektar 25",
+      "iso": 25,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        311,
+        464,
+        138,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektar-125",
+      "brand": "Kodak",
+      "name": "Ektar 125",
+      "iso": 125,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        608,
+        464,
+        139,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektar-1000",
+      "brand": "Kodak",
+      "name": "Ektar 1000",
+      "iso": 1000,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        758,
+        464,
+        136,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-gold-100",
+      "brand": "Kodak",
+      "name": "Gold 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        162,
+        666,
+        137,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-gold-400",
+      "brand": "Kodak",
+      "name": "Gold 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        459,
+        666,
+        137,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-kodacolor-100",
+      "brand": "Kodak",
+      "name": "Kodacolor 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        757,
+        666,
+        137,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-kodacolor-200",
+      "brand": "Kodak",
+      "name": "Kodacolor 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        906,
+        666,
+        134,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-portra-100t",
+      "brand": "Kodak",
+      "name": "Portra 100T",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        459,
+        767,
+        138,
+        91
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-portra-160vc",
+      "brand": "Kodak",
+      "name": "Portra 160VC",
+      "iso": 160,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        906,
+        767,
+        135,
+        91
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-portra-400bw",
+      "brand": "Kodak",
+      "name": "Portra 400BW",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        162,
+        868,
+        137,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-portra-400uc",
+      "brand": "Kodak",
+      "name": "Portra 400UC",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        459,
+        868,
+        138,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-portra-400vc",
+      "brand": "Kodak",
+      "name": "Portra 400VC",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        608,
+        868,
+        139,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-t400cn",
+      "brand": "Kodak",
+      "name": "T400CN",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        16,
+        1069,
+        135,
+        87
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-pro-image-100",
+      "brand": "Kodak",
+      "name": "Pro Image 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        162,
+        969,
+        137,
+        88
+      ]
+    },
+    {
+      "id": "kodak-t-max-p3200",
+      "brand": "Kodak",
+      "name": "T-Max P3200",
+      "iso": 3200,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        162,
+        767,
+        137,
+        91
+      ],
+      "aliases": [
+        "P3200",
+        "TMAX 3200",
+        "box EI 3200"
+      ]
+    },
+    {
+      "id": "kodak-e100gx",
+      "brand": "Kodak",
+      "name": "Ektachrome E100GX",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        459,
+        160,
+        138,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-e100s",
+      "brand": "Kodak",
+      "name": "Ektachrome E100S",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        608,
+        160,
+        139,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-e100sw",
+      "brand": "Kodak",
+      "name": "Ektachrome E100SW",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        757,
+        160,
+        137,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-e200",
+      "brand": "Kodak",
+      "name": "Ektachrome E200",
+      "iso": 200,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        16,
+        261,
+        135,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektachrome-64t",
+      "brand": "Kodak",
+      "name": "Ektachrome 64T",
+      "iso": 64,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        162,
+        261,
+        137,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektachrome-100-plus",
+      "brand": "Kodak",
+      "name": "Ektachrome 100 Plus",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        459,
+        261,
+        138,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektachrome-400x",
+      "brand": "Kodak",
+      "name": "Ektachrome 400X",
+      "iso": 400,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        757,
+        261,
+        137,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektachrome-p1600",
+      "brand": "Kodak",
+      "name": "Ektachrome P1600",
+      "iso": 1600,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        311,
+        362,
+        138,
+        91
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-elite-chrome-100",
+      "brand": "Kodak",
+      "name": "Elite Chrome 100",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        906,
+        464,
+        135,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-elite-chrome-100-extra-color",
+      "brand": "Kodak",
+      "name": "Elite Chrome 100 Extra Color",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        16,
+        565,
+        135,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-ektachrome-100d-5294",
+      "brand": "Kodak",
+      "name": "Ektachrome 100D 5294",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        16,
+        362,
+        135,
+        91
+      ],
+      "aliases": [
+        "5294",
+        "100D"
+      ]
+    },
+    {
+      "id": "kodak-vision3-200t",
+      "brand": "Kodak",
+      "name": "Vision3 200T",
+      "iso": 200,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        758,
+        1267,
+        136,
+        89
+      ],
+      "status": "specialty",
+      "aliases": [
+        "5213",
+        "200T"
+      ]
+    },
+    {
+      "id": "kodak-exr-50d-5245",
+      "brand": "Kodak",
+      "name": "EXR 50D 5245",
+      "iso": 50,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        162,
+        565,
+        137,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-exr-100t-5248",
+      "brand": "Kodak",
+      "name": "EXR 100T 5248",
+      "iso": 100,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        311,
+        565,
+        138,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-exr-200t-5287",
+      "brand": "Kodak",
+      "name": "EXR 200T 5287",
+      "iso": 200,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        459,
+        565,
+        137,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-exr-200t-5293",
+      "brand": "Kodak",
+      "name": "EXR 200T 5293",
+      "iso": 200,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        608,
+        565,
+        139,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-exr-500t-5296",
+      "brand": "Kodak",
+      "name": "EXR 500T 5296",
+      "iso": 500,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        758,
+        565,
+        136,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-exr-500t-5298",
+      "brand": "Kodak",
+      "name": "EXR 500T 5298",
+      "iso": 500,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        906,
+        565,
+        135,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision-250d-5246",
+      "brand": "Kodak",
+      "name": "Vision 250D 5246",
+      "iso": 250,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        758,
+        1069,
+        136,
+        87
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision-500t-5263",
+      "brand": "Kodak",
+      "name": "Vision 500T 5263",
+      "iso": 500,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        906,
+        1069,
+        135,
+        87
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision-200t-5274",
+      "brand": "Kodak",
+      "name": "Vision 200T 5274",
+      "iso": 200,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        17,
+        1167,
+        134,
+        89
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision-320t-5277",
+      "brand": "Kodak",
+      "name": "Vision 320T 5277",
+      "iso": 320,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        163,
+        1167,
+        136,
+        89
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision-500t-5279",
+      "brand": "Kodak",
+      "name": "Vision 500T 5279",
+      "iso": 500,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        311,
+        1167,
+        138,
+        89
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision-800t-5289",
+      "brand": "Kodak",
+      "name": "Vision 800T 5289",
+      "iso": 800,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        459,
+        1167,
+        138,
+        89
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision2-50d",
+      "brand": "Kodak",
+      "name": "Vision2 50D 5201",
+      "iso": 50,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        608,
+        1167,
+        138,
+        89
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision2-250d",
+      "brand": "Kodak",
+      "name": "Vision2 250D 5205",
+      "iso": 250,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        758,
+        1167,
+        136,
+        89
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision2-100t",
+      "brand": "Kodak",
+      "name": "Vision2 100T 5212",
+      "iso": 100,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        906,
+        1167,
+        135,
+        89
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision2-200t",
+      "brand": "Kodak",
+      "name": "Vision2 200T 5217",
+      "iso": 200,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        17,
+        1267,
+        134,
+        89
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision2-500t",
+      "brand": "Kodak",
+      "name": "Vision2 500T 5218",
+      "iso": 500,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        163,
+        1267,
+        136,
+        89
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "kodak-vision2-expression-500t",
+      "brand": "Kodak",
+      "name": "Vision2 Expression 500T 5229",
+      "iso": 500,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 1,
+      "crop": [
+        311,
+        1267,
+        138,
+        89
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-400",
+      "brand": "Fujifilm",
+      "name": "400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        408,
+        58,
+        114,
+        85
+      ]
+    },
+    {
+      "id": "fujifilm-fujicolor-100",
+      "brand": "Fujifilm",
+      "name": "Fujicolor 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        23,
+        154,
+        118,
+        88
+      ],
+      "aliases": [
+        "C100"
+      ]
+    },
+    {
+      "id": "fujifilm-64t-ii",
+      "brand": "Fujifilm",
+      "name": "Fujichrome 64T II",
+      "iso": 64,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        152,
+        58,
+        116,
+        85
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-astia-100",
+      "brand": "Fujifilm",
+      "name": "Astia 100",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        789,
+        58,
+        116,
+        85
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-fortia",
+      "brand": "Fujifilm",
+      "name": "Fortia 50",
+      "iso": 50,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        152,
+        355,
+        116,
+        89
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-fortia-sp",
+      "brand": "Fujifilm",
+      "name": "Fortia SP 50",
+      "iso": 50,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        280,
+        355,
+        116,
+        90
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-provia-400f",
+      "brand": "Fujifilm",
+      "name": "Provia 400F",
+      "iso": 400,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        281,
+        926,
+        115,
+        77
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-provia-400x",
+      "brand": "Fujifilm",
+      "name": "Provia 400X",
+      "iso": 400,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        408,
+        926,
+        115,
+        77
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-provia-1600",
+      "brand": "Fujifilm",
+      "name": "Provia 1600",
+      "iso": 1600,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        535,
+        926,
+        116,
+        77
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-sensia-400",
+      "brand": "Fujifilm",
+      "name": "Sensia 400",
+      "iso": 400,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        281,
+        1014,
+        115,
+        73
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-trebi-100",
+      "brand": "Fujifilm",
+      "name": "Trebi 100",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        281,
+        1339,
+        115,
+        71
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-trebi-100c",
+      "brand": "Fujifilm",
+      "name": "Trebi 100C",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        408,
+        1339,
+        115,
+        71
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-trebi-400",
+      "brand": "Fujifilm",
+      "name": "Trebi 400",
+      "iso": 400,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        534,
+        1339,
+        116,
+        71
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-velvia-100f",
+      "brand": "Fujifilm",
+      "name": "Velvia 100F",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        916,
+        1339,
+        117,
+        70
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-velvia-100",
+      "brand": "Fujifilm",
+      "name": "Velvia 100",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 0,
+      "crop": [
+        789,
+        1339,
+        116,
+        71
+      ]
+    },
+    {
+      "id": "fujifilm-acros-100",
+      "brand": "Fujifilm",
+      "name": "Neopan Acros 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 0,
+      "crop": [
+        534,
+        57,
+        116,
+        86
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-neopan-400cn",
+      "brand": "Fujifilm",
+      "name": "Neopan 400CN",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        408,
+        645,
+        115,
+        85
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-pro-160c",
+      "brand": "Fujifilm",
+      "name": "Pro 160C",
+      "iso": 160,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        23,
+        837,
+        118,
+        78
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-pro-160ns",
+      "brand": "Fujifilm",
+      "name": "Pro 160NS",
+      "iso": 160,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        153,
+        837,
+        115,
+        78
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-pro-160s",
+      "brand": "Fujifilm",
+      "name": "Pro 160S",
+      "iso": 160,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        281,
+        837,
+        115,
+        78
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-pro-800z",
+      "brand": "Fujifilm",
+      "name": "Pro 800Z",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        790,
+        837,
+        116,
+        78
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-superia-200",
+      "brand": "Fujifilm",
+      "name": "Superia 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        281,
+        1259,
+        115,
+        71
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-superia-400",
+      "brand": "Fujifilm",
+      "name": "Superia 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        408,
+        1259,
+        115,
+        71
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-superia-800",
+      "brand": "Fujifilm",
+      "name": "Superia 800",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        535,
+        1259,
+        115,
+        71
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-superia-1600",
+      "brand": "Fujifilm",
+      "name": "Superia 1600",
+      "iso": 1600,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        662,
+        1259,
+        115,
+        71
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-superia-reala-100",
+      "brand": "Fujifilm",
+      "name": "Superia Reala 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        917,
+        1259,
+        116,
+        70
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-superia-xtra-800",
+      "brand": "Fujifilm",
+      "name": "Superia X-TRA 800",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        153,
+        1339,
+        116,
+        70
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-super-g-100",
+      "brand": "Fujifilm",
+      "name": "Super G 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        662,
+        1098,
+        116,
+        72
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-super-g-ace-400",
+      "brand": "Fujifilm",
+      "name": "Super G ACE 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        790,
+        1098,
+        116,
+        72
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-super-g-plus-200",
+      "brand": "Fujifilm",
+      "name": "Super G Plus 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        917,
+        1098,
+        117,
+        73
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-super-g-plus-400",
+      "brand": "Fujifilm",
+      "name": "Super G Plus 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        24,
+        1180,
+        117,
+        69
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-super-g-plus-800",
+      "brand": "Fujifilm",
+      "name": "Super G Plus 800",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        153,
+        1180,
+        115,
+        69
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-super-hg-100",
+      "brand": "Fujifilm",
+      "name": "Super HG 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        281,
+        1180,
+        115,
+        69
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-super-hg-400",
+      "brand": "Fujifilm",
+      "name": "Super HG 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        408,
+        1180,
+        115,
+        68
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-super-hr-200",
+      "brand": "Fujifilm",
+      "name": "Super HR 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        662,
+        1180,
+        115,
+        69
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-super-hr-1600",
+      "brand": "Fujifilm",
+      "name": "Super HR 1600",
+      "iso": 1600,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        917,
+        1180,
+        116,
+        69
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-super-v-100",
+      "brand": "Fujifilm",
+      "name": "Super V 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        24,
+        1259,
+        117,
+        70
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-venus-400",
+      "brand": "Fujifilm",
+      "name": "Superia Venus 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        25,
+        1418,
+        116,
+        63
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-venus-800",
+      "brand": "Fujifilm",
+      "name": "Superia Venus 800",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        153,
+        1418,
+        116,
+        63
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-eterna-250d",
+      "brand": "Fujifilm",
+      "name": "Eterna 250D 8563",
+      "iso": 250,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        534,
+        154,
+        116,
+        88
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-eterna-500t",
+      "brand": "Fujifilm",
+      "name": "Eterna 500T 8573",
+      "iso": 500,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        662,
+        154,
+        116,
+        88
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-eterna-400t",
+      "brand": "Fujifilm",
+      "name": "Eterna 400T 8583",
+      "iso": 400,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        789,
+        154,
+        117,
+        88
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-eterna-vivid-160t",
+      "brand": "Fujifilm",
+      "name": "Eterna Vivid 160T 8543",
+      "iso": 160,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        917,
+        154,
+        117,
+        88
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-eterna-vivid-250d",
+      "brand": "Fujifilm",
+      "name": "Eterna Vivid 250D 8546",
+      "iso": 250,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        23,
+        253,
+        117,
+        91
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-eterna-vivid-500t",
+      "brand": "Fujifilm",
+      "name": "Eterna Vivid 500T 8547",
+      "iso": 500,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        152,
+        253,
+        116,
+        91
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "fujifilm-reala-500d",
+      "brand": "Fujifilm",
+      "name": "Reala 500D 8592",
+      "iso": 500,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 0,
+      "crop": [
+        917,
+        925,
+        117,
+        78
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "lomography-color-negative-100",
+      "brand": "Lomography",
+      "name": "Color Negative 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 22,
+      "crop": [
+        18,
+        213,
+        232,
+        267
+      ]
+    },
+    {
+      "id": "lomography-color-negative-400",
+      "brand": "Lomography",
+      "name": "Color Negative 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 22,
+      "crop": [
+        522,
+        213,
+        232,
+        267
+      ]
+    },
+    {
+      "id": "lomography-color-negative-800",
+      "brand": "Lomography",
+      "name": "Color Negative 800",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 22,
+      "crop": [
+        774,
+        213,
+        232,
+        267
+      ]
+    },
+    {
+      "id": "lomography-color-92",
+      "brand": "Lomography",
+      "name": "LomoChrome Color 92",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120",
+        "110"
+      ],
+      "sheet": 22,
+      "crop": [
+        522,
+        511,
+        232,
+        284
+      ],
+      "aliases": [
+        "Color '92"
+      ]
+    },
+    {
+      "id": "lomography-berlin-kino-400",
+      "brand": "Lomography",
+      "name": "Berlin Kino 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 22,
+      "crop": [
+        18,
+        511,
+        232,
+        284
+      ]
+    },
+    {
+      "id": "lomography-earl-grey-100",
+      "brand": "Lomography",
+      "name": "Earl Grey 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 22,
+      "crop": [
+        774,
+        511,
+        232,
+        284
+      ]
+    },
+    {
+      "id": "lomography-lady-grey-400",
+      "brand": "Lomography",
+      "name": "Lady Grey 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 22,
+      "crop": [
+        18,
+        827,
+        232,
+        291
+      ]
+    },
+    {
+      "id": "lomography-potsdam-kino-100",
+      "brand": "Lomography",
+      "name": "Potsdam Kino 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 22,
+      "crop": [
+        18,
+        1149,
+        232,
+        294
+      ]
+    },
+    {
+      "id": "lomography-metropolis",
+      "brand": "Lomography",
+      "name": "LomoChrome Metropolis",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120",
+        "110"
+      ],
+      "sheet": 22,
+      "crop": [
+        522,
+        827,
+        232,
+        291
+      ],
+      "aliases": [
+        "EI 100-400"
+      ]
+    },
+    {
+      "id": "lomography-purple",
+      "brand": "Lomography",
+      "name": "LomoChrome Purple",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120",
+        "110"
+      ],
+      "sheet": 22,
+      "crop": [
+        270,
+        1149,
+        232,
+        294
+      ],
+      "aliases": [
+        "EI 100-400"
+      ]
+    },
+    {
+      "id": "lomography-turquoise",
+      "brand": "Lomography",
+      "name": "LomoChrome Turquoise",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120",
+        "110"
+      ],
+      "sheet": 22,
+      "crop": [
+        774,
+        1149,
+        232,
+        294
+      ],
+      "aliases": [
+        "EI 100-400"
+      ]
+    },
+    {
+      "id": "lomography-orca-100",
+      "brand": "Lomography",
+      "name": "Orca 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "110"
+      ],
+      "sheet": 22,
+      "crop": [
+        774,
+        827,
+        232,
+        291
+      ]
+    },
+    {
+      "id": "lomography-tiger-200",
+      "brand": "Lomography",
+      "name": "Color Tiger 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "110"
+      ],
+      "sheet": 22,
+      "crop": [
+        522,
+        1149,
+        232,
+        294
+      ]
+    },
+    {
+      "id": "lomography-lobster-redscale-200",
+      "brand": "Lomography",
+      "name": "Lobster Redscale 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "110"
+      ],
+      "sheet": 22,
+      "crop": [
+        270,
+        827,
+        232,
+        291
+      ]
+    },
+    {
+      "id": "konica-centuria-100",
+      "brand": "Konica",
+      "name": "Centuria 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        277,
+        167,
+        226,
+        298
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "konica-centuria-200",
+      "brand": "Konica",
+      "name": "Centuria 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        522,
+        167,
+        227,
+        298
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "konica-centuria-400",
+      "brand": "Konica",
+      "name": "Centuria 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        769,
+        167,
+        231,
+        299
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "konica-centuria-800",
+      "brand": "Konica",
+      "name": "Centuria 800",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        24,
+        489,
+        234,
+        298
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "konica-centuria-super-100",
+      "brand": "Konica",
+      "name": "Centuria Super 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        522,
+        813,
+        228,
+        305
+      ],
+      "status": "discontinued",
+      "aliases": [
+        "Super Centuria 100"
+      ]
+    },
+    {
+      "id": "konica-centuria-super-200",
+      "brand": "Konica",
+      "name": "Centuria Super 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        770,
+        813,
+        230,
+        306
+      ],
+      "status": "discontinued",
+      "aliases": [
+        "Super Centuria 200"
+      ]
+    },
+    {
+      "id": "konica-centuria-super-400",
+      "brand": "Konica",
+      "name": "Centuria Super 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        24,
+        1145,
+        234,
+        320
+      ],
+      "status": "discontinued",
+      "aliases": [
+        "Super Centuria 400"
+      ]
+    },
+    {
+      "id": "konica-centuria-super-800",
+      "brand": "Konica",
+      "name": "Centuria Super 800",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        277,
+        1145,
+        226,
+        320
+      ],
+      "status": "discontinued",
+      "aliases": [
+        "Super Centuria 800"
+      ]
+    },
+    {
+      "id": "konica-centuria-super-1600",
+      "brand": "Konica",
+      "name": "Centuria Super 1600",
+      "iso": 1600,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        522,
+        1145,
+        228,
+        320
+      ],
+      "status": "discontinued",
+      "aliases": [
+        "Super Centuria 1600"
+      ]
+    },
+    {
+      "id": "konica-business-400",
+      "brand": "Konica",
+      "name": "Business 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        24,
+        167,
+        234,
+        298
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "konica-gx-100",
+      "brand": "Konica",
+      "name": "GX 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        277,
+        489,
+        226,
+        298
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "konica-jx-400",
+      "brand": "Konica",
+      "name": "JX 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        522,
+        490,
+        228,
+        297
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "konica-new-centuria-400",
+      "brand": "Konica",
+      "name": "New Centuria 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        24,
+        812,
+        234,
+        306
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "konica-new-centuria-800",
+      "brand": "Konica",
+      "name": "New Centuria 800",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        277,
+        812,
+        226,
+        306
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "konica-xg-400",
+      "brand": "Konica",
+      "name": "XG 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        769,
+        1145,
+        230,
+        320
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "konica-konipan-ss",
+      "brand": "Konica",
+      "name": "Konipan SS 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 23,
+      "crop": [
+        770,
+        490,
+        230,
+        294
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-apx-100",
+      "brand": "Agfa",
+      "name": "APX 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        20,
+        91,
+        135,
+        133
+      ]
+    },
+    {
+      "id": "agfa-apx-400",
+      "brand": "Agfa",
+      "name": "APX 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        168,
+        91,
+        136,
+        133
+      ]
+    },
+    {
+      "id": "agfa-color-400",
+      "brand": "Agfa",
+      "name": "Color 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        317,
+        91,
+        133,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-hdc-plus-100",
+      "brand": "Agfa",
+      "name": "HDC Plus 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        609,
+        91,
+        133,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-optima-100",
+      "brand": "Agfa",
+      "name": "Optima 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        168,
+        239,
+        136,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-portrait-xps-160",
+      "brand": "Agfa",
+      "name": "Portrait XPS 160",
+      "iso": 160,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        318,
+        239,
+        132,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-ultra-100",
+      "brand": "Agfa",
+      "name": "Ultra 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        903,
+        239,
+        133,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-vista-100",
+      "brand": "Agfa",
+      "name": "Vista 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        21,
+        387,
+        134,
+        132
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-vista-plus-200",
+      "brand": "Agfa",
+      "name": "Vista Plus 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        169,
+        387,
+        135,
+        132
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-vista-plus-400",
+      "brand": "Agfa",
+      "name": "Vista Plus 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        318,
+        387,
+        132,
+        132
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-xrg-100",
+      "brand": "Agfa",
+      "name": "XRG 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        610,
+        387,
+        132,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-xrg-200",
+      "brand": "Agfa",
+      "name": "XRG 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        756,
+        387,
+        133,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-xrg-400",
+      "brand": "Agfa",
+      "name": "XRG 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        903,
+        387,
+        132,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-ct-precisa-100",
+      "brand": "Agfa",
+      "name": "CT Precisa 100",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        462,
+        91,
+        134,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-rsx-ii-50",
+      "brand": "Agfa",
+      "name": "RSX II 50",
+      "iso": 50,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        463,
+        239,
+        132,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-rsx-ii-100",
+      "brand": "Agfa",
+      "name": "RSX II 100",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        609,
+        239,
+        133,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "agfa-rsx-ii-200",
+      "brand": "Agfa",
+      "name": "RSX II 200",
+      "iso": 200,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        756,
+        239,
+        133,
+        133
+      ],
+      "status": "discontinued"
+    },
+    {
+      "id": "harman-phoenix-200",
+      "brand": "Harman",
+      "name": "Phoenix 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 4,
+      "crop": [
+        227,
+        1153,
+        193,
+        128
+      ]
+    },
+    {
+      "id": "harman-phoenix-ii-200",
+      "brand": "Harman",
+      "name": "Phoenix II 200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 4,
+      "crop": [
+        434,
+        1152,
+        186,
+        129
+      ]
+    },
+    {
+      "id": "harman-red-125",
+      "brand": "Harman",
+      "name": "RED 125",
+      "iso": 125,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        635,
+        1151,
+        190,
+        131
+      ]
+    },
+    {
+      "id": "cinestill-50d",
+      "brand": "CineStill",
+      "name": "50D",
+      "iso": 50,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 5,
+      "crop": [
+        20,
+        1180,
+        192,
+        102
+      ]
+    },
+    {
+      "id": "cinestill-400d",
+      "brand": "CineStill",
+      "name": "400D",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 5,
+      "crop": [
+        226,
+        1180,
+        192,
+        102
+      ]
+    },
+    {
+      "id": "cinestill-800t",
+      "brand": "CineStill",
+      "name": "800T",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 5,
+      "crop": [
+        432,
+        1180,
+        192,
+        102
+      ]
+    },
+    {
+      "id": "cinestill-bwxx",
+      "brand": "CineStill",
+      "name": "BwXX",
+      "iso": 250,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 5,
+      "crop": [
+        638,
+        1180,
+        192,
+        102
+      ],
+      "aliases": [
+        "Double-X",
+        "EI 200 tungsten"
+      ]
+    },
+    {
+      "id": "candido-200",
+      "brand": "Candido",
+      "name": "200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 6,
+      "crop": [
+        32,
+        190,
+        307,
+        230
+      ]
+    },
+    {
+      "id": "candido-400",
+      "brand": "Candido",
+      "name": "400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 6,
+      "crop": [
+        364,
+        190,
+        307,
+        230
+      ]
+    },
+    {
+      "id": "candido-800",
+      "brand": "Candido",
+      "name": "800",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 6,
+      "crop": [
+        683,
+        190,
+        307,
+        230
+      ]
+    },
+    {
+      "id": "filmneverdie-kiro-400",
+      "brand": "FilmNeverDie",
+      "name": "KIRO 400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 2,
+      "crop": [
+        190,
+        731,
+        159,
+        117
+      ]
+    },
+    {
+      "id": "lucky-shd-100",
+      "brand": "Lucky",
+      "name": "SHD 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 2,
+      "crop": [
+        18,
+        331,
+        157,
+        108
+      ]
+    },
+    {
+      "id": "lucky-shd-400",
+      "brand": "Lucky",
+      "name": "SHD 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 2,
+      "crop": [
+        363,
+        331,
+        158,
+        108
+      ]
+    },
+    {
+      "id": "leica-monopan-50",
+      "brand": "Leica",
+      "name": "Monopan 50",
+      "iso": 50,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 4,
+      "crop": [
+        886,
+        1320,
+        149,
+        115
+      ]
+    },
+    {
+      "id": "ferrania-p30",
+      "brand": "Ferrania",
+      "name": "P30",
+      "iso": 80,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 3,
+      "crop": [
+        20,
+        1051,
+        157,
+        127
+      ]
+    },
+    {
+      "id": "ferrania-p33",
+      "brand": "Ferrania",
+      "name": "P33",
+      "iso": 160,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 3,
+      "crop": [
+        365,
+        1058,
+        157,
+        121
+      ]
+    },
+    {
+      "id": "shanghai-gp3-100",
+      "brand": "Shanghai",
+      "name": "GP3 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 16,
+      "crop": [
+        20,
+        891,
+        157,
+        113
+      ]
+    },
+    {
+      "id": "shanghai-gp3-400",
+      "brand": "Shanghai",
+      "name": "GP3 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 16,
+      "crop": [
+        191,
+        891,
+        158,
+        113
+      ]
+    },
+    {
+      "id": "arista-edu-ultra-100",
+      "brand": "Arista",
+      "name": "EDU Ultra 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 14,
+      "crop": [
+        18,
+        477,
+        190,
+        232
+      ]
+    },
+    {
+      "id": "arista-edu-ultra-200",
+      "brand": "Arista",
+      "name": "EDU Ultra 200",
+      "iso": 200,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 14,
+      "crop": [
+        218,
+        477,
+        190,
+        232
+      ]
+    },
+    {
+      "id": "arista-edu-ultra-400",
+      "brand": "Arista",
+      "name": "EDU Ultra 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm",
+        "120"
+      ],
+      "sheet": 14,
+      "crop": [
+        419,
+        477,
+        190,
+        232
+      ]
+    },
+    {
+      "id": "ultrafine-extreme-100",
+      "brand": "Ultrafine",
+      "name": "eXtreme 100",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 2,
+      "crop": [
+        19,
+        1308,
+        158,
+        111
+      ]
+    },
+    {
+      "id": "ultrafine-extreme-400",
+      "brand": "Ultrafine",
+      "name": "eXtreme 400",
+      "iso": 400,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 2,
+      "crop": [
+        191,
+        1308,
+        158,
+        112
+      ]
+    },
+    {
+      "id": "reflx-lab-100d",
+      "brand": "Reflx Lab",
+      "name": "100D",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 18,
+      "crop": [
+        36,
+        113,
+        301,
+        191
+      ]
+    },
+    {
+      "id": "reflx-lab-200t",
+      "brand": "Reflx Lab",
+      "name": "200T",
+      "iso": 200,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "120"
+      ],
+      "sheet": 18,
+      "crop": [
+        692,
+        113,
+        298,
+        192
+      ]
+    },
+    {
+      "id": "reflx-lab-400d",
+      "brand": "Reflx Lab",
+      "name": "400D",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 18,
+      "crop": [
+        36,
+        330,
+        301,
+        192
+      ]
+    },
+    {
+      "id": "reflx-lab-500t",
+      "brand": "Reflx Lab",
+      "name": "500T",
+      "iso": 500,
+      "type": "cinema",
+      "process": "ECN-2",
+      "formats": [
+        "120"
+      ],
+      "sheet": 18,
+      "crop": [
+        364,
+        330,
+        302,
+        192
+      ]
+    },
+    {
+      "id": "reflx-lab-640t-ahu",
+      "brand": "Reflx Lab",
+      "name": "640T AHU",
+      "iso": 640,
+      "type": "color",
+      "process": "C-41 / ECN-2",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 18,
+      "crop": [
+        692,
+        331,
+        298,
+        191
+      ],
+      "aliases": [
+        "EI 500 ECN-2",
+        "EI 640 C-41"
+      ]
+    },
+    {
+      "id": "reflx-lab-800t",
+      "brand": "Reflx Lab",
+      "name": "800T",
+      "iso": 800,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 18,
+      "crop": [
+        37,
+        548,
+        300,
+        196
+      ]
+    },
+    {
+      "id": "reflx-lab-100r",
+      "brand": "Reflx Lab",
+      "name": "100R",
+      "iso": 100,
+      "type": "slide",
+      "process": "E-6",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 18,
+      "crop": [
+        364,
+        113,
+        302,
+        191
+      ]
+    },
+    {
+      "id": "reflx-lab-diablo-100",
+      "brand": "Reflx Lab",
+      "name": "Diablo 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 18,
+      "crop": [
+        365,
+        550,
+        290,
+        192
+      ]
+    },
+    {
+      "id": "reflx-lab-double-x",
+      "brand": "Reflx Lab",
+      "name": "Double X",
+      "iso": 250,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 18,
+      "crop": [
+        692,
+        548,
+        297,
+        196
+      ]
+    },
+    {
+      "id": "reflx-lab-pro-100",
+      "brand": "Reflx Lab",
+      "name": "Pro 100",
+      "iso": 100,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "120"
+      ],
+      "sheet": 18,
+      "crop": [
+        692,
+        999,
+        297,
+        210
+      ]
+    },
+    {
+      "id": "reflx-lab-pan-200",
+      "brand": "Reflx Lab",
+      "name": "Pan 200",
+      "iso": 200,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "120"
+      ],
+      "sheet": 18,
+      "crop": [
+        38,
+        999,
+        300,
+        210
+      ]
+    },
+    {
+      "id": "orwo-un54",
+      "brand": "ORWO",
+      "name": "UN54",
+      "iso": 100,
+      "type": "black-and-white",
+      "process": "B&W",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 20,
+      "crop": [
+        359,
+        1131,
+        306,
+        159
+      ]
+    },
+    {
+      "id": "orwo-nc400",
+      "brand": "ORWO",
+      "name": "Wolfen NC400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 20,
+      "crop": [
+        106,
+        518,
+        393,
+        184
+      ]
+    },
+    {
+      "id": "yes-star-200",
+      "brand": "Yes!Star",
+      "name": "200",
+      "iso": 200,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 25,
+      "crop": [
+        45,
+        150,
+        640,
+        520
+      ],
+      "aliases": [
+        "Yesstar 200",
+        "Yes Star 200"
+      ]
+    },
+    {
+      "id": "yes-star-400",
+      "brand": "Yes!Star",
+      "name": "400",
+      "iso": 400,
+      "type": "color",
+      "process": "C-41",
+      "formats": [
+        "35mm"
+      ],
+      "sheet": 25,
+      "crop": [
+        717,
+        150,
+        640,
+        520
+      ],
+      "aliases": [
+        "Yesstar 400",
+        "Yes Star 400"
+      ]
+    }
+  ],
+  "excluded": [
+    "Instant stocks (Instax, FP pack film, Polaroid) and disposable cameras are not interchangeable supported roll films.",
+    "Repeated packaging/art variants are represented once; existing Kodak/Fujifilm IDs and covers are retained.",
+    "Unverified independent/repacked labels remain in the preserved source sheets. No ISO, processing or availability is invented.",
+    "LFANI stock numbers, 617 Film Club HC 4771, ambiguous Svema/GOST codes, and generic camera/unnumbered products require supplier datasheets.",
+    "16mm-only 72xx motion stock packaging does not create duplicate 35mm catalog entries.",
+    "Artwork may contain incorrect COLOR/B&W/ISO/format statements; catalog data takes precedence."
+  ]
+}

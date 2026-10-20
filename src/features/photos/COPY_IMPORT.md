@@ -1,3 +1,5 @@
+> Historical Copy implementation notes. New MVP imports are Reference-only via the local PhotoKit PHPicker; the mode selector is hidden and a stored Copy preference is ignored. Copy code and existing owned files remain supported. See [REFERENCE_MODE.md](REFERENCE_MODE.md). The import-routing descriptions below describe the earlier implementation.
+
 # Copy photo imports
 
 Roll Detail calls `PhotoImportService.addToRoll`. The existing Apple Photos provider reads

@@ -1,38 +1,45 @@
 import Storage from 'expo-sqlite/kv-store';
-import type { PhotoReference } from '../../photos/types';
 import type { Roll } from '../types';
-import { mockRolls } from './mockRolls';
-
+import { validateRollArchive } from './validateRollArchive';
 const storageKey = 'filmer.rolls.v1';
-
-function isPhoto(value: unknown): value is PhotoReference {
-  if (!value || typeof value !== 'object') return false;
-  const photo = value as Partial<PhotoReference>;
-  if (typeof photo.id !== 'string' || typeof photo.sortOrder !== 'number') return false;
-  return photo.provider === 'apple-photos'
-    ? typeof photo.assetId === 'string'
-    : photo.provider === 'filmer-copy' && photo.storageMode === 'copy' &&
-      typeof photo.localUri === 'string' && typeof photo.documentPath === 'string';
+export type ArchiveLoad = { status: 'ready'; rolls: Roll[] } | { status: 'recovery'; raw?: string; reason: string };
+export class ArchiveRecoveryError extends Error {
+  constructor(public archive: Extract<ArchiveLoad, { status: 'recovery' }>) { super(archive.reason); }
 }
-
-function isRoll(value: unknown): value is Roll {
-  if (!value || typeof value !== 'object') return false;
-  const roll = value as Partial<Roll>;
-  return [roll.id, roll.filmId, roll.filmName, roll.cameraId, roll.cameraName, roll.date].every(field => typeof field === 'string') &&
-    ['35mm', '120', '110', 'other'].includes(roll.format ?? '') && Array.isArray(roll.photos) && roll.photos.every(isPhoto);
-}
-
-/** Persistence for the existing Roll store, using the same SQLite KV facility as settings. */
+let expectedRaw: string | null = null;
+let writable = false;
+let envelope: Record<string, unknown> | undefined;
 export const RollRepository = {
-  load(): Roll[] {
-    const raw = Storage.getItemSync(storageKey);
-    if (raw === null) return mockRolls;
-    const saved: unknown = JSON.parse(raw);
-    // Do not silently overwrite an unreadable archive with the initial mock data.
-    if (!Array.isArray(saved) || !saved.every(isRoll)) throw new Error('Invalid saved Roll archive');
-    return saved;
+  load(): ArchiveLoad {
+    writable = false;
+    let raw: string | null | undefined;
+    try {
+      raw = Storage.getItemSync(storageKey);
+      const value: unknown = raw === null ? [] : JSON.parse(raw);
+      const rolls = validateRollArchive(value);
+      envelope = !Array.isArray(value) && value !== null && typeof value === 'object' ? value as Record<string, unknown> : undefined;
+      expectedRaw = raw;
+      writable = true;
+      return { status: 'ready', rolls };
+    } catch (error) {
+      return { status: 'recovery', ...(typeof raw === 'string' ? { raw } : {}), reason: error instanceof Error ? error.message : 'Storage read failed' };
+    }
   },
   save(rolls: Roll[]): void {
-    Storage.setItemSync(storageKey, JSON.stringify(rolls));
+    if (!writable) throw new Error('Roll archive requires recovery before writing');
+    validateRollArchive(rolls);
+    let currentRaw: string | null;
+    try { currentRaw = Storage.getItemSync(storageKey); }
+    catch {
+      writable = false;
+      throw new ArchiveRecoveryError({ status: 'recovery', ...(expectedRaw === null ? {} : { raw: expectedRaw }), reason: 'Storage read failed before write' });
+    }
+    if (currentRaw !== expectedRaw) {
+      writable = false;
+      throw new ArchiveRecoveryError({ status: 'recovery', ...(currentRaw === null ? {} : { raw: currentRaw }), reason: 'Stored archive changed; retry loading before writing' });
+    }
+    const serialized = JSON.stringify(envelope ? { ...envelope, rolls } : rolls);
+    Storage.setItemSync(storageKey, serialized);
+    expectedRaw = serialized;
   },
 };

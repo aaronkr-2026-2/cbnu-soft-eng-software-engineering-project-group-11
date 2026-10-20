@@ -3,7 +3,8 @@ import { Image, Text, View } from 'react-native';
 
 import { useThemedStyles } from '../../../constants/theme';
 import type { PhotoReference } from '../../photos/types';
-import { resolvePhotoUri } from '../../photos/utils/resolvePhotoUri';
+import { useResolvedPhoto } from '../../photos/hooks/useResolvedPhoto';
+import { PhotoResolutionStatus } from '../../photos/components/PhotoResolutionStatus';
 import { createRollThumbnailStripStyles } from '../styles/roll-thumbnail-strip.styles';
 
 type RollThumbnailStripProps = {
@@ -27,14 +28,9 @@ export function RollThumbnailStrip({ photos }: RollThumbnailStripProps) {
   return (
     <View style={styles.container}>
       {visible.map((photo, index) => {
-        const uri = resolvePhotoUri(photo);
         return (
           <View key={photo.id} style={styles.thumbnail}>
-            {uri ? (
-              <Image source={{ uri }} style={styles.image} />
-            ) : (
-              <Text style={styles.unavailable}>{t('unavailable')}</Text>
-            )}
+            <Thumbnail photo={photo} />
             {hidden > 0 && index === visible.length - 1 ? (
               <View style={styles.moreOverlay}><Text style={styles.moreText}>+{hidden}</Text></View>
             ) : null}
@@ -44,4 +40,11 @@ export function RollThumbnailStrip({ photos }: RollThumbnailStripProps) {
       {Array.from({ length: visibleCount - visible.length }, (_, index) => <View key={`spacer-${index}`} style={styles.spacer} />)}
     </View>
   );
+}
+
+function Thumbnail({ photo }: { photo: PhotoReference }) {
+  const styles = useThemedStyles(createRollThumbnailStripStyles);
+  const resolution = useResolvedPhoto(photo);
+  return resolution.uri ? <Image source={{ uri: resolution.uri }} style={styles.image} onError={resolution.failed} />
+    : <PhotoResolutionStatus status={resolution.status} />;
 }

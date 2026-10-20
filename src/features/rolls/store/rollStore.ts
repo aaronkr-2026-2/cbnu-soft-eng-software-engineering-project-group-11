@@ -2,7 +2,8 @@ import { create } from 'zustand';
 
 import type { PhotoDetailsPatch, PhotoReference } from '../../photos/types';
 import { PhotoStorageService } from '../../photos/services/PhotoStorageService';
-import { RollRepository } from '../data/RollRepository';
+import type { ArchiveLoad } from '../data/RollRepository';
+import { ArchiveRecoveryError, RollRepository } from '../data/RollRepository';
 import type { Roll, RollFormat, RollLocation } from '../types';
 import type { FilmOverride } from '../../../types/models';
 
@@ -21,6 +22,9 @@ export type CreateRollInput = {
 };
 
 type RollState = {
+  archive: ArchiveLoad;
+  retryLoad: () => void;
+  relinkPhoto: (rollId: string, photoId: string, assetId: string) => void;
   removePhotos: (rollId: string, ids: ReadonlySet<string>) => number;
   deleteRoll: (rollId: string) => boolean;
   updateRoll: (rollId: string, input: CreateRollInput) => void;
@@ -31,15 +35,33 @@ type RollState = {
   rolls: Roll[];
 };
 
+let rollSequence = 0;
 export const useRollStore = create<RollState>((set, get) => {
   function save(update: (state: RollState) => Pick<RollState, 'rolls'>) {
     const next = update(get());
     // Commit before publishing so failed imports can roll back their owned files.
-    RollRepository.save(next.rolls);
+    try { RollRepository.save(next.rolls); }
+    catch (error) {
+      if (error instanceof ArchiveRecoveryError) set({ archive: error.archive });
+      throw error;
+    }
     set(next);
   }
   return {
-    rolls: RollRepository.load(),
+    ...(() => { const archive = RollRepository.load(); return { archive, rolls: archive.status === 'ready' ? archive.rolls : [] }; })(),
+    retryLoad: () => {
+      const archive = RollRepository.load();
+      const previous = get().archive;
+      if (archive.status === 'recovery' && archive.raw === undefined && previous.status === 'recovery') archive.raw = previous.raw;
+      set(archive.status === 'ready' ? { archive, rolls: archive.rolls } : { archive });
+    },
+    relinkPhoto: (rollId, photoId, assetId) => save(state => ({
+      rolls: state.rolls.map(roll => roll.id !== rollId ? roll : { ...roll, photos: roll.photos.map(photo => {
+        if (photo.id !== photoId || photo.provider !== 'apple-photos') return photo;
+        const { thumbnailUri: _stale, ...retained } = photo;
+        return { ...retained, assetId, localIdentifier: assetId };
+      }) }),
+    })),
     removePhotos: (rollId, ids) => {
       const roll = get().rolls.find(item => item.id === rollId);
       const removed = roll?.photos.filter(photo => ids.has(photo.id)) ?? [];
@@ -92,8 +114,8 @@ export const useRollStore = create<RollState>((set, get) => {
     })),
     createRoll: (input) => {
       const roll: Roll = {
-        id: 'roll-' + Date.now(),
         ...input,
+        id: `roll-${Date.now()}-${++rollSequence}-${Math.random().toString(36).slice(2, 12)}`,
         photos: [],
       };
       save((state) => ({ rolls: [roll, ...state.rolls] }));
@@ -106,6 +128,7 @@ export const useRollStore = create<RollState>((set, get) => {
           if (roll.id !== rollId || photos.length === 0) return roll;
           addedCount = photos.length;
           const usedIds = new Set(roll.photos.map(photo => photo.id));
+          const nextOrder = roll.photos.reduce((max, photo) => Math.max(max, photo.sortOrder), -1) + 1;
           return {
             ...roll,
             photos: [
@@ -118,7 +141,7 @@ export const useRollStore = create<RollState>((set, get) => {
                   while (usedIds.has(id)) id = `${baseId}-${++suffix}`;
                 }
                 usedIds.add(id);
-                return { ...photo, id, sortOrder: roll.photos.length + index };
+                return { ...photo, id, sortOrder: nextOrder + index };
               }),
             ],
           };
