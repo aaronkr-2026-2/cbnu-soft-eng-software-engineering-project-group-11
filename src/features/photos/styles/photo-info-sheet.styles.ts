@@ -33,4 +33,11 @@ export const photoInfoSheetStyles = StyleSheet.create({
     paddingVertical: 12,
     textAlignVertical: 'top',
   },
+  error: {
+    color: '#FF453A',
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 14,
+    marginTop: -8,
+  },
 });

@@ -1,4 +1,5 @@
-import { usableAssetId } from './PhotoReferenceService';
+import { pickPhotoCopies } from './PhotoFallbackPickerService';
+import { photoModuleAvailable, usableAssetId } from './PhotoReferenceService';
 import { getRollById, useRollStore } from '../../rolls/store/rollStore';
 import { applePhotosProvider } from '../providers/ApplePhotosProvider';
 import type { PhotoPickResult } from '../types';
@@ -10,7 +11,7 @@ type PhotoImportResult = Exclude<PhotoPickResult, { status: 'selected' }> |
 export const PhotoImportService = {
   async addToRoll(rollId: string): Promise<PhotoImportResult> {
     if (!getRollById(rollId)) throw new Error('Roll not found');
-    const result = await applePhotosProvider.pickMultiplePhotos(rollId);
+    const result = await (photoModuleAvailable ? applePhotosProvider.pickMultiplePhotos(rollId) : pickPhotoCopies(rollId));
     if (result.status !== 'selected') return result;
     try {
       const roll = getRollById(rollId);

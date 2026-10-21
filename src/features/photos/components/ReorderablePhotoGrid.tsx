@@ -26,7 +26,8 @@ type Positions = Record<string, number>;
 type Props = {
   photos: PhotoReference[];
   onPhotoPress: (photo: PhotoReference, index: number) => void;
-  onReorder: (ids: string[]) => void;
+  /** Returns false when the new order could not be saved. */
+  onReorder: (ids: string[]) => boolean;
   onDraggingChange: (dragging: boolean) => void;
   onAdd: () => void;
   adding?: boolean;
@@ -76,8 +77,8 @@ export function ReorderablePhotoGrid({ photos, onPhotoPress, onReorder, onDraggi
 
   const commit = useCallback((next: Positions) => {
     const ids = Object.keys(next).sort((left, right) => next[left] - next[right]);
-    if (ids.some((id, index) => photos[index]?.id !== id)) onReorder(ids);
-  }, [photos, onReorder]);
+    if (ids.some((id, index) => photos[index]?.id !== id) && !onReorder(ids)) positions.value = positionsOf(photos);
+  }, [photos, onReorder, positions]);
 
   const moveBy = useCallback((index: number, offset: number) => {
     const to = Math.max(0, Math.min(photos.length - 1, index + offset));

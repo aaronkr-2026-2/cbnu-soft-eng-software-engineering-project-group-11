@@ -9,7 +9,7 @@ const src = path.resolve(__dirname, '../../../..');
 const seedRoll = { id: 'r1', filmId: 'f1', filmName: 'Film', cameraId: 'c1', cameraName: 'Camera', date: '2026-10', format: '35mm', photos: [] };
 
 // Exercise the real provider, services, resolver, repository and stores. Only native IO is mocked.
-function runtime(previous) {
+function runtime(previous, missingNative = false) {
   const state = previous ?? {
     kv: new Map([['filmer.rolls.v1', JSON.stringify([seedRoll])]]), files: new Map(),
     failUris: new Set(), shortUris: new Set(), documentRoot: 'file:///app/Documents',
@@ -74,7 +74,7 @@ function runtime(previous) {
   };
   const mocks = {
     'expo-sharing': { isAvailableAsync: async () => !state.noSharing, shareAsync: async (uri,options) => { state.rawExport={uri,options}; } },
-    'expo-modules-core': { requireOptionalNativeModule: () => native },
+    'expo-modules-core': { requireOptionalNativeModule: () => missingNative ? null : native },
     'react-native': { Linking: { openSettings: async () => { state.settingsOpened=true; } }, AppState: { addEventListener: (_event, fn) => { state.activeListener = fn; return { remove() {} }; } } },
     'expo-file-system': { File, Directory, Paths: { get document() { return new Directory(state.documentRoot); },
       get cache() { return new Directory('file:///app/Cache'); } } },
@@ -601,7 +601,11 @@ test('Dirty state and draft validation handle all fields, location removal and f
   assert.equal(isRollDraftDirty(draft, original), false);
   for (const patch of [{ filmId: 'new' }, { cameraId: 'new' }, { format: '120' }, { frameCount: 12 }, { date: '2030-10' }, { lab: 'New' }, { notes: 'New' }, { location: undefined }]) assert.equal(isRollDraftDirty({ ...draft, ...patch }, original), true);
   assert.equal(isValidRollDraft({ ...draft, date: '2030-10' }), true);
-  for (const patch of [{ date: '2026-13' }, { date: '2026-10-08' }, { frameCount: 0 }, { frameCount: 12.5 }, { location: { latitude: 91, longitude: 0 } }]) assert.equal(isValidRollDraft({ ...draft, ...patch }), false);
+  // Older Rolls saved an exact day; editing them must not force a new month.
+  assert.equal(isValidRollDraft({ ...draft, date: '2026-10-08' }), true);
+  assert.equal(isValidRollDraft({ ...draft, frameCount: undefined }), true);
+  assert.equal(isRollDraftDirty({ ...draft, frameCount: undefined }, original), true);
+  for (const patch of [{ date: '2026-13' }, { date: '2026-02-30' }, { date: '2026-10-8' }, { frameCount: 0 }, { frameCount: 12.5 }, { location: { latitude: 91, longitude: 0 } }]) assert.equal(isValidRollDraft({ ...draft, ...patch }), false);
 });
 
 test('Roll-specific film overrides survive restart without modifying built-in catalog or scans', async () => {
@@ -1030,4 +1034,46 @@ test('Import deduplication uses the same verified-identifier fallback as legacy 
  const restarted=runtime(r.state);restarted.select(1);
  const result=await restarted.service.addToRoll('r1');assert.equal(result.addedCount,0);assert.equal(result.duplicateCount,1);
  assert.equal(restarted.store.getState().rolls[0].photos[0].id,photo.id);
+});
+
+test('Missing PhotoKit falls back to system picker and persists durable copies', async () => {
+  const r = runtime(undefined, true);
+  const assets = r.select(2);
+  const result = await r.service.addToRoll('r1');
+  assert.equal(result.addedCount, 2);
+  const photos = r.store.getState().rolls[0].photos;
+  assert.ok(photos.every(photo => photo.provider === 'filmer-copy'));
+  assert.equal(r.state.nativePicks, undefined);
+  assert.equal(r.state.pickerOptions[0].orderedSelection, false);
+  assert.equal(r.state.pickerOptions[0].allowsMultipleSelection, true);
+  assert.equal(r.state.pickerOptions[0].selectionLimit, 0);
+  assert.deepEqual(photos.map(photo => r.state.files.get(r.storage.resolveUri(photo)).toString()),
+    assets.map(asset => r.state.files.get(asset.uri).toString()));
+  assets.forEach(asset => r.state.files.delete(asset.uri));
+  for (const photo of photos) {
+    const resolved = await r.load('features/photos/services/PhotoReferenceService.ts').resolvePhoto(photo);
+    assert.equal(resolved.status, 'ready');
+    assert.ok(r.state.files.has(resolved.uri));
+  }
+});
+
+test('Fallback cancellation and failed copy leave no photos or partial files', async () => {
+  const r = runtime(undefined, true);
+  assert.deepEqual(await r.service.addToRoll('r1'), { status: 'cancelled' });
+  const assets = r.select(1);
+  r.state.failUris.add(assets[0].uri);
+  const result = await r.service.addToRoll('r1');
+  assert.equal(result.addedCount, 0);
+  assert.equal(result.failedCount, 1);
+  assert.equal(r.store.getState().rolls[0].photos.length, 0);
+  assert.equal([...r.state.files.keys()].filter(uri => uri.includes('/Documents/photos/')).length, 0);
+});
+
+test('Fallback archive failure cleans copied files and preserves the roll', async () => {
+  const r = runtime(undefined, true);
+  r.select(2);
+  r.state.failSave = true;
+  await assert.rejects(r.service.addToRoll('r1'));
+  assert.equal(r.store.getState().rolls[0].photos.length, 0);
+  assert.equal([...r.state.files.keys()].filter(uri => uri.includes('/Documents/photos/')).length, 0);
 });

@@ -1,5 +1,5 @@
 import { applePhotosProvider } from '../../src/features/photos/providers/ApplePhotosProvider';
-import { invalidatePhotoRenders } from '../../src/features/photos/services/PhotoReferenceService';
+import { invalidatePhotoRenders, photoModuleAvailable } from '../../src/features/photos/services/PhotoReferenceService';
 import { FilmImage } from '../../src/features/films/components/FilmImage';
 import { resolveRollFilm } from '../../src/features/films/utils/resolveRollFilm';
 import { LocationPicker } from '../../src/features/location/components/LocationPicker';
@@ -28,7 +28,7 @@ import { RollActionsMenu } from '../../src/features/rolls/components/RollActions
 import { ContactSheetPreview } from '../../src/features/contact-sheet/components/ContactSheetPreview';
 import { usePhotoSelection } from '../../src/features/photos/hooks/usePhotoSelection';
 import { PhotoSelectionControls } from '../../src/features/photos/components/PhotoSelectionControls';
-import type { PhotoReference } from '../../src/features/photos/types';
+import type { PhotoDetailsPatch, PhotoReference } from '../../src/features/photos/types';
 
 export default function RollDetail() {
   const styles = useThemedStyles(createRollDetailStyles);
@@ -72,7 +72,14 @@ export default function RollDetail() {
     if (isSelecting()) return;
     setSelectedPhotoIndex(index); setViewerVisible(true);
   }, [isSelecting, setSelectedPhotoIndex, setViewerVisible]);
-  const reorder = useCallback((ids: string[]) => reorderPhotos(id, ids), [id, reorderPhotos]);
+  // A failed save leaves the store unchanged; report it so the grid can return to the saved order.
+  const reorder = useCallback((ids: string[]) => {
+    const saved = attemptSave(() => reorderPhotos(id, ids));
+    if (!saved) setMessage('rollSaveError');
+    return saved;
+  }, [id, reorderPhotos, setMessage]);
+  const changePhoto = useCallback((photoId: string, patch: PhotoDetailsPatch) =>
+    attemptSave(() => updatePhoto(id, photoId, patch)), [id, updatePhoto]);
 
   async function handleAddPhotos() {
     if (isPickingPhotos) return;
@@ -83,7 +90,7 @@ export default function RollDetail() {
       if (result.status === 'selected') {
         if (result.addedCount > 0) setAddedCount(result.addedCount);
         if (result.duplicateCount && !result.addedCount && !result.failedCount) setMessage('photosAlreadyAdded');
-        if (result.failedCount > 0) setMessage('photoAccessHelp');
+        if (result.failedCount > 0) setMessage(photoModuleAvailable ? 'photoAccessHelp' : 'photoImportError');
       }
     } catch { setMessage('photoImportError'); }
     finally { setIsPickingPhotos(false); }
@@ -123,6 +130,7 @@ export default function RollDetail() {
         {roll.notes ? <DetailRow label={t('notes')} value={roll.notes} /> : null}
       </View>
       <Text style={styles.photoHeading}>{t('photos')} · {photos.length}</Text>
+      {!photoModuleAvailable ? <Text style={styles.message}>{t('photoCopyFallback')}</Text> : null}
       {message ? <Text style={styles.message}>{t(message)}</Text> : null}
       {message === 'photoAccessHelp' || message === 'photoPermission' ? <Pressable accessibilityRole="button" style={{ paddingVertical: 12 }} onPress={() => {
         void applePhotosProvider.manageAccess().catch(() => Alert.alert(t('photosAccessRequired'), t('photoAccessHelp'))).finally(invalidatePhotoRenders);
@@ -138,8 +146,14 @@ export default function RollDetail() {
     {addedCount !== null ? <Toast message={t(addedCount === 1 ? 'photoAddedToRoll' : 'photosAddedToRoll', { count: addedCount })} /> : null}
     {contactSheetRoll ? <ContactSheetPreview roll={contactSheetRoll} onClose={() => setContactSheetRoll(null)} /> : null}
     {locationVisible && isValidLocation(roll?.location) ? <LocationPicker mode="view" location={roll.location} onClose={() => setLocationVisible(false)} /> : null}
-    <PhotoViewerModal rollId={id} visible={viewerVisible && !selection.selectionMode} photos={photos} initialIndex={selectedPhotoIndex} title={roll ? (isValidLocation(roll.location) ? locationLabel(roll.location) : roll.filmName) : ''} subtitle={roll ? formatRollMonth(roll.date, language) : undefined} onPhotoChange={(photoId, patch) => updatePhoto(id, photoId, patch)} onClose={() => setViewerVisible(false)} />
+    <PhotoViewerModal rollId={id} visible={viewerVisible && !selection.selectionMode} photos={photos} initialIndex={selectedPhotoIndex} title={roll ? (isValidLocation(roll.location) ? locationLabel(roll.location) : roll.filmName) : ''} subtitle={roll ? formatRollMonth(roll.date, language) : undefined} onPhotoChange={changePhoto} onClose={() => setViewerVisible(false)} />
   </Screen>;
+}
+
+/** Runs a store write and reports whether it was saved; the store keeps its previous state on failure. */
+function attemptSave(write: () => void): boolean {
+  try { write(); return true; }
+  catch { return false; }
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {

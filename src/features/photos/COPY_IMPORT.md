@@ -1,4 +1,4 @@
-> Historical Copy implementation notes. New MVP imports are Reference-only via the local PhotoKit PHPicker; the mode selector is hidden and a stored Copy preference is ignored. Copy code and existing owned files remain supported. See [REFERENCE_MODE.md](REFERENCE_MODE.md). The import-routing descriptions below describe the earlier implementation.
+> Current routing: imports use PhotoKit references when the FILMER native module is present. When absent (Expo Go or an older build), `PhotoFallbackPickerService` opens the system image picker and saves durable copies using `PhotoCopyService`. The fallback uses default multi-selection with no app-imposed count limit, allowing range dragging rather than ordered numbered selection. Copies preserve the order returned by iOS, which need not be tap order. Roll Detail explains this storage behavior before selection. The saved import preference is ignored. Existing references are never converted. The remaining routing descriptions below are historical; see [REFERENCE_MODE.md](REFERENCE_MODE.md) for native references.
 
 # Copy photo imports
 

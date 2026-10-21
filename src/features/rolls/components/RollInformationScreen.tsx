@@ -105,7 +105,7 @@ export function RollInformationScreen({ editingId }: { editingId?: string }) {
     <View style={styles.action}><PrimaryButton disabled={creating || (!!editingId && !dirty)} label={t(editingId ? 'saveChanges' : 'createRoll')} onPress={submit} /></View>
   </ScrollView>
     {editor === 'film' && film ? <FilmForm mode="edit" initialValues={film} visible onClose={() => setEditor(null)} onSubmit={filmOverride => update({ filmOverride })} /> : null}
-    {editor === 'frameCount' ? <RollTextEditor title={t('frameCount')} numeric value={draft.frameCount === undefined ? '' : String(draft.frameCount)} onClose={() => setEditor(null)} onSave={value => update({ frameCount: Number(value) })} /> : null}
+    {editor === 'frameCount' ? <RollTextEditor title={t('frameCount')} numeric value={draft.frameCount === undefined ? '' : String(draft.frameCount)} onClose={() => setEditor(null)} onSave={value => update({ frameCount: value ? Number(value) : undefined })} /> : null}
     {editor === 'format' ? <SettingsSelectModal title={t('format')} options={(['35mm', '120', '110'] as const).map((value) => ({ value, label: value }))} value={draft.format} onClose={() => setEditor(null)} onSelect={(format) => { update({ format }); setEditor(null); }} /> : null}
     {editor === 'lab' || editor === 'notes' ? <RollTextEditor key={editor} title={t(editor)} value={draft[editor]} multiline={editor === 'notes'} onClose={() => setEditor(null)} onSave={(value) => update({ [editor]: value })} /> : null}
     {editor === 'location' ? <LocationPicker mode="select" location={draft.location} onClose={() => setEditor(null)} onConfirm={(location) => { update({ location }); setEditor(null); }} /> : null}

@@ -1,7 +1,7 @@
 import { useTranslation } from '../src/i18n/useTranslation';
 import { createHomeStyles } from '../src/features/home/styles/home.styles';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { EmptyState } from '../src/components/ui/EmptyState';
@@ -32,7 +32,7 @@ export default function Home() {
   const [browseMode, setBrowseMode] = useState<RollBrowseMode>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const resultsScroll = useRef<ScrollView>(null);
-  const { groups, totalCount } = useRolls({
+  const { groups, totalCount, photoCount } = useRolls({
     query: searchQuery,
     browseMode,
     language,
@@ -56,6 +56,14 @@ export default function Home() {
             />
           </View>
         </View>
+
+        {totalCount > 0 ? <Pressable accessibilityRole="button" accessibilityLabel={t('statistics')} hitSlop={8}
+          onPress={() => router.push('/stats')} style={styles.summary}>
+          <Text style={styles.summaryText}>{t('statsSummary', {
+            rolls: t(totalCount === 1 ? 'rollCountOne' : 'rollCountOther', { count: totalCount }),
+            photos: t(photoCount === 1 ? 'photoCountOne' : 'photoCountOther', { count: photoCount }),
+          })} ›</Text>
+        </Pressable> : null}
 
         <SearchBar
           onChangeText={setSearchQuery}

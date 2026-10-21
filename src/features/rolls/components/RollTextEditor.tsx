@@ -13,7 +13,8 @@ export function RollTextEditor({ title, value, onSave, onClose, numeric = false,
   const colors = useTheme();
   const styles = useThemedStyles(createRollFormStyles);
   return <CatalogItemModal visible title={title} actionLabel={t('done')} onClose={onClose} error={error ? t('invalidRoll') : null} onSubmit={() => {
-    if (numeric && (!/^\d+$/.test(text.trim()) || !Number.isSafeInteger(Number(text)) || Number(text) <= 0)) { setError(true); return; }
+    // A blank number clears an optional count.
+    if (numeric && text.trim() && (!/^\d+$/.test(text.trim()) || !Number.isSafeInteger(Number(text)) || Number(text) <= 0)) { setError(true); return; }
     onSave(text.trim()); onClose();
   }}><TextInput autoFocus accessibilityLabel={title} placeholder={title} placeholderTextColor={colors.secondaryText} value={text} onChangeText={setText} keyboardType={numeric ? 'number-pad' : 'default'} multiline={multiline} style={styles.input} /></CatalogItemModal>;
 }

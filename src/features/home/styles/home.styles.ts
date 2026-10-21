@@ -31,6 +31,13 @@ export const createHomeStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: typography.weight.semibold,
     letterSpacing: 1.1,
   },
+  summary: { alignSelf: 'flex-start', marginBottom: 14, marginTop: -12 },
+  summaryText: {
+    color: colors.secondaryText,
+    fontSize: typography.size.small,
+    fontWeight: typography.weight.medium,
+    letterSpacing: 0.4,
+  },
   browseSelector: { height: 44, flexGrow: 0, flexShrink: 0, marginTop: 14 },
   chips: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 1 },
   sectionHeader: {

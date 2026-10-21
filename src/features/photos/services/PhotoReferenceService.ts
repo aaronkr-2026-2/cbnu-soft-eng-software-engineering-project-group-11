@@ -17,6 +17,8 @@ type NativePhotos = {
   clearRenders(): Promise<number>;
 };
 const native = requireOptionalNativeModule<NativePhotos>('FilmerPhotos');
+/** False in Expo Go and older builds, which lack the FILMER PhotoKit module. */
+export const photoModuleAvailable = !!native;
 export async function pickPhotoReferences(single: boolean) {
   if (!native) throw new Error('FILMER PhotoKit module requires a new iOS build');
   const settings = useAppStore.getState();

@@ -10,4 +10,5 @@ export const createSettingsStyles = (colors: ThemeColors) => StyleSheet.create({
   row: { minHeight: 58, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   label: { color: colors.text, fontSize: 16, flex: 1 }, value: { color: colors.secondaryText, fontSize: 16, flexShrink: 1 }, destructive: { color: colors.destructive },
   note: { color: colors.secondaryText, fontSize: 14, lineHeight: 21, marginTop: 12 },
+  noteInset: { marginHorizontal: 12 }, textCard: { padding: 16 }, body: { color: colors.text, fontSize: 15, lineHeight: 22 },
 });

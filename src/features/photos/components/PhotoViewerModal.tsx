@@ -52,7 +52,8 @@ type PhotoViewerModalProps = {
   title: string;
   subtitle?: string;
   onClose: () => void;
-  onPhotoChange: (photoId: string, patch: PhotoDetailsPatch) => void;
+  /** Returns false when the change could not be saved. */
+  onPhotoChange: (photoId: string, patch: PhotoDetailsPatch) => boolean;
 };
 
 export function PhotoViewerModal({ visible, ...props }: PhotoViewerModalProps) {

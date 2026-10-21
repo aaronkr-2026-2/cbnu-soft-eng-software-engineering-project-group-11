@@ -25,10 +25,12 @@ export function useRolls({ query, browseMode, language }: UseRollsOptions) {
     [query, rolls, browseMode, context],
   );
   const groups = useMemo(() => groupRolls(filteredRolls, browseMode, context), [filteredRolls, browseMode, context]);
+  const photoCount = useMemo(() => rolls.reduce((total, roll) => total + roll.photos.length, 0), [rolls]);
 
   return {
     groups,
     totalCount: rolls.length,
+    photoCount,
   };
 }
 

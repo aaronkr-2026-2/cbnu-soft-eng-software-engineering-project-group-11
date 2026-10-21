@@ -12,7 +12,8 @@ import { formatPhotoDate, todayPhotoDate } from '../utils/photoDate';
 
 type PhotoInfoSheetProps = {
   photo: PhotoReference;
-  onChange: (patch: PhotoDetailsPatch) => void;
+  /** Returns false when the change could not be saved. */
+  onChange: (patch: PhotoDetailsPatch) => boolean;
   /** Gesture for the grab handle, so the sheet can be swiped back down. */
   handleGesture: GestureType;
 };
@@ -23,11 +24,17 @@ export function PhotoInfoSheet({ photo, onChange, handleGesture }: PhotoInfoShee
   // Keyed by photo so paging to another photo starts from that photo's saved note.
   const [note, setNote] = useState(photo.note ?? '');
   const [notePhotoId, setNotePhotoId] = useState(photo.id);
-  if (notePhotoId !== photo.id) { setNotePhotoId(photo.id); setNote(photo.note ?? ''); }
+  const [saveFailed, setSaveFailed] = useState(false);
+  if (notePhotoId !== photo.id) { setNotePhotoId(photo.id); setNote(photo.note ?? ''); setSaveFailed(false); }
+
+  // A failed save keeps the typed note on screen so it can be saved again.
+  function save(patch: PhotoDetailsPatch) {
+    setSaveFailed(!onChange(patch));
+  }
 
   function saveNote() {
     const next = note.trim() || undefined;
-    if (next !== photo.note) onChange({ note: next });
+    if (next !== photo.note) save({ note: next });
   }
 
   return <View style={styles.sheet}>
@@ -58,8 +65,9 @@ export function PhotoInfoSheet({ photo, onChange, handleGesture }: PhotoInfoShee
         keyboardAppearance="dark"
         style={styles.noteInput}
       />
+      {saveFailed ? <Text accessibilityRole="alert" style={styles.error}>{t('rollSaveError')}</Text> : null}
     </View>
-    <DatePicker visible={editor === 'date'} value={photo.takenAt ?? todayPhotoDate()} onCancel={() => setEditor(null)} onConfirm={(takenAt) => { onChange({ takenAt }); setEditor(null); }} />
-    {editor === 'location' ? <LocationPicker mode="select" location={photo.location} onClose={() => setEditor(null)} onConfirm={(location) => { onChange({ location }); setEditor(null); }} /> : null}
+    <DatePicker visible={editor === 'date'} value={photo.takenAt ?? todayPhotoDate()} onCancel={() => setEditor(null)} onConfirm={(takenAt) => { save({ takenAt }); setEditor(null); }} />
+    {editor === 'location' ? <LocationPicker mode="select" location={photo.location} onClose={() => setEditor(null)} onConfirm={(location) => { save({ location }); setEditor(null); }} /> : null}
   </View>;
 }
