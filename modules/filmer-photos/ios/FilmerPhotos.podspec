@@ -10,7 +10,8 @@ Pod::Spec.new do |s|
   s.platform = :ios, '16.4'
   s.static_framework = true
   s.dependency 'ExpoModulesCore'
-  s.frameworks = 'Photos', 'PhotosUI', 'UIKit'
+  s.frameworks = 'Photos', 'PhotosUI', 'UIKit', 'CloudKit', 'CryptoKit'
   s.swift_version = '5.9'
-  s.source_files = '**/*.swift'
+  s.source_files = '**/*.{swift,h,m}'
+  s.public_header_files = 'FilmerCloudContainer.h'
 end

@@ -1,8 +1,11 @@
-
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+        <key>FILMERCloudContainer</key>
+        <string>iCloud.com.manhduong2003.filmer</string>
+        <key>FILMERCloudEnvironment</key>
+        <string>$(FILMER_CLOUD_ENVIRONMENT)</string>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true />
 		<key>CFBundleDevelopmentRegion</key>

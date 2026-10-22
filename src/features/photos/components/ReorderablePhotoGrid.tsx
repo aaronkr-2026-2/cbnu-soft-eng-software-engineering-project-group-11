@@ -90,7 +90,7 @@ export function ReorderablePhotoGrid({ photos, onPhotoPress, onReorder, onDraggi
   }, [photos, onReorder]);
 
   return <>
-    <Text style={styles.hint}>{t(selectionMode ? 'selectionDragHint' : photos.length ? 'reorderHint' : 'attachPhotos')}</Text>
+    {selectionMode || photos.length === 0 ? <Text style={styles.hint}>{t(selectionMode ? 'selectionDragHint' : 'attachPhotos')}</Text> : null}
     <GestureDetector gesture={selectionGesture}>
     <View onLayout={(event) => setWidth(event.nativeEvent.layout.width)} style={[styles.grid, { height: size > 0 && rows > 0 ? rows * size + (rows - 1) * gridGap : 0 }]}>
       {size > 0 ? photos.map((photo, index) => <PhotoTile

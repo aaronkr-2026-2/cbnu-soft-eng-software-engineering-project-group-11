@@ -48,7 +48,6 @@ export default function Home() {
         <View style={styles.header}>
           <Text style={styles.wordmark}>FILMER</Text>
           <View style={styles.headerActions}>
-            <Text style={styles.archiveLabel}>{t('archive')}</Text>
             <IconButton
               accessibilityLabel={t('settings')}
               icon="⚙"

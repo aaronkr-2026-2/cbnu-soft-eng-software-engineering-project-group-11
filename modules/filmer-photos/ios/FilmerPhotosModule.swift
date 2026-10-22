@@ -18,43 +18,31 @@ private final class ReferencePickerDelegate: NSObject, PHPickerViewControllerDel
 
 public class FilmerPhotosModule: Module {
   private var pickerDelegate: ReferencePickerDelegate?
-  private var selectionController: ReferenceSelectionViewController?
 
   public func definition() -> ModuleDefinition {
     Name("FilmerPhotos")
+    // Keep legacy label/theme arguments for bridge compatibility; the system owns all picker UI.
     AsyncFunction("pick") { (single: Bool, labels: [String: String], dark: Bool, promise: Promise) in
       DispatchQueue.main.async {
-        guard self.pickerDelegate == nil && self.selectionController == nil else { promise.reject("ERR_PICKER_BUSY", "Photo picker is already open"); return }
+        guard self.pickerDelegate == nil else { promise.reject("ERR_PICKER_BUSY", "Photo picker is already open"); return }
         guard let presenter = self.appContext?.utilities?.currentViewController() else {
           promise.reject("ERR_NO_PRESENTER", "Photo picker cannot be presented"); return
-        }
-        if !single {
-          let controller = ReferenceSelectionViewController(labels: labels, dark: dark)
-          controller.finish = { [weak module = self] identifiers in
-            module?.selectionController = nil
-            promise.resolve(Self.referenceResult(identifiers))
-          }
-          self.selectionController = controller
-          let navigation = UINavigationController(rootViewController: controller)
-          navigation.overrideUserInterfaceStyle = controller.overrideUserInterfaceStyle
-          navigation.modalPresentationStyle = .fullScreen
-          presenter.present(navigation, animated: true)
-          return
         }
         var configuration = PHPickerConfiguration(photoLibrary: PHPhotoLibrary.shared())
         configuration.filter = .images
         configuration.selectionLimit = single ? 1 : 0
-        configuration.selection = .ordered
+        // Prefer native range selection. Ordered mode disables swipe-to-select.
+        // Frame order follows PHPicker results, not necessarily the order of taps.
+        configuration.selection = .default
         let picker = PHPickerViewController(configuration: configuration)
+        // Use device language and system appearance, independent of FILMER's app theme.
+        picker.overrideUserInterfaceStyle = .unspecified
         let delegate = ReferencePickerDelegate()
         delegate.finish = { [weak module = self] results in
           module?.pickerDelegate = nil
-          // Single-photo Relink keeps the supported system picker; no image bytes are loaded.
-          let identifiers = results.compactMap { $0.assetIdentifier }
+          // Keep nil entries so JS can report rejected selections. Never load item-provider URLs.
           if results.isEmpty { promise.resolve(Self.referenceResult(nil)) }
-          else if identifiers.count != results.count {
-            promise.resolve(["canceled": false, "assets": results.map { ["assetId": $0.assetIdentifier as Any? ?? NSNull()] }])
-          } else { promise.resolve(Self.referenceResult(identifiers)) }
+          else { Self.resolveReferences(results.map { $0.assetIdentifier }, promise) }
         }
         self.pickerDelegate = delegate
         picker.delegate = delegate
@@ -64,6 +52,27 @@ public class FilmerPhotosModule: Module {
     }
     AsyncFunction("verify") { (identifier: String) -> [String: Any] in
       self.lookup(identifier).result
+    }
+    // Maps a saved PHCloudIdentifier to this device's localIdentifier. Read-only; never picks among ambiguous matches.
+    AsyncFunction("locate") { (cloudIdentifier: String) -> [String: Any] in
+      let authorization = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+      guard authorization == .authorized || authorization == .limited else { return ["status": "permission-denied"] }
+      let cloud = PHCloudIdentifier(stringValue: cloudIdentifier)
+      guard let mapping = PHPhotoLibrary.shared().localIdentifierMappings(for: [cloud])[cloud] else {
+        return ["status": "temporary-error"]
+      }
+      switch mapping {
+      case .success(let identifier):
+        let lookup = self.lookup(identifier)
+        guard lookup.asset != nil else { return lookup.result }
+        return ["status": "ready", "assetId": identifier]
+      case .failure(let error):
+        let code = (error as? PHPhotosError)?.code
+        if code == .identifierNotFound || code == .multipleIdentifiersFound {
+          return ["status": authorization == .limited ? "limited" : "unavailable"]
+        }
+        return ["status": "temporary-error"]
+      }
     }
     AsyncFunction("resolve") { (identifier: String, full: Bool, pixels: Int, promise: Promise) in
       DispatchQueue.main.async {
@@ -122,19 +131,50 @@ public class FilmerPhotosModule: Module {
         }
       }
     }
+    AsyncFunction("cacheInfo") { () -> [String: Any] in
+      let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filmer-photo-renders", isDirectory: true)
+      var bytes: Int64 = 0
+      var files = 0
+      if FileManager.default.fileExists(atPath: directory.path) {
+        for url in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey]) {
+          let values = try url.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+          if values.isRegularFile == true && url.pathExtension == "jpg" {
+            bytes += Int64(values.fileSize ?? 0)
+            files += 1
+          }
+        }
+      }
+      return ["bytes": bytes, "files": files, "uri": directory.absoluteString]
+    }
     AsyncFunction("clearRenders") { () -> Int in
       let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filmer-photo-renders", isDirectory: true)
-      let count = (try? FileManager.default.contentsOfDirectory(atPath: directory.path).count) ?? 0
-      if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
+      guard FileManager.default.fileExists(atPath: directory.path) else { return 0 }
+      var count = 0
+      for file in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isRegularFileKey]) {
+        let values = try file.resourceValues(forKeys: [.isRegularFileKey])
+        guard values.isRegularFile == true && file.pathExtension == "jpg" else { continue }
+        try FileManager.default.removeItem(at: file)
+        count += 1
+      }
       return count
     }
   }
 
-  private static func referenceResult(_ identifiers: [String]?) -> [String: Any] {
+  // PhotoKit identifier mapping can be slow for large selections; keep it off the main thread.
+  private static func resolveReferences(_ identifiers: [String?]?, _ promise: Promise) {
+    DispatchQueue.global(qos: .userInitiated).async { promise.resolve(referenceResult(identifiers)) }
+  }
+
+  private static func referenceResult(_ identifiers: [String?]?) -> [String: Any] {
     guard let identifiers = identifiers else { return ["canceled": true, "assets": []] }
     let formatter = DateFormatter(); formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.dateFormat = "yyyy-MM-dd"
+    // Best effort: an asset without a cloud identifier (e.g. iCloud Photos off) still imports by localIdentifier.
+    let validIdentifiers = identifiers.compactMap { $0 }
+    let cloud = validIdentifiers.isEmpty ? [:] : PHPhotoLibrary.shared().cloudIdentifierMappings(forLocalIdentifiers: validIdentifiers)
     let assets: [[String: Any]] = identifiers.map { identifier in
+      guard let identifier = identifier else { return ["assetId": NSNull()] }
       var item: [String: Any] = ["assetId": identifier]
+      if case .success(let value)? = cloud[identifier], !value.stringValue.isEmpty { item["cloudId"] = value.stringValue }
       if let asset = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil).firstObject, let date = asset.creationDate {
         item["takenAt"] = formatter.string(from: date)
       }

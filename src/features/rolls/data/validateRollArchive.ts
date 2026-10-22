@@ -25,6 +25,7 @@ function photo(v: unknown) {
     !optionalText(v, ['thumbnailUri','note']) || !location(v.location) || (v.takenAt !== undefined && !day(v.takenAt))) return false;
   if (v.provider === 'apple-photos') {
     // Preserve legacy picker-URI references for relinking, but never resolve their stale images.
+    // cloudIdentifier is deliberately not validated: an odd value only disables recovery, never blocks the archive.
     return id(v.assetId) && (v.storageMode === undefined || v.storageMode === 'reference') && optionalText(v, ['localIdentifier']);
   }
   return v.provider === 'filmer-copy' && v.storageMode === 'copy' && text(v.localUri) && typeof v.documentPath === 'string' &&

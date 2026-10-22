@@ -1,4 +1,4 @@
-> Current routing: imports use PhotoKit references when the FILMER native module is present. When absent (Expo Go or an older build), `PhotoFallbackPickerService` opens the system image picker and saves durable copies using `PhotoCopyService`. The fallback uses default multi-selection with no app-imposed count limit, allowing range dragging rather than ordered numbered selection. Copies preserve the order returned by iOS, which need not be tap order. Roll Detail explains this storage behavior before selection. The saved import preference is ignored. Existing references are never converted. The remaining routing descriptions below are historical; see [REFERENCE_MODE.md](REFERENCE_MODE.md) for native references.
+> Historical notes only. New imports use native PHPicker with verified PhotoKit references. There is no Copy fallback when the native module is missing. Existing saved Copy records remain supported. See [REFERENCE_MODE.md](REFERENCE_MODE.md).
 
 # Copy photo imports
 

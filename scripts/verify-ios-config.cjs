@@ -19,6 +19,21 @@ assert.ok(fs.existsSync('ios/FILMER/Images.xcassets/AppIcon.appiconset/Contents.
 assert.ok(fs.readFileSync('ios/Podfile.lock', 'utf8').includes('FilmerPhotos'));
 const config = require('../modules/filmer-photos/expo-module.config.json');
 assert.ok(config.apple.modules.includes('FilmerPhotosModule'));
+assert.ok(config.apple.modules.includes('FilmerCloudModule'));
+const entitlements = plist('ios/FILMER/FILMER.Cloud.entitlements');
+assert.equal(info.FILMERCloudSyncProvisioned, undefined, 'Availability must follow actual entitlements, not a hardcoded provisioning flag');
+const localEntitlements = plist('ios/FILMER/FILMER.entitlements');
+assert.equal(localEntitlements['com.apple.developer.icloud-services'], undefined, 'Default local-only build must work with a Personal Team');
+assert.ok(project.includes('CODE_SIGN_ENTITLEMENTS = \"$(FILMER_CODE_SIGN_ENTITLEMENTS)\";'));
+assert.ok(project.includes('FILMER_CODE_SIGN_ENTITLEMENTS = FILMER/FILMER.entitlements;'));
+assert.ok(entitlements['com.apple.developer.icloud-container-identifiers'].includes(info.FILMERCloudContainer));
+assert.ok(entitlements['com.apple.developer.icloud-services'].includes('CloudKit'));
+assert.equal(info.FILMERCloudEnvironment, '$(FILMER_CLOUD_ENVIRONMENT)');
+assert.equal(entitlements['com.apple.developer.icloud-container-environment'], info.FILMERCloudEnvironment);
+assert.ok(project.includes('FILMER_CLOUD_ENVIRONMENT = Development;'));
+assert.ok(project.includes('FILMER_CLOUD_ENVIRONMENT = Production;'));
+console.log('Local-only default and opt-in CloudKit container/environment declarations match. Runtime checks actual container availability; this is not live CloudKit verification.');
+
 console.log('Native iOS identity, Photos permission strings, limited-access setting, scheme, icon/launch resources and local module declaration match.');
 console.log('Maintained-native policy: iOS Info.plist / Xcode settings determine actual orientations, build number, signing and entitlements; app.json plugins are not automatically applied.');
 console.log('Native orientations:', info.UISupportedInterfaceOrientations, 'iPad:', info['UISupportedInterfaceOrientations~ipad']);

@@ -5,11 +5,16 @@ import { createCatalogRepository, validCustomFilm, type CatalogLoad } from '../.
 export type CreateCustomFilmInput = Omit<Film, 'id' | 'isCustom'>;
 const repository = createCatalogRepository('filmer.films.v1', 'films', validCustomFilm, new Set(builtInFilms.map(f => f.id)));
 let sequence = 0;
-type FilmState = { films: Film[]; archive: CatalogLoad<Film>; retryLoad: () => void; addCustomFilm: (input: CreateCustomFilmInput) => Film };
+type FilmState = { films: Film[]; archive: CatalogLoad<Film>; applyCloudItems: (items: Film[], expected: Film[]) => void; retryLoad: () => void; addCustomFilm: (input: CreateCustomFilmInput) => Film };
 export const useFilmStore = create<FilmState>((set, get) => {
   const archive = repository.load();
   return {
     archive, films: [...builtInFilms, ...(archive.status === 'ready' ? archive.items : [])],
+    applyCloudItems: (items, expected) => {
+      if (get().films !== expected || get().archive.status !== 'ready') throw new Error('Catalog changed during cloud merge');
+      repository.save(items);
+      set({ films: [...builtInFilms, ...items] });
+    },
     retryLoad: () => { const archive = repository.load(); set(archive.status === 'ready' ? { archive, films: [...builtInFilms, ...archive.items] } : { archive }); },
     addCustomFilm: input => {
       let id: string;

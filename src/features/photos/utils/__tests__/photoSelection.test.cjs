@@ -200,6 +200,7 @@ test('Photo resolution UI clears stale images on library change, ignores old req
   };
   const {useResolvedPhoto}=load('features/photos/hooks/useResolvedPhoto.ts',{
     react:runner.hooks,'../services/PhotoReferenceService':api,
+    '../../../store/app-store': { useAppStore: selector => selector({ photoQuality: 'optimized' }) },
   });
   const photo={id:'p',provider:'apple-photos',assetId:'asset',sortOrder:0};
   const render=()=>runner.render(()=>useResolvedPhoto(photo,'thumbnail'));
@@ -215,4 +216,25 @@ test('Photo resolution UI clears stale images on library change, ignores old req
   pending[3].resolve({status:'ready',uri:'file:///relinked.jpg'}); await Promise.resolve();
   assert.equal(render().uri,'file:///relinked.jpg');
   render().failed(); assert.equal(render().status,'temporary-error'); assert.equal(render().uri,undefined);
+});
+
+
+test('Viewer quality changes its request while thumbnails keep their original size', async () => {
+  const runner = hookRunner(); let quality = 'optimized'; const requests = [];
+  const { useResolvedPhoto } = load('features/photos/hooks/useResolvedPhoto.ts', {
+    react: runner.hooks,
+    '../../../store/app-store': { useAppStore: selector => selector({ photoQuality: quality }) },
+    '../services/PhotoReferenceService': {
+      observePhotoLibrary: () => () => {}, invalidatePhotoRenders: () => {},
+      resolvePhoto: async (photo, size, pixels) => { requests.push({ size, pixels }); return { status: 'ready', uri: 'preview' }; },
+    },
+  });
+  const photo = { id: 'p', provider: 'apple-photos', assetId: 'a', sortOrder: 0 };
+  runner.render(() => useResolvedPhoto(photo, 'full'));
+  assert.deepEqual(requests.at(-1), { size: 'thumbnail', pixels: 1600 });
+  quality = 'high';
+  runner.render(() => useResolvedPhoto(photo, 'full'));
+  assert.deepEqual(requests.at(-1), { size: 'full', pixels: 1600 });
+  runner.render(() => useResolvedPhoto(photo, 'thumbnail'));
+  assert.deepEqual(requests.at(-1), { size: 'thumbnail', pixels: 512 });
 });

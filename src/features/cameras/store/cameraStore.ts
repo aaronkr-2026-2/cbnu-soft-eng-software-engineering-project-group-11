@@ -4,13 +4,18 @@ import { cameras as builtInCameras } from '../data/cameras';
 import { createCatalogRepository, validCustomCamera, type CatalogLoad } from '../../catalog/data/CatalogRepository';
 import { CameraCoverStorage } from '../services/CameraCoverStorage';
 export type CreateCustomCameraInput = Omit<Camera, 'id' | 'isCustom' | 'format'> & { format: NonNullable<Camera['format']> };
-type CameraState = { cameras: Camera[]; archive: CatalogLoad<Camera>; retryLoad: () => void; addCustomCamera: (input: CreateCustomCameraInput) => Promise<Camera> };
+type CameraState = { cameras: Camera[]; archive: CatalogLoad<Camera>; applyCloudItems: (items: Camera[], expected: Camera[]) => void; retryLoad: () => void; addCustomCamera: (input: CreateCustomCameraInput) => Promise<Camera> };
 const repository = createCatalogRepository('filmer.cameras.v1', 'cameras', validCustomCamera, new Set(builtInCameras.map(c => c.id)));
 let sequence = 0;
 export const useCameraStore = create<CameraState>((set, get) => {
   const archive = repository.load();
   return {
     archive, cameras: [...builtInCameras, ...(archive.status === 'ready' ? archive.items : [])],
+    applyCloudItems: (items, expected) => {
+      if (get().cameras !== expected || get().archive.status !== 'ready') throw new Error('Catalog changed during cloud merge');
+      repository.save(items);
+      set({ cameras: [...builtInCameras, ...items] });
+    },
     retryLoad: () => { const archive = repository.load(); set(archive.status === 'ready' ? { archive, cameras: [...builtInCameras, ...archive.items] } : { archive }); },
     addCustomCamera: async input => {
       const brand = input.brand.trim(), model = input.model.trim();

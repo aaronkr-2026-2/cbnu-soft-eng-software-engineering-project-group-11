@@ -11,6 +11,6 @@ export async function relinkPhoto(rollId: string, photoId: string) {
   if (replacement.provider !== 'apple-photos' || (await verifyPhotoAsset(replacement.assetId)).status !== 'ready') throw new Error('Replacement unavailable');
   const current = getRollById(rollId)?.photos.find(photo => photo.id === photoId);
   if (current !== original) throw new Error('Photo changed while selecting replacement');
-  useRollStore.getState().relinkPhoto(rollId, photoId, replacement.assetId);
+  useRollStore.getState().relinkPhoto(rollId, photoId, replacement.assetId, replacement.cloudIdentifier);
   invalidatePhotoRenders();
 }

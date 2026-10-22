@@ -27,6 +27,7 @@ function runtime(previous, missingNative = false) {
     get exists() { return state.directories.has(this.uri); }
     get name() { return this.uri.split('/').at(-1); }
     list() {
+      if (state.failList) throw new Error('Directory read failed');
       const prefix = this.uri + '/';
       const direct = value => value.startsWith(prefix) && !value.slice(prefix.length).includes('/');
       return [...[...state.directories].filter(direct).map(value => new Directory(value)),
@@ -70,14 +71,37 @@ function runtime(previous, missingNative = false) {
       const access = await this.verify(id);
       return access.status === 'ready' ? { status: 'ready', uri: state.assetUris.get(id) } : access;
     },
-    async clearRenders() {},
+    async cacheInfo() {
+      if (state.cacheInfoError || (state.failCacheAfterClear && state.didClear)) throw new Error('Cannot measure cache');
+      const prefix = 'file:///app/Cache/filmer-photo-renders/';
+      const entries = [...state.files].filter(([uri]) => uri.startsWith(prefix) && uri.endsWith('.jpg'));
+      return { bytes: entries.reduce((sum, [, bytes]) => sum + bytes.length, 0), files: entries.length, uri: prefix };
+    },
+    async clearRenders() {
+      state.didClear = true;
+      let count = 0;
+      for (const uri of [...state.files.keys()]) if (uri.startsWith('file:///app/Cache/filmer-photo-renders/') && uri.endsWith('.jpg')) {
+        if (state.clearFailureAfter !== undefined && count >= state.clearFailureAfter) throw new Error('Cache removal failed');
+        state.files.delete(uri); count++;
+      }
+      return count;
+    },
+    // cloudMap: cloud identifier -> current-device localIdentifier, or a full native result.
+    async locate(cloudId) {
+      (state.locateCalls ??= []).push(cloudId);
+      if (!state.permission) return { status: 'permission-denied' };
+      const mapped = state.cloudMap?.get(cloudId);
+      if (mapped === undefined) return { status: state.limited ? 'limited' : 'unavailable' };
+      return typeof mapped === 'object' ? mapped : { status: 'ready', assetId: mapped };
+    },
   };
   const mocks = {
     'expo-sharing': { isAvailableAsync: async () => !state.noSharing, shareAsync: async (uri,options) => { state.rawExport={uri,options}; } },
-    'expo-modules-core': { requireOptionalNativeModule: () => missingNative ? null : native },
-    'react-native': { Linking: { openSettings: async () => { state.settingsOpened=true; } }, AppState: { addEventListener: (_event, fn) => { state.activeListener = fn; return { remove() {} }; } } },
+    'expo-modules-core': { requireOptionalNativeModule: name => name === 'FilmerCloud' ? state.cloudBridge ?? null : missingNative ? null : native },
+    'react-native': { Linking: { openSettings: async () => { state.settingsOpened=true; } }, AppState: { get currentState() { return state.appState ?? 'active'; }, addEventListener: (_event, fn) => { state.activeListener = fn; return { remove() {} }; } } },
     'expo-file-system': { File, Directory, Paths: { get document() { return new Directory(state.documentRoot); },
       get cache() { return new Directory('file:///app/Cache'); } } },
+    'expo-sqlite': { defaultDatabaseDirectory: 'file:///app/Documents/SQLite' },
     'expo-sqlite/kv-store': {
       getItemSync: key => { if (state.failRead) throw new Error('SQLite unavailable'); return state.kv.get(key) ?? null; },
       setItemSync: (key, value) => { if (state.failSave) throw new Error('Disk full'); state.writes.push(key); state.kv.set(key, value); },
@@ -90,7 +114,7 @@ function runtime(previous, missingNative = false) {
     'expo-media-library': {
       addListener: fn => { state.libraryListener = fn; return { remove() {} }; },
       presentPermissionsPicker: async () => { state.limitedPicker = true; },
-      getPermissionsAsync: async (...args) => { state.permissionChecks.push(args); return { granted: state.permission, canAskAgain: true, accessPrivileges: state.limited ? 'limited' : 'all' }; },
+      getPermissionsAsync: async (...args) => { state.permissionChecks.push(args); return { status: state.permission ? 'granted' : state.undetermined ? 'undetermined' : 'denied', granted: state.permission, canAskAgain: true, accessPrivileges: state.limited ? 'limited' : 'all' }; },
       requestPermissionsAsync: async (...args) => { state.permissionRequests.push(args); return { granted: state.permission }; },
       Asset: class Asset {
         constructor(id) { this.id = id; }
@@ -160,7 +184,7 @@ function runtime(previous, missingNative = false) {
     state.selection = { canceled: false, assets };
     return assets;
   }
-  return { state, app, store, service, storage, resolve, select, load, provider, pickReference };
+  return { state, app, store, service, storage, resolve, select, load, provider, pickReference, native };
 }
 
 test('Reference imports preserve verified identifiers and metadata without persisting picker URIs', async () => {
@@ -1020,7 +1044,7 @@ test('Cancelled native selection does not write a Roll archive', async () => {
  assert.equal(r.state.kv.get('filmer.rolls.v1'),before);assert.equal(r.state.writes.length,writes);
 });
 
-test('Native import receives localized count/actions and appearance, while Relink requests a single picker', async () => {
+test('Native bridge retains legacy argument compatibility, while Relink requests a single picker', async () => {
  const r=runtime();r.state.legacyCopyFixture=false;r.app.getState().setLanguage('vi');r.app.getState().setAppearance('dark');
  r.select(1);await r.provider.pickMultiplePhotos('r1');const pick=r.state.nativePicks.at(-1);
  assert.equal(pick.single,false);assert.equal(pick.dark,true);assert.equal(pick.labels.title,'Thêm ảnh');assert.ok(pick.labels.countMany.includes('{count}'));
@@ -1036,44 +1060,851 @@ test('Import deduplication uses the same verified-identifier fallback as legacy 
  assert.equal(restarted.store.getState().rolls[0].photos[0].id,photo.id);
 });
 
-test('Missing PhotoKit falls back to system picker and persists durable copies', async () => {
+test('Missing PhotoKit cannot import copies or mutate the archive', async () => {
   const r = runtime(undefined, true);
-  const assets = r.select(2);
+  r.select(2);
+  const before = r.state.kv.get('filmer.rolls.v1');
+  const writes = r.state.writes.length;
+  await assert.rejects(r.service.addToRoll('r1'), /requires a new iOS build/);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), before);
+  assert.equal(r.state.writes.length, writes);
+  assert.equal(r.state.pickerOptions.length, 0);
+  assert.equal(r.state.copyCalls.length, 0);
+  assert.equal(r.state.permissionRequests.length, 0);
+});
+
+test('Limited system selections import only verified assets in returned order, retaining cloud IDs', async () => {
+  const r = runtime(); r.state.legacyCopyFixture = false; r.state.limited = true;
+  const assets = r.select(4);
+  assets[0].cloudId = 'cloud-first';
+  assets[2].cloudId = 'cloud-third';
+  r.state.selection.assets = [assets[2], { assetId: null }, assets[0], assets[1], assets[3]];
+  r.state.assetStatus.set(assets[1].assetId, 'limited');
   const result = await r.service.addToRoll('r1');
-  assert.equal(result.addedCount, 2);
+  assert.deepEqual(result, { status: 'selected', addedCount: 3, failedCount: 2 });
   const photos = r.store.getState().rolls[0].photos;
-  assert.ok(photos.every(photo => photo.provider === 'filmer-copy'));
-  assert.equal(r.state.nativePicks, undefined);
-  assert.equal(r.state.pickerOptions[0].orderedSelection, false);
-  assert.equal(r.state.pickerOptions[0].allowsMultipleSelection, true);
-  assert.equal(r.state.pickerOptions[0].selectionLimit, 0);
-  assert.deepEqual(photos.map(photo => r.state.files.get(r.storage.resolveUri(photo)).toString()),
-    assets.map(asset => r.state.files.get(asset.uri).toString()));
-  assets.forEach(asset => r.state.files.delete(asset.uri));
-  for (const photo of photos) {
-    const resolved = await r.load('features/photos/services/PhotoReferenceService.ts').resolvePhoto(photo);
-    assert.equal(resolved.status, 'ready');
-    assert.ok(r.state.files.has(resolved.uri));
+  assert.deepEqual(photos.map(photo => photo.assetId), [assets[2].assetId, assets[0].assetId, assets[3].assetId]);
+  assert.deepEqual(photos.map(photo => photo.sortOrder), [0, 1, 2]);
+  assert.deepEqual(photos.map(photo => photo.cloudIdentifier), ['cloud-third', 'cloud-first', undefined]);
+  assert.equal(r.state.copyCalls.length, 0);
+  assert.equal(r.state.permissionRequests.length, 0);
+});
+
+// Simulates a restore/new iPhone: old localIdentifiers vanish, the same iCloud Photos assets get new ones.
+async function cloudImported(count, withCloud = () => true) {
+  const r = runtime(); r.state.legacyCopyFixture = false;
+  const assets = r.select(count);
+  assets.forEach((asset, i) => { if (withCloud(i)) asset.cloudId = `cloud-${i}:001:AbC/+=`; });
+  await r.service.addToRoll('r1');
+  return { r, assets };
+}
+function moveToNewDevice(r, assets, indexes) {
+  r.state.cloudMap ??= new Map();
+  for (const i of indexes) {
+    const uri = r.state.assetUris.get(assets[i].assetId);
+    r.state.assetUris.delete(assets[i].assetId);
+    r.state.assetUris.set(`device2-${i}`, uri);
+    r.state.cloudMap.set(`cloud-${i}:001:AbC/+=`, `device2-${i}`);
+  }
+}
+const resolver = r => r.load('features/photos/services/PhotoReferenceService.ts');
+
+test('Reference import stores cloud identifiers only when PhotoKit provides them', async () => {
+  const { r, assets } = await cloudImported(3, i => i !== 1);
+  const photos = r.store.getState().rolls[0].photos;
+  assert.equal(photos.length, 3);
+  assert.equal(photos[0].cloudIdentifier, 'cloud-0:001:AbC/+=');
+  assert.ok(!('cloudIdentifier' in photos[1]));
+  photos.forEach((photo, i) => { assert.equal(photo.localIdentifier, assets[i].assetId); assert.equal(photo.id, `apple-photos-asset-${i}-${i}`); });
+  assert.equal(r.state.copyCalls.length, 0);
+  assert.deepEqual(runtime(r.state).store.getState().rolls[0].photos, photos);
+});
+
+test('Unusable cloud identifiers are dropped at import without failing the import', async () => {
+  const r = runtime(); r.state.legacyCopyFixture = false;
+  const assets = r.select(2); assets[0].cloudId = ''; assets[1].cloudId = 'bad\u0000id';
+  const result = await r.service.addToRoll('r1');
+  assert.equal(result.addedCount, 2); assert.equal(result.failedCount, 0);
+  assert.ok(r.store.getState().rolls[0].photos.every(photo => !('cloudIdentifier' in photo)));
+});
+
+test('Legacy, Copy and malformed-cloud records load, resolve and never query cloud mapping', async () => {
+  const legacy = { id: 'p1', provider: 'apple-photos', assetId: 'old-1', sortOrder: 0 };
+  const odd = { id: 'p2', provider: 'apple-photos', storageMode: 'reference', assetId: 'old-2', localIdentifier: 'old-2', cloudIdentifier: 42, sortOrder: 1 };
+  const r0 = runtime(); r0.state.kv.set('filmer.rolls.v1', JSON.stringify([{ ...seedRoll, photos: [legacy, odd] }]));
+  const r = runtime(r0.state);
+  assert.equal(r.store.getState().archive.status, 'ready');
+  const raw = r.state.kv.get('filmer.rolls.v1');
+  for (const photo of r.store.getState().rolls[0].photos) assert.equal((await resolver(r).resolvePhoto(photo)).status, 'unavailable');
+  assert.equal(r.state.locateCalls, undefined);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), raw);
+  r.app.getState().setImportMode('copy'); r.state.legacyCopyFixture = true; r.select(1);
+  await r.service.addToRoll('r1');
+  const copy = r.store.getState().rolls[0].photos.find(photo => photo.provider === 'filmer-copy');
+  assert.equal((await resolver(r).resolvePhoto(copy)).status, 'ready');
+  assert.equal(r.state.locateCalls, undefined);
+});
+
+test('Stale reference recovers through its cloud identifier, changing only identifiers, across restart', async () => {
+  const { r, assets } = await cloudImported(3);
+  r.store.getState().updatePhoto('r1', r.store.getState().rolls[0].photos[1].id, { note: 'keep', takenAt: '2026-10-01', location: { latitude: 1, longitude: 2 } });
+  r.store.getState().createRoll({ cameraName: 'C', cameraId: 'c', date: '2026-09', filmId: 'f', filmName: 'F', format: '120' });
+  const before = r.store.getState().rolls;
+  const restarted = runtime(r.state); moveToNewDevice(restarted, assets, [1]);
+  const photo = restarted.store.getState().rolls.find(roll => roll.id === 'r1').photos[1];
+  const result = await resolver(restarted).resolvePhoto(photo);
+  assert.equal(result.status, 'ready'); assert.equal(result.uri, assets[1].uri);
+  const after = restarted.store.getState().rolls;
+  const r1Before = before.find(roll => roll.id === 'r1'), r1After = after.find(roll => roll.id === 'r1');
+  assert.deepEqual(r1After.photos[1], { ...r1Before.photos[1], assetId: 'device2-1', localIdentifier: 'device2-1' });
+  assert.deepEqual({ ...r1After, photos: [] }, { ...r1Before, photos: [] });
+  assert.deepEqual([r1After.photos[0], r1After.photos[2]], [r1Before.photos[0], r1Before.photos[2]]);
+  assert.deepEqual(after.find(roll => roll.id !== 'r1'), before.find(roll => roll.id !== 'r1'));
+  assert.deepEqual(r1After.photos.map(p => p.id), r1Before.photos.map(p => p.id));
+  assert.deepEqual(runtime(restarted.state).store.getState().rolls, after);
+  // Repaired reference resolves directly; no further cloud lookups.
+  assert.equal((await resolver(restarted).resolvePhoto(r1After.photos[1])).status, 'ready');
+  assert.deepEqual(restarted.state.locateCalls, ['cloud-1:001:AbC/+=']);
+});
+
+test('The same stale asset in several Rolls is repaired together, and a moved-on reference is not overwritten', async () => {
+  const { r, assets } = await cloudImported(1);
+  const shared = r.store.getState().rolls[0].photos[0];
+  const second = r.store.getState().createRoll({ cameraName: 'C', cameraId: 'c', date: '2026-09', filmId: 'f', filmName: 'F', format: '35mm' });
+  r.store.getState().addPhotosToRoll(second.id, [{ ...shared }]);
+  moveToNewDevice(r, assets, [0]);
+  assert.equal((await resolver(r).resolvePhoto(shared)).status, 'ready');
+  assert.ok(r.store.getState().rolls.every(roll => roll.photos[0].localIdentifier === 'device2-0'));
+  assert.equal(r.store.getState().recoverPhotoReferences('asset-0', 'cloud-0:001:AbC/+=', 'other'), 0);
+});
+
+test('Failed mapping and deleted photos keep identifiers, show unavailable and query once per Retry', async () => {
+  const { r } = await cloudImported(1);
+  const photo = r.store.getState().rolls[0].photos[0], raw = r.state.kv.get('filmer.rolls.v1');
+  r.state.assetUris.delete('asset-0');
+  const api = resolver(r);
+  for (let i = 0; i < 3; i++) assert.equal((await api.resolvePhoto(photo)).status, 'unavailable');
+  assert.equal(r.state.locateCalls.length, 1);
+  api.invalidatePhotoRenders();
+  assert.equal((await api.resolvePhoto(photo)).status, 'unavailable');
+  assert.equal(r.state.locateCalls.length, 2);
+  r.state.cloudMap = new Map([['cloud-0:001:AbC/+=', { status: 'temporary-error' }]]); api.invalidatePhotoRenders();
+  assert.equal((await api.resolvePhoto(photo)).status, 'unavailable');
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), raw);
+  assert.equal(r.store.getState().rolls[0].photos[0], photo);
+});
+
+test('A mapped asset that fails independent verification is never written', async () => {
+  const { r } = await cloudImported(1);
+  const photo = r.store.getState().rolls[0].photos[0], raw = r.state.kv.get('filmer.rolls.v1');
+  r.state.assetUris.delete('asset-0');
+  r.state.cloudMap = new Map([['cloud-0:001:AbC/+=', 'ghost']]);
+  assert.equal((await resolver(r).resolvePhoto(photo)).status, 'unavailable');
+  r.state.cloudMap.set('cloud-0:001:AbC/+=', { status: 'ready', assetId: 'file:///not-an-identifier' });
+  resolver(r).invalidatePhotoRenders();
+  assert.equal((await resolver(r).resolvePhoto(photo)).status, 'unavailable');
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), raw);
+});
+
+test('Denied permission and transient errors never attempt recovery; limited access may recover', async () => {
+  const { r, assets } = await cloudImported(2);
+  const [a, b] = r.store.getState().rolls[0].photos, raw = r.state.kv.get('filmer.rolls.v1');
+  const api = resolver(r);
+  r.state.permission = false;
+  assert.equal((await api.resolvePhoto(a)).status, 'permission-denied');
+  r.state.permission = true; r.state.assetStatus.set('asset-0', 'temporary-error'); api.invalidatePhotoRenders();
+  assert.equal((await api.resolvePhoto(a)).status, 'temporary-error');
+  assert.equal(r.state.locateCalls, undefined);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), raw);
+  r.state.limited = true; moveToNewDevice(r, assets, [1]); r.state.cloudMap.delete('cloud-1:001:AbC/+=');
+  assert.equal((await api.resolvePhoto(b)).status, 'limited');
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), raw);
+  r.state.cloudMap.set('cloud-1:001:AbC/+=', 'device2-1'); api.invalidatePhotoRenders();
+  assert.equal((await api.resolvePhoto(b)).status, 'ready');
+  assert.equal(r.store.getState().rolls[0].photos[1].localIdentifier, 'device2-1');
+});
+
+test('A recovery that cannot be saved still displays this session and leaves the archive untouched', async () => {
+  const { r, assets } = await cloudImported(1);
+  const photo = r.store.getState().rolls[0].photos[0], raw = r.state.kv.get('filmer.rolls.v1');
+  moveToNewDevice(r, assets, [0]); r.state.failSave = true;
+  const api = resolver(r);
+  assert.equal((await api.resolvePhoto(photo)).status, 'ready');
+  assert.equal((await api.resolvePhoto(photo)).status, 'ready');
+  assert.equal(r.state.locateCalls.length, 1);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), raw);
+  assert.equal(r.store.getState().rolls[0].photos[0], photo);
+});
+
+test('Builds without native locate keep the existing unavailable state', async () => {
+  const { r, assets } = await cloudImported(1);
+  delete r.native.locate; moveToNewDevice(r, assets, [0]);
+  assert.equal((await resolver(r).resolvePhoto(r.store.getState().rolls[0].photos[0])).status, 'unavailable');
+});
+
+test('Manual Relink replaces the cloud identifier with the replacement one, or drops it', async () => {
+  const { r } = await cloudImported(2);
+  const relink = r.load('features/photos/services/PhotoRelinkService.ts').relinkPhoto;
+  const [first, second] = r.store.getState().rolls[0].photos;
+  const withCloud = r.select(1); withCloud[0].assetId = 'replacement-a'; withCloud[0].cloudId = 'cloud-new'; r.state.assetUris.set('replacement-a', withCloud[0].uri);
+  await relink('r1', first.id);
+  const withoutCloud = r.select(1); withoutCloud[0].assetId = 'replacement-b'; r.state.assetUris.set('replacement-b', withoutCloud[0].uri);
+  await relink('r1', second.id);
+  const [a, b] = r.store.getState().rolls[0].photos;
+  assert.deepEqual(a, { ...first, assetId: 'replacement-a', localIdentifier: 'replacement-a', cloudIdentifier: 'cloud-new' });
+  const { cloudIdentifier: _dropped, ...rest } = second;
+  assert.deepEqual(b, { ...rest, assetId: 'replacement-b', localIdentifier: 'replacement-b' });
+});
+
+test('Photo Quality defaults safely, persists alongside old preferences and cannot publish a failed save', () => {
+  const r = runtime();
+  assert.equal(r.app.getState().photoQuality, 'optimized');
+  r.app.getState().setLanguage('vi');
+  r.app.getState().setImportMode('copy');
+  r.app.getState().setPhotoQuality('high');
+  const restarted = runtime(r.state);
+  assert.equal(restarted.app.getState().photoQuality, 'high');
+  assert.equal(restarted.app.getState().language, 'vi');
+  assert.equal(restarted.app.getState().importMode, 'copy');
+  r.state.failSave = true;
+  assert.throws(() => restarted.app.getState().setPhotoQuality('optimized'));
+  assert.equal(restarted.app.getState().photoQuality, 'high');
+  r.state.failSave = false;
+  r.state.kv.set('filmer.settings.v1', JSON.stringify({ language: 'ko', appearance: 'dark', photoQuality: 'invalid' }));
+  const legacy = runtime(r.state);
+  assert.equal(legacy.app.getState().photoQuality, 'optimized');
+  assert.equal(legacy.app.getState().language, 'ko');
+});
+
+test('Reference check distinguishes available, saved recovery, limited, missing and transient failures without downloading photos', async () => {
+  const { r, assets } = await cloudImported(5);
+  moveToNewDevice(r, assets, [1]);
+  r.state.assetStatus.set(assets[2].assetId, 'limited');
+  r.state.assetStatus.set(assets[3].assetId, 'unavailable');
+  r.state.assetStatus.set(assets[4].assetId, 'temporary-error');
+  const before = r.store.getState().rolls[0].photos;
+  const snapshots = [];
+  const report = await r.load('features/settings/services/ReferenceRepairService.ts').ReferenceRepairService.run(value => snapshots.push(value));
+  const { issues, ...counts } = report;
+  assert.deepEqual(counts, { total: 5, checked: 5, available: 1, recovered: 1, restricted: 1, inaccessible: 1, errors: 1, skipped: 0 });
+  assert.deepEqual(issues.map(issue => issue.reason), ['limited', 'unavailable', 'temporary-error']);
+  assert.equal(r.state.nativeRequests.length, 0);
+  assert.equal(r.state.copyCalls.length, 0);
+  assert.equal(snapshots[0].checked, 0);
+  assert.equal(snapshots.at(-1).checked, 5);
+  const after = r.store.getState().rolls[0].photos;
+  assert.deepEqual(after.map(p => [p.id, p.sortOrder, p.note]), before.map(p => [p.id, p.sortOrder, p.note]));
+});
+
+test('Reference check reports save errors and can retry without changing the original archive', async () => {
+  const { r, assets } = await cloudImported(1);
+  moveToNewDevice(r, assets, [0]);
+  const before = r.state.kv.get('filmer.rolls.v1');
+  const service = r.load('features/settings/services/ReferenceRepairService.ts').ReferenceRepairService;
+  r.state.failSave = true;
+  const failed = await service.run();
+  assert.equal(failed.errors, 1);
+  assert.equal(failed.recovered, 0);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), before);
+  r.state.failSave = false;
+  assert.equal((await service.run()).recovered, 1);
+});
+
+test('Reference check handles denied access, empty archives, cancellation and single-flight execution', async () => {
+  const { r } = await cloudImported(2);
+  const service = r.load('features/settings/services/ReferenceRepairService.ts').ReferenceRepairService;
+  r.state.permission = false;
+  assert.equal((await service.run()).restricted, 2);
+  const operation = new AbortController();
+  const pending = service.run(report => { if (report.checked === 1) operation.abort(); }, operation.signal);
+  await assert.rejects(service.run(), /already running/);
+  assert.equal((await pending).checked, 1);
+  r.state.permission = true;
+  r.store.getState().deleteRoll('r1');
+  assert.equal((await service.run()).total, 0);
+});
+
+test('Photos Access reads full, limited, denied, undetermined and missing module without prompting', async () => {
+  const r = runtime();
+  const service = r.load('features/settings/services/PhotosAccessService.ts').PhotosAccessService;
+  assert.equal(await service.read(), 'full');
+  r.state.limited = true; assert.equal(await service.read(), 'limited');
+  r.state.limited = false; r.state.permission = false; assert.equal(await service.read(), 'denied');
+  r.state.undetermined = true; assert.equal(await service.read(), 'undetermined');
+  assert.equal(r.state.permissionRequests.length, 0);
+  await service.request(); assert.equal(r.state.permissionRequests.length, 1);
+  const missing = runtime(undefined, true);
+  assert.equal(await missing.load('features/settings/services/PhotosAccessService.ts').PhotosAccessService.read(), 'unavailable');
+});
+
+test('Storage measures disjoint categories and clears only known previews, preserving all user files', async () => {
+  const r = runtime();
+  for (const directory of ['Documents', 'Documents/SQLite', 'Documents/film-covers', 'Documents/camera-covers', 'Documents/photos', 'Documents/photos/r1', 'Cache', 'Cache/filmer-photo-renders']) r.state.directories.add('file:///app/' + directory);
+  const entries = [
+    ['Documents/SQLite/ExpoSQLiteStorage', 100], ['Documents/SQLite/ExpoSQLiteStorage-wal', 20],
+    ['Documents/film-covers/cover-a.jpg', 30], ['Documents/camera-covers/cover-b.jpg', 40],
+    ['Documents/photos/r1/photo-a.jpg', 50], ['Documents/other.txt', 60],
+    ['Cache/filmer-photo-renders/a.jpg', 70], ['Cache/filmer-photo-renders/unknown.txt', 5], ['Cache/share.jpg', 80],
+  ];
+  for (const [path, size] of entries) r.state.files.set('file:///app/' + path, Buffer.alloc(size));
+  const service = r.load('features/settings/services/StorageService.ts').StorageService;
+  const measured = await service.measure();
+  assert.deepEqual([measured.database, measured.covers, measured.copies, measured.cache, measured.other, measured.total], [120, 70, 50, 70, 145, 455]);
+  assert.equal(await service.clearPhotoCache(), 70);
+  assert.equal(r.state.files.has('file:///app/Cache/filmer-photo-renders/a.jpg'), false);
+  for (const [path] of entries.filter(([path]) => path !== 'Cache/filmer-photo-renders/a.jpg')) assert.equal(r.state.files.has('file:///app/' + path), true, path);
+  const after = await service.measure();
+  assert.equal(after.cache, 0);
+  // Unknown files are measured as Other and remain untouched.
+  assert.equal(after.total, 385);
+  r.state.cacheInfoError = true;
+  assert.equal((await service.measure()).cache, null);
+  await assert.rejects(service.clearPhotoCache());
+});
+
+
+test('Storage read errors remain errors and do not clear user files', async () => {
+  const r = runtime(); r.state.directories.add('file:///app/Documents');
+  const before = [...r.state.files]; r.state.failList = true;
+  await assert.rejects(r.load('features/settings/services/StorageService.ts').StorageService.measure(), /Directory read failed/);
+  assert.deepEqual([...r.state.files], before);
+});
+
+test('Transient cloud mapping failure is retryable in reference verification', async () => {
+  const { r, assets } = await cloudImported(1);
+  moveToNewDevice(r, assets, [0]);
+  r.state.cloudMap.set('cloud-0:001:AbC/+=', { status: 'temporary-error' });
+  const service = r.load('features/settings/services/ReferenceRepairService.ts').ReferenceRepairService;
+  assert.equal((await service.run()).errors, 1);
+  r.state.cloudMap.set('cloud-0:001:AbC/+=', 'device2-0');
+  assert.equal((await service.run()).recovered, 1);
+});
+
+
+test('Empty storage has finite zero totals and does not count Apple Photos originals', async () => {
+  const r = runtime();
+  r.state.files.set('file:///apple-photos/original.jpg', Buffer.alloc(4096));
+  const measured = await r.load('features/settings/services/StorageService.ts').StorageService.measure();
+  assert.equal(measured.total, 0);
+  assert.equal(measured.cache, 0);
+  assert.ok(Object.values(measured).every(Number.isFinite));
+});
+
+test('Large storage measurement sums exact file bytes while retaining custom covers and copies', async () => {
+  const r = runtime();
+  r.state.directories.add('file:///app/Documents');
+  r.state.directories.add('file:///app/Documents/photos');
+  r.state.directories.add('file:///app/Documents/photos/r1');
+  for (let i = 1; i <= 500; i++) r.state.files.set(`file:///app/Documents/photos/r1/photo-${i}.jpg`, Buffer.alloc(i));
+  const before = [...r.state.files.keys()];
+  const measured = await r.load('features/settings/services/StorageService.ts').StorageService.measure();
+  assert.equal(measured.copies, 500 * 501 / 2);
+  assert.equal(measured.total, measured.copies);
+  assert.deepEqual([...r.state.files.keys()], before);
+});
+
+test('Partial cache deletion reports actual freed bytes and preserves every user-owned file', async () => {
+  const r = runtime();
+  r.state.files.set('file:///app/Cache/filmer-photo-renders/a.jpg', Buffer.alloc(70));
+  r.state.files.set('file:///app/Cache/filmer-photo-renders/b.jpg', Buffer.alloc(30));
+  const retained = ['file:///app/Documents/SQLite/ExpoSQLiteStorage', 'file:///app/Documents/film-covers/cover-a.jpg', 'file:///app/Documents/photos/r1/photo-a.jpg'];
+  for (const uri of retained) r.state.files.set(uri, Buffer.from('user-data'));
+  const { StorageService, PhotoCacheClearError } = r.load('features/settings/services/StorageService.ts');
+  r.state.clearFailureAfter = 1;
+  await assert.rejects(StorageService.clearPhotoCache(), error => error instanceof PhotoCacheClearError && error.freedBytes === 70);
+  assert.ok(retained.every(uri => r.state.files.get(uri).toString() === 'user-data'));
+  assert.equal(r.state.files.has('file:///app/Cache/filmer-photo-renders/b.jpg'), true);
+  r.state.clearFailureAfter = undefined;
+  assert.equal(await StorageService.clearPhotoCache(), 30);
+});
+
+test('A failed post-clear measurement never claims a successful cleanup or resets metadata', async () => {
+  const r = runtime();
+  const before = r.state.kv.get('filmer.rolls.v1');
+  r.state.failCacheAfterClear = true;
+  const { StorageService, PhotoCacheClearError } = r.load('features/settings/services/StorageService.ts');
+  await assert.rejects(StorageService.clearPhotoCache(), error => error instanceof PhotoCacheClearError && error.freedBytes === null);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), before);
+});
+
+test('Large reference verification preserves frame identity and never requests image rendering', async () => {
+  const r = runtime(); r.state.legacyCopyFixture = false;
+  r.select(500); await r.service.addToRoll('r1');
+  const before = r.state.kv.get('filmer.rolls.v1');
+  const report = await r.load('features/settings/services/ReferenceRepairService.ts').ReferenceRepairService.run();
+  assert.equal(report.total, 500);
+  assert.equal(report.available, 500);
+  assert.equal(report.checked, 500);
+  assert.equal(report.errors, 0);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), before);
+  assert.equal(r.state.nativeRequests.length, 0);
+});
+
+// CloudKit integration uses the actual guarded Roll/catalog stores; only the network transport is mocked.
+function fakeCloud() {
+  const records = new Map(); let revision = 0;
+  const server = {
+    account: 'account-a', available: true, configured: true, offline: false, writes: 0, expire: false,
+    async identity() { return { configured: server.configured, available: server.available, account: server.account }; },
+    transport(deviceID) { return {
+      deviceID, account: server.identity,
+      async fetch(token, account) {
+        if (server.offline) throw Object.assign(new Error('offline'), { code: '4' });
+        if (account !== server.account) throw new Error('account changed');
+        if (server.expire && token) { server.expire = false; throw Object.assign(new Error('expired token'), { code: '21' }); }
+        if (server.beforeFetch) { const hook = server.beforeFetch; server.beforeFetch = undefined; hook(); }
+        return { records: [...records.values()].filter(item => item.revision > Number(token ?? 0)).map(({ document, tag }) => ({ document, tag })), token: String(revision), more: false };
+      },
+      async save(key, document, tag, account) {
+        if (server.offline) throw new Error('offline');
+        if (account !== server.account) throw new Error('account changed');
+        if (server.beforeSave) { const hook = server.beforeSave; server.beforeSave = undefined; hook(); }
+        const old = records.get(key);
+        if (old && old.tag !== tag) return { conflict: { document: old.document, tag: old.tag } };
+        const value = { document, revision: ++revision, tag: String(revision) }; records.set(key, value); server.writes++;
+        return { document, tag: value.tag };
+      },
+    }; },
+    inject(key, document) { records.set(key, { document, revision: ++revision, tag: String(revision) }); },
+    records,
+  };
+  return server;
+}
+function cloudDevice(server, name, previous) {
+  const r = runtime(previous);
+  const { CloudSyncEngine } = r.load('features/cloud/services/CloudSyncEngine.ts');
+  const local = () => ({ rolls: r.store.getState().rolls, films: r.load('features/films/store/filmStore.ts').useFilmStore.getState().films.filter(f => f.isCustom), cameras: r.load('features/cameras/store/cameraStore.ts').useCameraStore.getState().cameras.filter(c => c.isCustom) });
+  const io = {
+    read: () => { const raw = r.state.kv.get('cloud-test'); return raw ? JSON.parse(raw) : undefined; },
+    write: value => { if (r.state.failJournal) throw new Error('journal disk full'); r.state.kv.set('cloud-test', JSON.stringify(value)); },
+    local,
+    apply: value => {
+      const f = r.load('features/films/store/filmStore.ts').useFilmStore;
+      const c = r.load('features/cameras/store/cameraStore.ts').useCameraStore;
+      f.getState().applyCloudItems(value.films, f.getState().films);
+      c.getState().applyCloudItems(value.cameras, c.getState().cameras);
+      if (r.state.failMerge) throw new Error('interrupted merge');
+      r.store.getState().applyCloudRolls(value.rolls, r.store.getState().rolls);
+    },
+  };
+  const engine = new CloudSyncEngine(io, server.transport(name));
+  const edit = patch => r.store.getState().updateRoll('r1', { ...r.store.getState().rolls.find(roll => roll.id === 'r1'), ...patch });
+  return { r, engine, io, edit, local };
+}
+
+test('Cloud bootstrap preserves nonempty old local archives when cloud is empty', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a');
+  const before = a.local().rolls;
+  await a.engine.run();
+  assert.deepEqual(a.local().rolls, before);
+  assert.equal(a.engine.snapshot.status, 'metadata-synced');
+  assert.equal(a.engine.snapshot.pending, 0);
+  assert.ok(server.writes > 0);
+});
+
+test('Two devices converge on independent field edits without replacing entire libraries', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); const b = cloudDevice(server, 'b');
+  await a.engine.run(); await b.engine.run(); await a.engine.run();
+  a.edit({ notes: 'from A' }); a.engine.capture();
+  b.edit({ lab: 'from B' }); b.engine.capture();
+  await a.engine.run(); await b.engine.run(); await a.engine.run();
+  for (const device of [a, b]) {
+    assert.equal(device.local().rolls[0].notes, 'from A');
+    assert.equal(device.local().rolls[0].lab, 'from B');
+    assert.equal(device.local().rolls.length, 1);
   }
 });
 
-test('Fallback cancellation and failed copy leave no photos or partial files', async () => {
-  const r = runtime(undefined, true);
-  assert.deepEqual(await r.service.addToRoll('r1'), { status: 'cancelled' });
-  const assets = r.select(1);
-  r.state.failUris.add(assets[0].uri);
-  const result = await r.service.addToRoll('r1');
-  assert.equal(result.addedCount, 0);
-  assert.equal(result.failedCount, 1);
-  assert.equal(r.store.getState().rolls[0].photos.length, 0);
-  assert.equal([...r.state.files.keys()].filter(uri => uri.includes('/Documents/photos/')).length, 0);
+test('Offline edits survive process restart and synchronize when online', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); await a.engine.run();
+  server.offline = true; a.edit({ notes: 'offline note' }); a.engine.capture();
+  await assert.rejects(a.engine.run(), /offline/);
+  const restarted = cloudDevice(server, 'a-new-process', a.r.state);
+  server.offline = false; await restarted.engine.run();
+  assert.equal(restarted.local().rolls[0].notes, 'offline note');
+  assert.equal(restarted.engine.snapshot.pending, 0);
 });
 
-test('Fallback archive failure cleans copied files and preserves the roll', async () => {
-  const r = runtime(undefined, true);
-  r.select(2);
-  r.state.failSave = true;
-  await assert.rejects(r.service.addToRoll('r1'));
-  assert.equal(r.store.getState().rolls[0].photos.length, 0);
-  assert.equal([...r.state.files.keys()].filter(uri => uri.includes('/Documents/photos/')).length, 0);
+test('Deletion tombstones defeat stale offline edits and do not resurrect a Roll', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); const b = cloudDevice(server, 'b');
+  await a.engine.run(); await b.engine.run();
+  b.edit({ notes: 'stale update' }); b.engine.capture();
+  a.r.store.getState().deleteRoll('r1'); a.engine.capture(); await a.engine.run();
+  await b.engine.run(); await a.engine.run();
+  assert.equal(a.local().rolls.length, 0); assert.equal(b.local().rolls.length, 0);
+  assert.ok([...server.records.values()].some(item => JSON.parse(item.document).deleted));
+});
+
+test('New installation restores metadata/frame order and cloud identifiers without local asset paths', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); a.r.state.legacyCopyFixture = false;
+  const assets = a.r.select(3); assets.forEach((asset, i) => { asset.cloudId = `cloud-${i}`; });
+  await a.r.service.addToRoll('r1');
+  const roll = a.local().rolls[0];
+  a.r.store.getState().reorderPhotos('r1', [...roll.photos].reverse().map(photo => photo.id));
+  await a.engine.run();
+  const b = cloudDevice(server, 'b'); b.r.store.getState().deleteRoll('r1'); await b.engine.run();
+  const restored = b.local().rolls[0];
+  assert.deepEqual(restored.photos.map(p => [p.id, p.sortOrder, p.cloudIdentifier]), a.local().rolls[0].photos.map(p => [p.id, p.sortOrder, p.cloudIdentifier]));
+  assert.ok(restored.photos.every(p => p.assetId.startsWith('pending-reference-')));
+  const networkPayload = [...server.records.values()].map(item => item.document).join('');
+  assert.equal(networkPayload.includes('localIdentifier'), false);
+  assert.equal(networkPayload.includes('file:///'), false);
+  assert.equal(a.r.state.copyCalls.length, 0);
+});
+
+test('Account switching and signed-out states pause without mixing libraries or resetting local data', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); await a.engine.run();
+  const before = JSON.stringify(a.local()); const writes = server.writes;
+  server.account = 'another-account'; await assert.rejects(a.engine.run(), /account changed/);
+  assert.equal(JSON.stringify(a.local()), before); assert.equal(server.writes, writes);
+  server.account = 'account-a'; server.available = false; await assert.rejects(a.engine.run(), /account unavailable/);
+  assert.equal(JSON.stringify(a.local()), before);
+});
+
+test('Unconfigured CloudKit does not upload, alter local data or claim sync success', async () => {
+  const server = fakeCloud(); server.configured = false; const a = cloudDevice(server, 'a');
+  const before = JSON.stringify(a.local()); await a.engine.run();
+  assert.equal(a.engine.snapshot.status, 'unavailable');
+  assert.equal(a.engine.snapshot.lastSync, undefined); assert.equal(server.writes, 0);
+  assert.equal(JSON.stringify(a.local()), before);
+});
+
+test('Disabling sync keeps local edits and durable pending records', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); await a.engine.run();
+  a.engine.setEnabled(false); a.edit({ notes: 'retained' }); a.engine.capture(); const writes = server.writes;
+  await a.engine.run(); assert.equal(a.engine.snapshot.status, 'off'); assert.equal(server.writes, writes);
+  assert.ok(a.engine.snapshot.pending > 0);
+  a.engine.setEnabled(true); await a.engine.run(); assert.equal(a.local().rolls[0].notes, 'retained');
+});
+
+test('Journal write failure stops network writes and preserves the original archive', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); const before = JSON.stringify(a.local());
+  a.r.state.failJournal = true; await assert.rejects(a.engine.run(), /journal disk full/);
+  assert.equal(server.writes, 0); assert.equal(JSON.stringify(a.local()), before);
+});
+
+test('Expired zone tokens refetch safely without clearing local records', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); await a.engine.run();
+  server.expire = true; const before = JSON.stringify(a.local()); await a.engine.run();
+  assert.equal(JSON.stringify(a.local()), before); assert.equal(a.engine.snapshot.status, 'metadata-synced');
+});
+
+test('Interrupted merge replays its durable stage after relaunch', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); a.edit({ notes: 'restore me' }); await a.engine.run();
+  const b = cloudDevice(server, 'b'); b.r.store.getState().deleteRoll('r1'); b.r.state.failMerge = true;
+  await assert.rejects(b.engine.run(), /interrupted merge/);
+  assert.ok(JSON.parse(b.r.state.kv.get('cloud-test')).stage);
+  b.r.state.failMerge = false; const restarted = cloudDevice(server, 'b2', b.r.state); await restarted.engine.run();
+  assert.equal(restarted.local().rolls[0].notes, 'restore me');
+});
+
+test('New local edits after an interrupted merge require review rather than being overwritten', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); await a.engine.run();
+  a.r.state.failMerge = true; await assert.rejects(a.engine.run(), /interrupted merge/);
+  a.r.state.failMerge = false; a.edit({ notes: 'new protected edit' });
+  await assert.rejects(a.engine.run(), /review required/);
+  assert.equal(a.local().rolls[0].notes, 'new protected edit');
+});
+
+test('In-flight save acknowledgment cannot discard a newer local edit', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); await a.engine.run();
+  a.edit({ notes: 'first' }); a.engine.capture();
+  server.beforeSave = () => { a.edit({ notes: 'newer' }); a.engine.capture(); };
+  await a.engine.run();
+  assert.equal(a.local().rolls[0].notes, 'newer');
+  assert.equal(a.engine.snapshot.pending, 0);
+  assert.ok([...server.records.values()].some(item => JSON.parse(item.document).fields.notes?.value === 'newer'));
+});
+
+
+test('Compare-and-save conflicts merge remote fields rather than overwriting them', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); await a.engine.run();
+  a.edit({ notes: 'local pending edit' }); a.engine.capture();
+  const key = [...server.records.keys()][0];
+  server.beforeSave = () => {
+    const remote = JSON.parse(server.records.get(key).document);
+    remote.fields.lab = { stamp: { n: 500, device: 'concurrent-device' }, value: 'remote concurrent lab' };
+    server.inject(key, JSON.stringify(remote));
+  };
+  await a.engine.run();
+  assert.equal(a.local().rolls[0].notes, 'local pending edit');
+  assert.equal(a.local().rolls[0].lab, 'remote concurrent lab');
+  assert.equal(a.engine.snapshot.pending, 0);
+});
+
+test('Cloud merge preserves legacy sortOrder gaps and custom catalog IDs without uploading covers', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); a.r.state.legacyCopyFixture = false;
+  a.r.select(2); await a.r.service.addToRoll('r1');
+  const current = a.local().rolls[0];
+  a.r.store.getState().applyCloudRolls([{ ...current, photos: current.photos.map((photo, i) => ({ ...photo, sortOrder: i * 5 })) }], a.r.store.getState().rolls);
+  const film = a.r.load('features/films/store/filmStore.ts').useFilmStore.getState().addCustomFilm({ brand: 'Custom', name: 'Stock', iso: 100, type: 'color', format: '35mm', imageDocumentPath: 'film-covers/cover-a.jpg', imageUri: 'file:///app/cover.jpg' });
+  await a.engine.run();
+  assert.deepEqual(a.local().rolls[0].photos.map(photo => photo.sortOrder), [0, 5]);
+  const b = cloudDevice(server, 'b'); b.r.store.getState().deleteRoll('r1'); await b.engine.run();
+  assert.equal(b.local().films[0].id, film.id);
+  assert.equal(b.local().films[0].imageDocumentPath, undefined);
+  assert.ok(a.local().films[0].imageDocumentPath);
+  assert.ok(![...server.records.values()].some(item => item.document.includes('file:///')));
+});
+
+test('Restored legacy Copy frames keep identities and show unavailable without copying original files', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a');
+  a.r.app.getState().setImportMode('copy'); a.r.select(1); await a.r.service.addToRoll('r1');
+  const original = a.local().rolls[0].photos[0]; await a.engine.run();
+  const b = cloudDevice(server, 'b'); b.r.store.getState().deleteRoll('r1'); await b.engine.run();
+  const restored = b.local().rolls[0].photos[0];
+  assert.equal(restored.id, original.id); assert.equal(restored.provider, 'filmer-copy');
+  assert.equal((await b.r.load('features/photos/services/PhotoReferenceService.ts').resolvePhoto(restored)).status, 'unavailable');
+  assert.equal(b.r.state.copyCalls.length, 0);
+  assert.ok(a.r.state.files.has(a.r.storage.resolveUri(original)));
+});
+
+test('Invalid cloud data and orphan frames pause restore before replacing a local archive', async () => {
+  for (const kind of ['invalid-roll', 'orphan']) {
+    const server = fakeCloud(); const a = cloudDevice(server, 'a');
+    const before = JSON.stringify(a.local());
+    const doc = kind === 'orphan'
+      ? { schema: 1, kind: 'photo', id: 'p', rollId: 'missing', fields: { provider: { stamp: { n: 1, device: 'z' }, value: 'apple-photos' }, sortOrder: { stamp: { n: 1, device: 'z' }, value: 0 } } }
+      : { schema: 1, kind: 'roll', id: 'broken', fields: { date: { stamp: { n: 1, device: 'z' }, value: 'not-a-date' } } };
+    server.inject(JSON.stringify([doc.kind, doc.rollId ?? '', doc.id]), JSON.stringify(doc));
+    await assert.rejects(a.engine.run());
+    assert.equal(JSON.stringify(a.local()), before);
+    assert.equal(a.engine.snapshot.lastSync, undefined);
+  }
+});
+
+test('Corrupt or future cloud journals do not reset local stores', () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); const before = JSON.stringify(a.local());
+  a.r.state.kv.set('cloud-test', JSON.stringify({ schema: 999 }));
+  assert.throws(() => cloudDevice(server, 'a', a.r.state), /recovery/);
+  assert.equal(JSON.stringify(a.local()), before);
+});
+
+test('Expired tokens with missing server records pause for review instead of silently declaring restored', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); await a.engine.run();
+  const before = JSON.stringify(a.local()); server.records.clear(); server.expire = true;
+  await assert.rejects(a.engine.run(), /history changed/);
+  assert.equal(JSON.stringify(a.local()), before);
+  assert.equal(a.engine.snapshot.status, 'error');
+});
+
+test('An account change during fetch never applies or uploads the other account records', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); await a.engine.run();
+  const before = JSON.stringify(a.local()); const writes = server.writes;
+  server.beforeFetch = () => { server.account = 'account-b'; };
+  await assert.rejects(a.engine.run(), /account changed/);
+  assert.equal(JSON.stringify(a.local()), before); assert.equal(server.writes, writes);
+});
+
+test('Remote deletion retains a local review preimage and never deletes copied files', () => {
+  const r = runtime();
+  const before = { rolls: r.store.getState().rolls, films: [], cameras: [] };
+  r.state.files.set('file:///app/Documents/photos/r1/photo-owned.jpg', Buffer.from('original-local-copy'));
+  r.load('features/cloud/services/retainLocalPreimages.ts').retainLocalPreimages('retained-test', before, { rolls: [], films: [], cameras: [] });
+  const saved = JSON.parse(r.state.kv.get('retained-test'));
+  assert.deepEqual(saved.records[JSON.stringify(['rolls', 'r1'])].value, before.rolls[0]);
+  assert.equal(r.state.files.get('file:///app/Documents/photos/r1/photo-owned.jpg').toString(), 'original-local-copy');
+});
+
+test('Remote Relink invalidates an old but accessible local identifier and remaps the new cloud reference', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); a.r.state.legacyCopyFixture = false;
+  a.r.select(1)[0].cloudId = 'cloud-old'; await a.r.service.addToRoll('r1'); await a.engine.run();
+  const b = cloudDevice(server, 'b'); b.r.store.getState().deleteRoll('r1'); await b.engine.run();
+  b.r.state.cloudMap = new Map([['cloud-old', 'b-old']]); b.r.state.assetUris.set('b-old', 'file:///b-old.jpg'); b.r.state.files.set('file:///b-old.jpg', Buffer.from('old'));
+  await b.r.load('features/settings/services/ReferenceRepairService.ts').ReferenceRepairService.run(); b.engine.capture();
+  const oldPhoto = b.local().rolls[0].photos[0]; assert.equal(oldPhoto.assetId, 'b-old');
+  const id = a.local().rolls[0].photos[0].id;
+  a.r.store.getState().relinkPhoto('r1', id, 'a-new', 'cloud-new'); a.engine.capture(); await a.engine.run(); await b.engine.run();
+  const pending = b.local().rolls[0].photos[0];
+  assert.equal(pending.id, oldPhoto.id); assert.equal(pending.sortOrder, oldPhoto.sortOrder);
+  assert.equal(pending.cloudIdentifier, 'cloud-new'); assert.notEqual(pending.assetId, 'b-old');
+  b.r.state.cloudMap.set('cloud-new', 'b-new'); b.r.state.assetUris.set('b-new', 'file:///b-new.jpg'); b.r.state.files.set('file:///b-new.jpg', Buffer.from('new'));
+  const repaired = await b.r.load('features/settings/services/ReferenceRepairService.ts').ReferenceRepairService.run();
+  assert.equal(repaired.recovered, 1); assert.equal(b.local().rolls[0].photos[0].assetId, 'b-new');
+});
+
+test('Cloud projection retains unknown legacy metadata and does not invalidate a usable photo with a malformed optional cloud ID', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); a.r.state.legacyCopyFixture = false;
+  a.r.select(1); await a.r.service.addToRoll('r1');
+  const old = a.local().rolls[0];
+  a.r.store.getState().applyCloudRolls([{ ...old, legacyExtra: 'preserve', photos: old.photos.map(photo => ({ ...photo, legacyDetail: 'keep', cloudIdentifier: 42 })) }], a.r.store.getState().rolls);
+  const assetId = a.local().rolls[0].photos[0].assetId;
+  await a.engine.run();
+  assert.equal(a.local().rolls[0].legacyExtra, 'preserve');
+  assert.equal(a.local().rolls[0].photos[0].legacyDetail, 'keep');
+  assert.equal(a.local().rolls[0].photos[0].assetId, assetId);
+});
+
+test('Concurrent same-field edits converge deterministically and cleared fields stay cleared', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); const b = cloudDevice(server, 'b');
+  await a.engine.run(); await b.engine.run(); await a.engine.run();
+  a.edit({ notes: 'A' }); b.edit({ notes: 'B' }); a.engine.capture(); b.engine.capture();
+  await a.engine.run(); await b.engine.run(); await a.engine.run();
+  assert.equal(a.local().rolls[0].notes, b.local().rolls[0].notes);
+  b.edit({ notes: undefined }); b.engine.capture(); await b.engine.run(); await a.engine.run();
+  assert.equal(a.local().rolls[0].notes, undefined); assert.equal(b.local().rolls[0].notes, undefined);
+});
+
+test('A failed toggle save keeps the prior enabled preference', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); await a.engine.run();
+  a.r.state.failJournal = true; assert.throws(() => a.engine.setEnabled(false));
+  assert.equal(a.engine.snapshot.enabled, true);
+  a.r.state.failJournal = false; await a.engine.run(); assert.equal(a.engine.snapshot.enabled, true);
+});
+
+test('Cloud review history preserves later overwritten notes instead of retaining only the first version', () => {
+  const r = runtime(); const retain = r.load('features/cloud/services/retainLocalPreimages.ts').retainLocalPreimages;
+  const original = r.store.getState().rolls[0];
+  const state = notes => ({ rolls: [{ ...original, notes }], films: [], cameras: [] });
+  retain('review', state('first local note'), state('remote note'));
+  retain('review', state('second local note'), state('another remote note'));
+  const saved = JSON.parse(r.state.kv.get('review')).records[JSON.stringify(['rolls', 'r1'])];
+  assert.equal(saved.value.notes, 'first local note');
+  assert.equal(saved.history[0].value.notes, 'second local note');
+});
+
+test('Fresh restore reports actual paged downloads, applies only complete data and repeats without duplicates', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'source');
+  a.r.state.legacyCopyFixture = false; a.r.select(3).forEach((asset, i) => { asset.cloudId = `restore-${i}`; });
+  await a.r.service.addToRoll('r1'); await a.engine.run();
+  const b = cloudDevice(server, 'fresh'); b.r.store.getState().deleteRoll('r1');
+  const records = [...server.records.values()].map(({ document, tag }) => ({ document, tag }));
+  const events = [];
+  const { CloudSyncEngine } = b.r.load('features/cloud/services/CloudSyncEngine.ts');
+  let first = true;
+  const transport = { ...server.transport('fresh'), async fetch() {
+    assert.equal(b.local().rolls.length, 0, 'No partially downloaded archive is published');
+    if (first) { first = false; return { records: records.slice(0, 1), token: 'page-one', more: true }; }
+    return { records: records.slice(1), token: String(records.length), more: false };
+  } };
+  const engine = new CloudSyncEngine(b.io, transport, state => events.push(structuredClone(state)));
+  await engine.run();
+  assert.ok(events.some(state => state.restore?.phase === 'downloading' && state.restore.received === 1));
+  assert.ok(events.some(state => state.restore?.phase === 'applying' && state.restore.received === records.length));
+  assert.equal(engine.snapshot.restore, undefined);
+  assert.equal(engine.snapshot.status, 'metadata-synced');
+  const before = JSON.stringify(b.local());
+  const restarted = cloudDevice(server, 'fresh-restarted', b.r.state);
+  await restarted.engine.run(); await restarted.engine.run();
+  assert.equal(JSON.stringify(restarted.local()), before);
+  assert.equal(restarted.local().rolls[0].photos.length, 3);
+});
+
+test('Interrupted download pauses restore without committing partial records or claiming success', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'source');
+  a.r.state.legacyCopyFixture = false; a.r.select(2); await a.r.service.addToRoll('r1'); await a.engine.run();
+  const b = cloudDevice(server, 'fresh'); b.r.store.getState().deleteRoll('r1');
+  const records = [...server.records.values()].map(({ document, tag }) => ({ document, tag }));
+  let page = 0;
+  const { CloudSyncEngine } = b.r.load('features/cloud/services/CloudSyncEngine.ts');
+  const engine = new CloudSyncEngine(b.io, { ...server.transport('fresh'), async fetch() {
+    if (page++ === 0) return { records: records.slice(0, 1), token: 'partial', more: true };
+    throw Object.assign(new Error('network interrupted'), { kind: 'network' });
+  } });
+  await assert.rejects(engine.run(), /interrupted/);
+  assert.deepEqual(engine.snapshot.restore, { phase: 'paused', received: 1 });
+  assert.equal(engine.snapshot.lastSync, undefined);
+  assert.equal(b.local().rolls.length, 0);
+  assert.equal(JSON.parse(b.r.state.kv.get('cloud-test')).token, undefined);
+  const resumed = cloudDevice(server, 'fresh-restarted', b.r.state); await resumed.engine.run();
+  assert.equal(resumed.local().rolls[0].photos.length, 2);
+  assert.equal(resumed.engine.snapshot.status, 'metadata-synced');
+});
+
+test('Roll membership prevents a truncated restore when an upload stops before saving all frames', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'source');
+  a.r.state.legacyCopyFixture = false; a.r.select(2); await a.r.service.addToRoll('r1'); await a.engine.run();
+  const key = [...server.records.keys()].find(key => JSON.parse(key)[0] === 'photo');
+  const delayed = server.records.get(key); server.records.delete(key);
+  const b = cloudDevice(server, 'fresh'); b.r.store.getState().deleteRoll('r1');
+  await assert.rejects(b.engine.run(), /restore incomplete/);
+  assert.equal(b.engine.snapshot.errorKind, 'incomplete');
+  assert.equal(b.engine.snapshot.lastSync, undefined);
+  assert.equal(b.local().rolls.length, 0);
+  server.inject(key, delayed.document);
+  await b.engine.run();
+  assert.equal(b.local().rolls[0].photos.length, 2);
+  assert.equal(b.engine.snapshot.status, 'metadata-synced');
+});
+
+test('Empty cloud and unavailable accounts never publish a restored-data claim', async () => {
+  const server = fakeCloud(); const b = cloudDevice(server, 'fresh'); b.r.store.getState().deleteRoll('r1');
+  server.available = false;
+  await assert.rejects(b.engine.run(), /account unavailable/);
+  assert.deepEqual(b.engine.snapshot.restore, { phase: 'paused', received: 0 });
+  assert.equal(b.engine.snapshot.lastSync, undefined);
+  server.available = true; await b.engine.run();
+  assert.equal(b.local().rolls.length, 0);
+  assert.equal(b.engine.snapshot.restore, undefined);
+  assert.equal(b.engine.snapshot.status, 'metadata-synced'); // Empty metadata checked, no "restored" flag exists.
+});
+
+test('A tombstoned frame satisfies membership without resurrecting or duplicating it', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a');
+  a.r.state.legacyCopyFixture = false; a.r.select(2); await a.r.service.addToRoll('r1'); await a.engine.run();
+  const { projectCloud, wireItems } = a.r.load('features/cloud/utils/cloudProjection.ts');
+  const { cloudKey, updateDocument } = a.r.load('features/cloud/utils/cloudModel.ts');
+  const items = wireItems(a.local());
+  const docs = Object.fromEntries(items.map(item => [cloudKey(item), updateDocument(undefined, item, undefined, { n: 1, device: 'a' })]));
+  const frameKey = Object.keys(docs).find(key => docs[key].kind === 'photo');
+  docs[frameKey].deleted = { n: 2, device: 'b' };
+  assert.equal(projectCloud(docs, a.local()).rolls[0].photos.length, 1);
+});
+
+test('Cloud driver stays local when no native CloudKit bridge is installed', async () => {
+  const r = runtime(); const before = r.state.kv.get('filmer.rolls.v1');
+  const driver = r.load('features/cloud/services/cloudSync.ts');
+  await driver.syncNow();
+  const sync = driver.useCloudStore.getState().sync;
+  assert.equal(sync.configured, false);
+  assert.equal(sync.unavailableReason, 'native-build');
+  assert.equal(sync.status, 'unavailable');
+  assert.equal(sync.lastSync, undefined);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), before);
+});
+
+test('Cloud driver rejects unavailable signing capabilities without changing local archives', async () => {
+  const r = runtime(); const before = r.state.kv.get('filmer.rolls.v1');
+  r.state.cloudBridge = { deviceID: 'test', namespace: 'local-build', async account() { return { configured: false, reason: 'configuration' }; } };
+  const driver = r.load('features/cloud/services/cloudSync.ts');
+  await driver.syncNow();
+  const sync = driver.useCloudStore.getState().sync;
+  assert.equal(sync.unavailableReason, 'configuration');
+  assert.equal(sync.status, 'unavailable');
+  assert.equal(sync.lastSync, undefined);
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), before);
+});
+
+test('Native account-change notifications recheck account binding and subscriptions are removed', async () => {
+  const r = runtime(); const server = fakeCloud(); const transport = server.transport('native-driver');
+  let accountChanged; let removed = false;
+  r.state.cloudBridge = { ...transport, namespace: 'account-events', addListener(event, listener) {
+    assert.equal(event, 'onAccountChanged'); accountChanged = listener;
+    return { remove() { removed = true; } };
+  } };
+  const driver = r.load('features/cloud/services/cloudSync.ts');
+  const stop = driver.startCloudSync();
+  try {
+    await driver.syncNow();
+    assert.equal(driver.useCloudStore.getState().sync.status, 'metadata-synced');
+    const archive = r.state.kv.get('filmer.rolls.v1'); const writes = server.writes;
+    server.account = 'changed-account'; accountChanged(); await driver.syncNow();
+    assert.equal(driver.useCloudStore.getState().sync.errorKind, 'account-changed');
+    assert.equal(r.state.kv.get('filmer.rolls.v1'), archive);
+    assert.equal(server.writes, writes);
+    server.account = 'account-a'; accountChanged(); await driver.syncNow();
+    assert.equal(driver.useCloudStore.getState().sync.status, 'metadata-synced');
+  } finally { stop(); }
+  assert.equal(removed, true);
+});
+
+test('An older native CloudKit bridge without events can still sync and stop safely', async () => {
+  const r = runtime(); const server = fakeCloud();
+  r.state.cloudBridge = { ...server.transport('old-native'), namespace: 'old-native' };
+  const driver = r.load('features/cloud/services/cloudSync.ts');
+  const stop = driver.startCloudSync();
+  try {
+    await driver.syncNow();
+    assert.equal(driver.useCloudStore.getState().sync.status, 'metadata-synced');
+  } finally { stop(); }
 });

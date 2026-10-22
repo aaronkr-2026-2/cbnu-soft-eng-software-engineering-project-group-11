@@ -83,6 +83,7 @@ export default function RollDetail() {
 
   async function handleAddPhotos() {
     if (isPickingPhotos) return;
+    if (!photoModuleAvailable) { setMessage('photoModuleMissing'); return; }
     setIsPickingPhotos(true); setMessage(null); setAddedCount(null);
     try {
       const result = await PhotoImportService.addToRoll(id);
@@ -90,7 +91,7 @@ export default function RollDetail() {
       if (result.status === 'selected') {
         if (result.addedCount > 0) setAddedCount(result.addedCount);
         if (result.duplicateCount && !result.addedCount && !result.failedCount) setMessage('photosAlreadyAdded');
-        if (result.failedCount > 0) setMessage(photoModuleAvailable ? 'photoAccessHelp' : 'photoImportError');
+        if (result.failedCount > 0) setMessage('photoAccessHelp');
       }
     } catch { setMessage('photoImportError'); }
     finally { setIsPickingPhotos(false); }
@@ -130,7 +131,6 @@ export default function RollDetail() {
         {roll.notes ? <DetailRow label={t('notes')} value={roll.notes} /> : null}
       </View>
       <Text style={styles.photoHeading}>{t('photos')} · {photos.length}</Text>
-      {!photoModuleAvailable ? <Text style={styles.message}>{t('photoCopyFallback')}</Text> : null}
       {message ? <Text style={styles.message}>{t(message)}</Text> : null}
       {message === 'photoAccessHelp' || message === 'photoPermission' ? <Pressable accessibilityRole="button" style={{ paddingVertical: 12 }} onPress={() => {
         void applePhotosProvider.manageAccess().catch(() => Alert.alert(t('photosAccessRequired'), t('photoAccessHelp'))).finally(invalidatePhotoRenders);

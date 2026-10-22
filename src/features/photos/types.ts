@@ -18,6 +18,8 @@ export type ApplePhotoReference = PhotoDetails & {
   storageMode?: 'reference';
   assetId: string;
   localIdentifier?: string;
+  /** PHCloudIdentifier string; optional, used only to recover a stale localIdentifier on another device. */
+  cloudIdentifier?: string;
 };
 
 export type CopiedPhotoReference = PhotoDetails & {

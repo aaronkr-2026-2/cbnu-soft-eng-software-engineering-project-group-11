@@ -4,17 +4,22 @@ import { File } from 'expo-file-system';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import * as MediaLibrary from 'expo-media-library';
 import { AppState } from 'react-native';
-import type { PhotoReference } from '../types';
+import type { ApplePhotoReference, PhotoReference } from '../types';
+import { useRollStore } from '../../rolls/store/rollStore';
+import { referenceIdentifier, usableAssetId, usableCloudIdentifier } from '../utils/referenceIdentifier';
 import { PhotoStorageService } from './PhotoStorageService';
 
 export type PhotoStatus = 'ready' | 'loading' | 'permission-denied' | 'limited' | 'unavailable' | 'temporary-error';
 export type PhotoResolution = { status: PhotoStatus; uri?: string };
-export type PickedReference = { assetId: string | null; takenAt?: string };
+export type PickedReference = { assetId: string | null; takenAt?: string; cloudId?: string };
 type NativePhotos = {
   pick(single: boolean, labels: Record<string, string>, dark: boolean): Promise<{ canceled: boolean; assets: PickedReference[] }>;
   verify(id: string): Promise<PhotoResolution>;
   resolve(id: string, full: boolean, pixels: number): Promise<PhotoResolution>;
+  cacheInfo?(): Promise<{ bytes: number; files: number; uri: string }>;
   clearRenders(): Promise<number>;
+  /** Absent in builds before cloud-identifier recovery. */
+  locate?(cloudIdentifier: string): Promise<{ status: PhotoStatus; assetId?: string }>;
 };
 const native = requireOptionalNativeModule<NativePhotos>('FilmerPhotos');
 /** False in Expo Go and older builds, which lack the FILMER PhotoKit module. */
@@ -30,17 +35,17 @@ export async function pickPhotoReferences(single: boolean) {
     access: text.managePhotosAccess, retry: text.photoRetry, photo: text.rollPhoto, imageError: text.photoTemporaryError,
   }, settings.appearance === 'dark');
 }
-export function usableAssetId(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0 && !/[:\x00-\x1f]/.test(value) && !value.startsWith('/');
-}
+export { usableAssetId, usableCloudIdentifier } from '../utils/referenceIdentifier';
 // Session-only derived renders. A cache hit always verifies current library access first.
 const cache = new Map<string, PhotoResolution>();
 const inFlight = new Map<string, Promise<PhotoResolution>>();
 const listeners = new Set<() => void>();
+// One cloud-identifier lookup per stale reference until Retry, app activation or a library change.
+const recoveries = new Map<string, Promise<string | undefined>>();
 let epoch = 0;
 let stop: (() => void) | undefined;
 export function invalidatePhotoRenders() {
-  epoch++; cache.clear(); listeners.forEach(listener => listener());
+  epoch++; cache.clear(); recoveries.clear(); listeners.forEach(listener => listener());
 }
 export function observePhotoLibrary(listener: () => void) {
   listeners.add(listener);
@@ -64,12 +69,18 @@ export async function resolvePhoto(photo: PhotoReference, size: 'thumbnail' | 'f
 async function resolvePhotoSafely(photo: PhotoReference, size: 'thumbnail' | 'full', pixels: number): Promise<PhotoResolution> {
   if (photo.provider === 'filmer-copy') {
     const uri = PhotoStorageService.resolveUri(photo);
-    return uri ? { status: 'ready', uri } : { status: 'unavailable' };
+    return uri && new File(uri).exists ? { status: 'ready', uri } : { status: 'unavailable' };
   }
-  const id = usableAssetId(photo.localIdentifier) ? photo.localIdentifier : photo.assetId;
+  let id = referenceIdentifier(photo);
   const generation = epoch;
-  const access = await verifyPhotoAsset(id);
+  let access = await verifyPhotoAsset(id);
   if (generation !== epoch) return { status: 'loading' };
+  // Permission and transient failures never trigger recovery; only a missing or out-of-selection asset does.
+  if (access.status === 'unavailable' || access.status === 'limited') {
+    const recovered = await recoverReference(photo, id);
+    if (generation !== epoch) return { status: 'loading' };
+    if (recovered) { id = recovered; access = { status: 'ready' }; }
+  }
   if (access.status !== 'ready') { cache.clear(); return access; }
   const key = `${id}:${size}:${pixels}`;
   const hit = cache.get(key);
@@ -94,7 +105,58 @@ async function resolvePhotoSafely(photo: PhotoReference, size: 'thumbnail' | 'fu
   } catch { return { status: 'temporary-error' }; }
   finally { if (inFlight.get(requestKey) === request) inFlight.delete(requestKey); }
 }
+function recoverReference(photo: ApplePhotoReference, staleId: string) {
+  const cloudId = photo.cloudIdentifier;
+  if (!usableCloudIdentifier(cloudId) || typeof native?.locate !== 'function') return undefined;
+  const key = `${staleId}\n${cloudId}`;
+  let recovery = recoveries.get(key);
+  if (!recovery) {
+    recovery = locateAndRepair(staleId, cloudId);
+    recoveries.set(key, recovery);
+  }
+  return recovery;
+}
+async function locateAndRepair(staleId: string, cloudId: string, requirePersistence = false) {
+  let located: Awaited<ReturnType<NonNullable<NativePhotos['locate']>>>;
+  try { located = await native!.locate!(cloudId); } catch (error) { if (requirePersistence) throw error; return undefined; }
+  if (requirePersistence && (located.status === 'temporary-error' || located.status === 'loading' || located.status === 'permission-denied')) throw new Error('PhotoKit mapping temporarily unavailable');
+  if (located.status !== 'ready' || !usableAssetId(located.assetId) || located.assetId === staleId) return undefined;
+  // Verify independently before any write; a failed check leaves the saved identifiers untouched.
+  const verified = await verifyPhotoAsset(located.assetId);
+  if (verified.status !== 'ready') {
+    if (requirePersistence && (verified.status === 'temporary-error' || verified.status === 'permission-denied')) throw new Error('PhotoKit verification interrupted');
+    return undefined;
+  }
+  try {
+    const changed = useRollStore.getState().recoverPhotoReferences(staleId, cloudId, located.assetId);
+    if (requirePersistence && changed === 0) throw new Error('Reference changed during repair');
+  }
+  catch (error) {
+    if (requirePersistence) throw error;
+    // Viewer-only recovery may display this session without changing the saved identifiers.
+  }
+  return located.assetId;
+}
 export async function clearPhotoRenders() {
   try { return await native?.clearRenders() ?? 0; }
   finally { invalidatePhotoRenders(); }
+}
+
+/** Checks identifiers and repairs metadata only; never downloads an image. */
+export async function checkPhotoReference(photo: ApplePhotoReference): Promise<PhotoStatus> {
+  const id = referenceIdentifier(photo);
+  const access = await verifyPhotoAsset(id);
+  if ((access.status === 'unavailable' || access.status === 'limited') && usableCloudIdentifier(photo.cloudIdentifier) && typeof native?.locate === 'function') {
+    try {
+      if (await locateAndRepair(id, photo.cloudIdentifier, true)) return 'ready';
+    } catch {
+      const fresh = await verifyPhotoAsset(id);
+      return fresh.status === 'permission-denied' ? 'permission-denied' : 'temporary-error';
+    }
+  }
+  return access.status;
+}
+export async function photoCacheInfo() {
+  if (!native?.cacheInfo) throw new Error('Native cache measurement requires an updated FILMER build');
+  return native.cacheInfo();
 }

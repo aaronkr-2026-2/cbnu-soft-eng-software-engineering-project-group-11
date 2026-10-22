@@ -1,1 +1,1 @@
-{"platforms":["apple"],"apple":{"modules":["FilmerPhotosModule"]}}
+{"platforms": ["apple"], "apple": {"modules": ["FilmerPhotosModule", "FilmerCloudModule"]}}

@@ -1,17 +1,20 @@
+import { darkColors } from '../../../constants/colors';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useThemedStyles } from '../../../constants/theme';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { createSettingsSelectModalStyles } from '../styles/settings-select-modal.styles';
 
 type Props<T extends string> = {
+  tone?: 'theme' | 'dark';
   title: string;
   options: { value: T; label: string }[];
   value: T;
   onSelect: (value: T) => void;
   onClose: () => void;
 };
-export function SettingsSelectModal<T extends string>({ title, options, value, onSelect, onClose }: Props<T>) {
-  const styles = useThemedStyles(createSettingsSelectModalStyles);
+export function SettingsSelectModal<T extends string>({ tone = 'theme', title, options, value, onSelect, onClose }: Props<T>) {
+  const themedStyles = useThemedStyles(createSettingsSelectModalStyles);
+  const styles = tone === 'dark' ? darkStyles : themedStyles;
   const { t } = useTranslation();
   return <Modal transparent animationType="slide" onRequestClose={onClose}>
     <View style={styles.backdrop}><View style={styles.sheet}>
@@ -25,3 +28,5 @@ export function SettingsSelectModal<T extends string>({ title, options, value, o
     </View></View>
   </Modal>;
 }
+
+const darkStyles = createSettingsSelectModalStyles(darkColors);

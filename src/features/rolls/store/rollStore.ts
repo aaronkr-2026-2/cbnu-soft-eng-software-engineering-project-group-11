@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import type { PhotoDetailsPatch, PhotoReference } from '../../photos/types';
 import { PhotoStorageService } from '../../photos/services/PhotoStorageService';
+import { referenceIdentifier } from '../../photos/utils/referenceIdentifier';
 import type { ArchiveLoad } from '../data/RollRepository';
 import { ArchiveRecoveryError, RollRepository } from '../data/RollRepository';
 import type { Roll, RollFormat, RollLocation } from '../types';
@@ -23,8 +24,10 @@ export type CreateRollInput = {
 
 type RollState = {
   archive: ArchiveLoad;
+  applyCloudRolls: (rolls: Roll[], expected: Roll[]) => void;
   retryLoad: () => void;
-  relinkPhoto: (rollId: string, photoId: string, assetId: string) => void;
+  relinkPhoto: (rollId: string, photoId: string, assetId: string, cloudIdentifier?: string) => void;
+  recoverPhotoReferences: (staleId: string, cloudIdentifier: string, assetId: string) => number;
   removePhotos: (rollId: string, ids: ReadonlySet<string>) => number;
   deleteRoll: (rollId: string) => boolean;
   updateRoll: (rollId: string, input: CreateRollInput) => void;
@@ -49,19 +52,40 @@ export const useRollStore = create<RollState>((set, get) => {
   }
   return {
     ...(() => { const archive = RollRepository.load(); return { archive, rolls: archive.status === 'ready' ? archive.rolls : [] }; })(),
+    applyCloudRolls: (rolls, expected) => {
+      if (get().rolls !== expected || get().archive.status !== 'ready') throw new Error('Rolls changed during cloud merge');
+      save(() => ({ rolls })); // Same validator/byte guard; deliberately no owned-file deletion.
+    },
     retryLoad: () => {
       const archive = RollRepository.load();
       const previous = get().archive;
       if (archive.status === 'recovery' && archive.raw === undefined && previous.status === 'recovery') archive.raw = previous.raw;
       set(archive.status === 'ready' ? { archive, rolls: archive.rolls } : { archive });
     },
-    relinkPhoto: (rollId, photoId, assetId) => save(state => ({
+    relinkPhoto: (rollId, photoId, assetId, cloudIdentifier) => save(state => ({
       rolls: state.rolls.map(roll => roll.id !== rollId ? roll : { ...roll, photos: roll.photos.map(photo => {
         if (photo.id !== photoId || photo.provider !== 'apple-photos') return photo;
-        const { thumbnailUri: _stale, ...retained } = photo;
-        return { ...retained, assetId, localIdentifier: assetId };
+        // A different photo: the old cloud identifier no longer describes it.
+        const { thumbnailUri: _stale, cloudIdentifier: _previous, ...retained } = photo;
+        return { ...retained, assetId, localIdentifier: assetId, ...(cloudIdentifier ? { cloudIdentifier } : {}) };
       }) }),
     })),
+    recoverPhotoReferences: (staleId, cloudIdentifier, assetId) => {
+      // Compare-and-set: only references still pointing at staleId with the same cloud identifier are repaired.
+      const matches = (photo: PhotoReference) => photo.provider === 'apple-photos' && photo.cloudIdentifier === cloudIdentifier &&
+        referenceIdentifier(photo) === staleId;
+      let count = 0;
+      if (!get().rolls.some(roll => roll.photos.some(matches))) return 0;
+      save(state => ({
+        rolls: state.rolls.map(roll => !roll.photos.some(matches) ? roll : { ...roll, photos: roll.photos.map(photo => {
+          if (!matches(photo)) return photo;
+          count++;
+          const { thumbnailUri: _stale, ...retained } = photo;
+          return { ...retained, assetId, localIdentifier: assetId };
+        }) }),
+      }));
+      return count;
+    },
     removePhotos: (rollId, ids) => {
       const roll = get().rolls.find(item => item.id === rollId);
       const removed = roll?.photos.filter(photo => ids.has(photo.id)) ?? [];

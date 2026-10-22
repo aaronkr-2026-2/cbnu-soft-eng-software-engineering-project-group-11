@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../constants/theme';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useRollStore } from '../rolls/store/rollStore';
@@ -12,12 +12,18 @@ import { resolvePhoto } from '../photos/services/PhotoReferenceService';
 export function StartupScreen({ onReady }: { onReady: () => void }) {
   const colors = useTheme();
   const { t } = useTranslation();
-  const [progress, setProgress] = useState(0);
   useEffect(() => {
     let active = true;
     let next = 0;
-    let completed = 0;
+    let imagesReady = false;
+    let minimumElapsed = false;
     const finish = () => { if (active) { active = false; onReady(); } };
+    const finishWhenReady = () => { if (imagesReady && minimumElapsed) finish(); };
+    // Give the FILMER introduction a short pause while image preparation runs in parallel.
+    const minimumDisplay = setTimeout(() => {
+      minimumElapsed = true;
+      finishWhenReady();
+    }, 3000);
     // A missing file, denied Photos access or slow iCloud must never block startup.
     const deadline = setTimeout(finish, 6000);
     const start = setTimeout(() => {
@@ -42,18 +48,18 @@ export function StartupScreen({ onReady }: { onReady: () => void }) {
           });
         }
       }
-      setProgress(0.1);
       async function worker() {
         while (active && next < tasks.length) {
           const task = tasks[next++];
           try { await task(); } catch { /* Normal image placeholders handle unavailable sources. */ }
-          completed++;
-          if (active) setProgress(0.1 + 0.9 * completed / tasks.length);
         }
       }
-      void Promise.all(Array.from({ length: Math.min(3, tasks.length) }, worker)).then(finish);
+      void Promise.all(Array.from({ length: Math.min(3, tasks.length) }, worker)).then(() => {
+        imagesReady = true;
+        finishWhenReady();
+      });
     }, 100); // Let the loading screen paint before preparing the first screen.
-    return () => { active = false; clearTimeout(start); clearTimeout(deadline); };
+    return () => { active = false; clearTimeout(start); clearTimeout(deadline); clearTimeout(minimumDisplay); };
   }, [onReady]);
 
   return <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -64,13 +70,7 @@ export function StartupScreen({ onReady }: { onReady: () => void }) {
       <Text style={[styles.wordmark, { color: colors.text }]}>FILMER</Text>
       <Text style={[styles.subtitle, { color: colors.secondaryText }]}>{t('startupSubtitle')}</Text>
     </View>
-    <View style={styles.loading} accessibilityLiveRegion="polite">
-      <ActivityIndicator color={colors.text} />
-      <Text style={[styles.label, { color: colors.secondaryText }]}>{t(progress === 0 ? 'startupData' : 'startupImages')}</Text>
-      <View accessibilityRole="progressbar" accessibilityLabel={t('startupImages')} accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }} style={[styles.track, { backgroundColor: colors.border }]}>
-        <View style={{ width: `${Math.round(progress * 100)}%`, height: 3, backgroundColor: colors.text }} />
-      </View>
-    </View>
+
   </View>;
 }
 const styles = StyleSheet.create({
@@ -80,7 +80,4 @@ const styles = StyleSheet.create({
   lens: { width: 24, height: 24, borderWidth: 2, borderRadius: 12 },
   wordmark: { fontSize: 34, fontWeight: '700', letterSpacing: 9 },
   subtitle: { fontSize: 14, textAlign: 'center', lineHeight: 21 },
-  loading: { marginTop: 64, alignItems: 'center', gap: 16, width: '100%', maxWidth: 240 },
-  label: { fontSize: 13, textAlign: 'center' },
-  track: { width: '100%', height: 3, overflow: 'hidden', borderRadius: 2 },
 });

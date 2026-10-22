@@ -1,6 +1,50 @@
 # FILMER release readiness — NOT READY for App Store
 
+## Latest Storage / automatic-restore revision — 2026-10-22
+
+**NOT READY; signed iCloud/reinstall verification is still required.** Storage now follows the reference hierarchy from iCloud downward, with dedicated compact typography, card spacing and four-line lists. No unconditional protection checkmark, encryption guarantee, uploaded-original claim or destructive delete control is shown.
+
+First-install metadata restore has a localized nonblocking notice with actual received-record counts, validating/applying and paused/Retry states. Additive Roll/frame membership prevents a Roll from being published before its known frames arrive. Existing journal, account binding, tombstones, local-first repositories and PhotoKit remapping are retained. No local schema migration, uninstall or data reset occurred. Covers and legacy Copy bytes remain local and are not protected by this CloudKit implementation.
+
+**192 automated tests pass**, plus one Simulator screenshot/scroll XCTest. TypeScript, lint, native config, Metro export and diff checks pass. Debug Simulator and Release generic-device unsigned builds succeed. Doctor remains **19/21** (maintained-native configuration warning and four Expo patch mismatches). Real iCloud account, Development/Production schema, two signed devices, actual reinstall, permission/iCloud-only photo cases remain unverified. `FILMERCloudSyncProvisioned` remains false. Setup and exact files: [Cloud Sync QA](docs/CLOUD_SYNC_QA.md). Screenshots: [Storage visual QA](docs/qa/storage-2026-10-22/README.md).
+
+
+## Authoritative update 2026-10-22 — simplified Settings and real CloudKit source
+
+**NOT READY for App Store.** Native private-CloudKit metadata sync, durable per-record journal, deterministic field conflicts, tombstones, guarded merge/restore and PhotoKit recovery integration are implemented. `FILMERCloudSyncProvisioned` remains **false** until Apple Developer signing/container/schema setup and live tests are complete. No live iCloud, two-device or reinstall protection is verified. Covers and legacy Copy bytes are not synchronized; originals remain in Apple Photos.
+
+Settings now exposes only iCloud Sync / Sync Photos and Storage in the relevant groups. Earlier multi-page Settings proposals below are historical and superseded. Existing repositories, archives, covers and legacy files are preserved.
+
+Verification: **187 passing automated tests**, TypeScript, lint, native config, Metro export and diff checks pass; **Debug Simulator and Release generic-device unsigned builds succeed**. Online Expo Doctor remains **19/21** (maintained-native configuration warning plus four Expo patch updates). Simulator main Settings inspected; physical-iPhone, signed CloudKit, upgrade/reinstall and two-device conflict QA remain release blockers. Full architecture, limitations, exact changed files, Apple setup and QA: [Cloud Sync QA](docs/CLOUD_SYNC_QA.md).
+
+## Historical implementation reports
+
+
+## Update 2026-10-22 — Storage & Data Protection refinement
+
+Storage now includes a measured-total summary, inline viewing-quality controls using the existing preference, explicit unconfigured CloudKit information, device-specific photo-link/recovery limitations, and local-only cover/legacy-Copy protection disclosures. No CloudKit engine, Copy import, Wi-Fi-only switch, schema migration or data reset was introduced. Cache errors report measured partial completion instead of implying rollback; retained user files are covered by regression tests. Reference checking now uses cached indexes for large libraries and shows an unresolved total.
+
+Validation: **161/161 Node tests**, TypeScript, lint, iOS config and unsigned Simulator Debug workspace build pass. Online Expo Doctor remains **19/21** (maintained-native config warning and four available Expo patch updates). Physical-device/iCloud QA remains required. Full details, touched files and manual steps: [Settings QA](docs/SETTINGS_QA.md). Earlier results below are historical. App Store status remains **NOT READY** until existing release gaps and device QA are resolved.
+
+
+## Update 2026-10-22 — Settings, storage and reference verification
+
+Implemented main Settings plus Storage, Photo Quality, Photos Access, Sync Photos (metadata-only reference verification/repair), Sync Status and Data & Recovery. All new strings are localized in English/Korean/Vietnamese. Quality persists in the existing settings record with a safe Optimized default; Roll schemas and catalog/archive IDs are unchanged. Preview clearing measures bytes first, confirms, and removes only native derived JPEG renders. Legacy copies and Apple Photos originals remain supported and untouched by cache clearing.
+
+**CloudKit is not implemented.** Coming Later / Not configured are explanatory states, not functional sync. No cloud upload/delete, account check, guaranteed backup/restore, or encryption claim was added. Device transfer still depends on actual iOS backup/transfer and optional PhotoKit cloud-identifier recovery.
+
+Current verification: TypeScript, lint (no warnings), iOS config check, **156/156 Node tests**, unsigned Simulator Debug workspace build and iOS Metro export pass. Online Expo Doctor **19/21**: maintained-native config warning plus available patch updates for Expo, expo-location, expo-router and expo-sharing. Dependencies were not upgraded and prebuild was not run. Physical iPhone, real iCloud/backup recovery, small/large screen and Dynamic Type QA remain required. See [Settings QA](docs/SETTINGS_QA.md) for behavior, measurement scope, files, limitations and manual steps. Earlier results below are historical and do not supersede this update. Overall App Store readiness remains **NOT READY** pending device QA and existing release gaps.
+
+
 Updated 2026-10-15 (Asia/Seoul), after SDK patch alignment, lint setup and Reference import drag selection. **Ready to begin signed physical-device QA; not approved for release.** No app was installed/launched on an iPhone, and no device data was reset or removed. Previous comprehensive audit and its detailed data-integrity findings are preserved in [docs/PRE_RELEASE_AUDIT_2026-10-15.md](docs/PRE_RELEASE_AUDIT_2026-10-15.md); this report supersedes its dependency, lint, picker and test results.
+
+## Update 2026-10-21 — PHCloudIdentifier Reference recovery
+
+- New optional `cloudIdentifier` on Apple Photos References. Import and Relink store it when PhotoKit provides one; absence never fails an import. Existing records are not rewritten.
+- Apple APIs: `PHPhotoLibrary.cloudIdentifierMappings(forLocalIdentifiers:)`, `PHPhotoLibrary.localIdentifierMappings(for:)`, `PHCloudIdentifier(stringValue:)` / `.stringValue`, `PHPhotosError.Code.identifierNotFound` / `.multipleIdentifiersFound` (all iOS 15+; deployment target 16.4). Mapping for the picker result now runs off the main thread.
+- On `unavailable`/`limited` resolution, a stored cloud identifier is mapped to this device's localIdentifier, verified, then saved through the existing write-protected repository. Only `assetId`/`localIdentifier` change. Permission-denied/temporary errors never trigger it. One lookup per stale reference until Retry/app activation/library change. Manual Retry and Relink unchanged.
+- Validation: TypeScript and ESLint pass; **148/148 Node tests** (11 new recovery tests, mutation-checked); unsigned iOS Simulator Debug build succeeds with no FilmerPhotos warnings; Expo Doctor offline 19/21 (native config sync warning, and Directory check needs network).
+- **Physical iPhone restore/migration is UNVERIFIED.** Cloud identifiers require iCloud Photos on the same Apple Account and are not a guaranteed cross-device recovery.
 
 ## Current results
 
@@ -93,7 +137,7 @@ CocoaPods reports an existing leading-newline plist-parser warning; plist syntax
 | P2 | Native config warning is understood/retained; documented portrait/iPad landscape and hardcoded version sources require deliberate maintenance, not destructive prebuild |
 | P2 | Previous audit's optional-frame-count clearing issue, settings corruption recovery limits, missing general custom catalog editing/deletion, English native permission prompts and decorative artwork inaccuracies remain as documented in the historical audit |
 
-Backup/Restore remains intentionally excluded from FILMER 1.0; emergency raw archive export is I-03 recovery only. Settings warns that uninstalling can permanently lose local Roll metadata; Apple Photos originals are not deleted. Nothing in these changes provides cloud backup or automatic recovery.
+Backup/Restore remains intentionally excluded from FILMER 1.0; emergency raw archive export is I-03 recovery only. Settings warns that uninstalling can permanently lose local Roll metadata; Apple Photos originals are not deleted. Nothing in these changes provides cloud backup. Since 2026-10-21, Reference recovery through PHCloudIdentifier can repair a stale photo link; it does not back up Roll metadata.
 
 ## Physical iPhone verification required
 
@@ -104,6 +148,7 @@ Backup/Restore remains intentionally excluded from FILMER 1.0; emergency raw arc
 5. Test full/limited/denied access, including changing access while picker is open/backgrounded; Manage Access/Settings, Retry and inaccessible selected assets must fail safely without deleting frames. Single-photo Relink success/cancel/error preserves frame ID/order/metadata. Actual permission and thumbnail failures require hardware, not mocks.
 6. Test a cloud-only photo online, airplane-mode failure, then Retry online; use expendable assets to compare album-only removal with true Photos deletion. Existing frame becomes Photo unavailable only when inaccessible, and old cached image must not masquerade as current. Preserve legacy Copy access when its original is deleted; app cache clearing must preserve Copies/covers.
 7. Delete an expendable FILMER Roll; confirm no Apple Photos original was deleted. Smoke-test Viewer, reorder, sharing/contact sheets, custom Film/Camera cover persistence and startup recovery. Complete signed Release/TestFlight validation after privacy/signing requirements, without uploading as part of this task.
+8. Cloud-identifier recovery (iCloud Photos on): import expendable photos on device A and confirm records gain `cloudIdentifier`. Restore that device backup to device B (or migrate), open the Roll and confirm frames resolve without Relink, then force quit/reopen and confirm they stay resolved with unchanged frame IDs, order and details. Repeat with iCloud Photos off (expect Photo unavailable plus working Relink), with a photo deleted on A before migration, under limited and denied access, and offline (expect temporary error, no write).
 
 ## Next release actions
 

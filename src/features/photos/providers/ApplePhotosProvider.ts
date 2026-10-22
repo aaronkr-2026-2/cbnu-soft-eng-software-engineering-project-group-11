@@ -1,10 +1,12 @@
 import { Linking } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import type { ApplePhotoReference, PhotoPickResult, PhotoProvider } from '../types';
-import { pickPhotoReferences, usableAssetId, verifyPhotoAsset } from '../services/PhotoReferenceService';
+import { photoModuleAvailable, pickPhotoReferences, usableAssetId, usableCloudIdentifier, verifyPhotoAsset } from '../services/PhotoReferenceService';
 
 class ApplePhotosProvider implements PhotoProvider {
   async pickMultiplePhotos(_rollId: string, single = false): Promise<PhotoPickResult> {
+    // Persistent references require our PhotoKit bridge; never fall back to copying picker exports.
+    if (!photoModuleAvailable) throw new Error('FILMER PhotoKit module requires a new iOS build');
     let permission = await MediaLibrary.getPermissionsAsync(false, ['photo']);
     if (!permission.granted && permission.canAskAgain) permission = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
     if (!permission.granted) return { status: 'permission-denied' };
@@ -23,7 +25,7 @@ class ApplePhotosProvider implements PhotoProvider {
       photos.push({
         id: 'apple-photos-' + asset.assetId, provider: 'apple-photos', storageMode: 'reference',
         assetId: asset.assetId, localIdentifier: asset.assetId, sortOrder: photos.length,
-        takenAt: asset.takenAt,
+        takenAt: asset.takenAt, ...(usableCloudIdentifier(asset.cloudId) ? { cloudIdentifier: asset.cloudId } : {}),
       });
     }
     return { status: 'selected', photos, failedCount };
