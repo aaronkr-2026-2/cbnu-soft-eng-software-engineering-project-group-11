@@ -7,12 +7,14 @@
     "scheme": "filog",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.manhduong2003.filmer"
+      "supportsTablet": false,
+      "bundleIdentifier": "com.manhduong2003.filog",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "permissions": [
-        "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
@@ -25,7 +27,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow FILMER to access your photos so you can attach scans to film rolls."
+          "photosPermission": "Allow FiLog to access your photos so you can attach scans to film rolls.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ],
       [
