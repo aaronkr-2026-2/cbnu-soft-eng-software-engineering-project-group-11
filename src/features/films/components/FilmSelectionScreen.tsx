@@ -1,7 +1,7 @@
 import { FilmImage } from './FilmImage';
 import { filterFilms } from '../utils/filterFilms';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, SectionList, Text, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, SectionList, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '../../../components/ui/Screen';
 import { BackButton } from '../../../components/ui/BackButton';
@@ -42,7 +42,7 @@ export function FilmSelectionScreen() {
     if (change && router.canGoBack()) router.back();
     else router.push('/new-roll/details');
   }
-  return <Screen><SectionList sections={sections} keyExtractor={(film) => film.id} stickySectionHeadersEnabled={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}
+  return <Screen><KeyboardAvoidingView style={styles.layout} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><SectionList style={styles.list} sections={sections} keyExtractor={(film) => film.id} stickySectionHeadersEnabled={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.content}
     ListHeaderComponent={<><BackButton onPress={() => router.canGoBack() ? router.back() : router.replace('/')} /><Text style={styles.title}>{t('selectFilm')}</Text><SearchBar placeholder={t('searchFilms')} value={query} onChangeText={setQuery} /></>}
     renderSectionHeader={({ section }) => <Text style={styles.brand}>{section.title}</Text>}
     renderItem={({ item }) => <Pressable accessibilityRole="button" onPress={() => select(item.id)} style={styles.row}>
@@ -50,7 +50,13 @@ export function FilmSelectionScreen() {
       <View style={styles.description}><Text style={styles.text}>{item.brand} {item.name}</Text><Text style={styles.secondary}>ISO {item.iso} · {t(item.type)} · {(item.formats ?? [item.format]).map(format => format === 'other' ? t('other') : format).join(' / ')}</Text></View><Text style={styles.secondary}>›</Text>
     </Pressable>}
     ListEmptyComponent={<Text style={styles.secondary}>{t('noFilms')}</Text>}
-    ListFooterComponent={<Pressable accessibilityRole="button" style={styles.custom} onPress={() => setCustom(true)}><Text style={styles.text}>+ {t('addCustomFilm')}</Text><Text style={styles.secondary}>{t('filmFallback')}</Text></Pressable>}
-  />{custom ? <CustomFilmModal visible onClose={() => setCustom(false)} onAdded={select} /> : null}
+  />
+    <View style={styles.bottomBar}>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('addCustomFilm')} style={styles.custom} onPress={() => { Keyboard.dismiss(); setCustom(true); }}>
+        <Text style={styles.text}>+ {t('addCustomFilm')}</Text>
+        <Text style={styles.secondary}>{t('filmFallback')}</Text>
+      </Pressable>
+    </View>
+  </KeyboardAvoidingView>{custom ? <CustomFilmModal visible onClose={() => setCustom(false)} onAdded={select} /> : null}
   </Screen>;
 }

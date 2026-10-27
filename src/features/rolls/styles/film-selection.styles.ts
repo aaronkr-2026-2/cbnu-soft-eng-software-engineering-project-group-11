@@ -1,7 +1,10 @@
 import { StyleSheet } from 'react-native';
 import { type ThemeColors, spacing, typography, radii } from '../../../constants/theme';
 export const createFilmSelectionStyles = (colors: ThemeColors) => StyleSheet.create({
-  content: { padding: spacing.screen, paddingBottom: 40 },
+  layout: { flex: 1 },
+  list: { flex: 1 },
+  content: { padding: spacing.screen, paddingBottom: spacing.md },
+  bottomBar: { flexShrink: 0, paddingHorizontal: spacing.screen, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.border, backgroundColor: colors.background },
   title: { color: colors.text, fontSize: typography.size.screenTitle, fontWeight: '600', marginVertical: 20 },
   brand: { color: colors.secondaryText, fontSize: 13, fontWeight: '600', marginTop: 24, marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
@@ -11,5 +14,5 @@ export const createFilmSelectionStyles = (colors: ThemeColors) => StyleSheet.cre
   description: { flex: 1 },
   coverButton: { minHeight: 44, justifyContent: 'center' },
   selectButton: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center' },
-  custom: { marginTop: 24, padding: 16, borderRadius: radii.md, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  custom: { minHeight: 64, justifyContent: 'center', backgroundColor: colors.surface, padding: 16, borderRadius: radii.md, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
 });
