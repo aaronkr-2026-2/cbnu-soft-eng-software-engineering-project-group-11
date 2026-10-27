@@ -3,9 +3,13 @@ import type { PhotoReference } from '../types';
 import { observePhotoLibrary, resolvePhoto, type PhotoResolution } from '../services/PhotoReferenceService';
 export function useResolvedPhotos(photos: PhotoReference[]) {
   const [revision, setRevision] = useState(0);
+  const [invalidation, setInvalidation] = useState(0);
   const [state, setState] = useState<{ key: string; items: PhotoResolution[] }>();
-  const key = JSON.stringify([photos, revision]);
-  useEffect(() => observePhotoLibrary(() => setRevision(value => value + 1)), []);
+  const key = JSON.stringify([photos, invalidation]);
+  useEffect(() => observePhotoLibrary(change => {
+    if (change !== 'refresh') setInvalidation(value => value + 1);
+    setRevision(value => value + 1);
+  }), []);
   useEffect(() => {
     let active = true;
     // Bounded concurrency avoids simultaneous iCloud downloads for a large contact sheet.
@@ -19,7 +23,7 @@ export function useResolvedPhotos(photos: PhotoReference[]) {
     }
     void Promise.all(Array.from({ length: Math.min(4, photos.length) }, worker)).then(() => { if (active) setState({ key, items }); });
     return () => { active = false; };
-  }, [key, photos]);
+  }, [key, photos, revision]);
   return { items: state?.key === key ? state.items : photos.map(() => ({ status: 'loading' as const, uri: undefined })),
     retry: () => setRevision(value => value + 1) };
 }

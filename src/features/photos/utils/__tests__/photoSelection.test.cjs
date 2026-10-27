@@ -321,3 +321,91 @@ test('A late thumbnail decode error cannot clear the upgraded viewer source', as
   previewFailure(); assert.equal(render().uri, 'screen');
   render().failed(); assert.equal(render().status, 'temporary-error');
 });
+
+test('Foreground revalidation keeps the same visible thumbnail and render key until a verified replacement is ready', async () => {
+  const runner = hookRunner(), pending = []; let changed;
+  const { useResolvedPhoto } = load('features/photos/hooks/useResolvedPhoto.ts', {
+    react: runner.hooks,
+    '../services/PhotoReferenceService': {
+      observePhotoLibrary: listener => { changed = listener; return () => {}; }, invalidatePhotoRenders: () => changed('invalidate'),
+      resolvePhoto: () => new Promise(resolve => pending.push(resolve)),
+    },
+    '../../../store/app-store': { useAppStore: select => select({ photoQuality: 'optimized' }) },
+  });
+  const photo = { id: 'p', provider: 'apple-photos', assetId: 'asset', sortOrder: 0 };
+  const render = () => runner.render(() => useResolvedPhoto(photo));
+  render(); pending[0]({ status: 'ready', uri: 'file:///preview.jpg' }); await Promise.resolve();
+  const key = render().renderKey;
+  changed('refresh');
+  assert.equal(render().uri, 'file:///preview.jpg'); assert.equal(render().renderKey, key);
+  pending[1]({ status: 'ready', uri: 'file:///preview.jpg' }); await Promise.resolve();
+  assert.equal(render().uri, 'file:///preview.jpg'); assert.equal(render().renderKey, key);
+  changed('refresh'); render(); pending[2]({ status: 'temporary-error' }); await Promise.resolve();
+  assert.equal(render().uri, 'file:///preview.jpg', 'transient revalidation failure must not blank the image');
+  changed('refresh'); render(); pending[3]({ status: 'permission-denied' }); await Promise.resolve();
+  assert.equal(render().uri, undefined); assert.equal(render().status, 'permission-denied');
+});
+
+test('Library changes during foreground validation hide old pixels and stale foreground completions cannot restore them', async () => {
+  const runner = hookRunner(), pending = []; let changed;
+  const { useResolvedPhoto } = load('features/photos/hooks/useResolvedPhoto.ts', {
+    react: runner.hooks,
+    '../services/PhotoReferenceService': {
+      observePhotoLibrary: listener => { changed = listener; return () => {}; }, invalidatePhotoRenders: () => {},
+      resolvePhoto: () => new Promise(resolve => pending.push(resolve)),
+    },
+    '../../../store/app-store': { useAppStore: select => select({ photoQuality: 'optimized' }) },
+  });
+  const render = () => runner.render(() => useResolvedPhoto({ id: 'p', provider: 'apple-photos', assetId: 'asset', sortOrder: 0 }));
+  render(); pending[0]({ status: 'ready', uri: 'old' }); await Promise.resolve();
+  const key = render().renderKey;
+  changed('refresh'); assert.equal(render().uri, 'old');
+  changed('invalidate'); assert.equal(render().uri, undefined); assert.notEqual(render().renderKey, key);
+  pending[1]({ status: 'ready', uri: 'obsolete-refresh' }); await Promise.resolve();
+  assert.equal(render().uri, undefined);
+  pending[2]({ status: 'unavailable' }); await Promise.resolve();
+  assert.equal(render().status, 'unavailable'); assert.equal(render().uri, undefined);
+});
+
+test('High-quality viewer foreground checks do not downgrade the displayed image through thumbnail and screen tiers', async () => {
+  const runner = hookRunner(), pending = []; let changed;
+  const { useResolvedPhoto } = load('features/photos/hooks/useResolvedPhoto.ts', {
+    react: runner.hooks,
+    '../services/PhotoReferenceService': {
+      observePhotoLibrary: listener => { changed = listener; return () => {}; }, invalidatePhotoRenders: () => {},
+      resolvePhoto: () => new Promise(resolve => pending.push(resolve)),
+    },
+    '../../../store/app-store': { useAppStore: select => select({ photoQuality: 'high' }) },
+  });
+  const photo = { id: 'p', provider: 'apple-photos', assetId: 'asset', sortOrder: 0 };
+  const render = () => runner.render(() => useResolvedPhoto(photo, 'full'));
+  render();
+  for (let i = 0; i < 3; i++) { pending[i]({ status: 'ready', uri: ['thumb', 'screen', 'high'][i] }); await Promise.resolve(); }
+  assert.equal(render().uri, 'high');
+  changed('refresh'); assert.equal(render().uri, 'high');
+  pending[3]({ status: 'ready', uri: 'thumb' }); await Promise.resolve(); assert.equal(render().uri, 'high');
+  pending[4]({ status: 'ready', uri: 'screen' }); await Promise.resolve(); assert.equal(render().uri, 'high');
+  pending[5]({ status: 'ready', uri: 'high' }); await Promise.resolve(); assert.equal(render().uri, 'high');
+});
+
+test('Contact-sheet foreground refresh retains its displayed items while real library changes clear them', async () => {
+  const runner = hookRunner(), pending = []; let changed;
+  const { useResolvedPhotos } = load('features/photos/hooks/useResolvedPhotos.ts', {
+    react: runner.hooks,
+    '../services/PhotoReferenceService': {
+      observePhotoLibrary: listener => { changed = listener; return () => {}; },
+      resolvePhoto: () => new Promise(resolve => pending.push(resolve)),
+    },
+  });
+  const photos = [{ id: 'p', provider: 'apple-photos', assetId: 'asset', sortOrder: 0 }];
+  const render = () => runner.render(() => useResolvedPhotos(photos));
+  const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
+  render(); pending[0]({ status: 'ready', uri: 'sheet-preview' }); await flush();
+  assert.equal(render().items[0].uri, 'sheet-preview');
+  changed('refresh'); assert.equal(render().items[0].uri, 'sheet-preview');
+  pending[1]({ status: 'ready', uri: 'sheet-preview' }); await flush();
+  assert.equal(render().items[0].uri, 'sheet-preview');
+  changed('invalidate'); assert.equal(render().items[0].uri, undefined);
+  pending[2]({ status: 'unavailable' }); await flush();
+  assert.equal(render().items[0].status, 'unavailable');
+});

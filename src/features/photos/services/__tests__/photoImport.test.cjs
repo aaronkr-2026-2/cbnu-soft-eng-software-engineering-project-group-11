@@ -1527,7 +1527,7 @@ test('Two devices converge on independent field edits without replacing entire l
   await a.engine.run(); await b.engine.run(); await a.engine.run();
   for (const device of [a, b]) {
     assert.equal(device.local().rolls[0].notes, 'from A');
-    assert.equal(device.local().rolls[0].lab, 'from B');
+    assert.equal(device.local().rolls[0].lab, 'From B');
     assert.equal(device.local().rolls.length, 1);
   }
 });
@@ -2059,5 +2059,54 @@ test('Repeated metadata polls preserve visible render cache while still checking
     assert.equal((await api.resolvePhoto(photo)).status, 'permission-denied', 'cache never overrides fresh access verification');
     await r.load('features/settings/services/ReferenceRepairService.ts').ReferenceRepairService.run();
     assert.equal(invalidations, 2, 'explicit repair still refreshes views before and after checking');
+  } finally { stop(); }
+});
+
+test('Explicit camera, film and Roll saves normalize display names and preserve free text, IDs and archived data', async () => {
+  const r = runtime();
+  const cameraStore = r.load('features/cameras/store/cameraStore.ts').useCameraStore;
+  const filmStore = r.load('features/films/store/filmStore.ts').useFilmStore;
+  const before = r.state.kv.get('filmer.rolls.v1');
+  const camera = await cameraStore.getState().addCustomCamera({ brand: ' leica ', model: 'm6', format: '35mm' });
+  assert.equal(camera.brand, 'Leica'); assert.equal(camera.model, 'M6');
+  const film = filmStore.getState().addCustomFilm({ brand: 'kodak', name: 'portra 400', iso: 400, format: '35mm', type: 'color' });
+  assert.equal(film.brand, 'Kodak'); assert.equal(film.name, 'Portra 400');
+  assert.equal(r.state.kv.get('filmer.rolls.v1'), before, 'creating catalog items cannot rewrite existing rolls');
+  const input = { ...seedRoll, cameraId: camera.id, cameraName: 'leica m6', filmId: film.id, filmName: 'kodak portra 400', lab: 'oddne lab', notes: 'keep myCase\niso 400', location: { latitude: 21, longitude: 105, name: 'hà nội', address: '123 ngõ 4, eBay street' }, filmOverride: { brand: 'cinestill', name: '800t', iso: 800, type: 'cinema', format: '35mm' } };
+  const roll = r.store.getState().createRoll(input);
+  assert.equal(roll.cameraName, 'Leica M6'); assert.equal(roll.filmName, 'Kodak Portra 400');
+  assert.equal(roll.lab, 'Oddne Lab'); assert.equal(roll.location.name, 'Hà Nội');
+  assert.equal(roll.filmOverride.brand, 'CineStill'); assert.equal(roll.filmOverride.name, '800T');
+  assert.equal(roll.notes, input.notes); assert.equal(roll.location.address, input.location.address);
+  assert.equal(input.cameraName, 'leica m6', 'normalization must not mutate drafts');
+  r.store.getState().updateRoll(roll.id, { ...input, cameraName: 'nikon fm2' });
+  const restarted = runtime(r.state);
+  const loaded = restarted.store.getState().rolls.find(item => item.id === roll.id);
+  assert.equal(loaded.cameraName, 'Nikon FM2'); assert.equal(loaded.id, roll.id);
+  assert.equal(loaded.createdAt, roll.createdAt); assert.equal(loaded.notes, input.notes);
+  assert.equal(restarted.load('features/cameras/store/cameraStore.ts').useCameraStore.getState().cameras.find(item => item.id === camera.id).model, 'M6');
+});
+
+test('Foreground notifies an in-place refresh, ignores empty PhotoKit events and still checks current access and changed renders', async () => {
+  const r = runtime(); r.state.legacyCopyFixture = false; r.select(1); await r.service.addToRoll('r1');
+  const api = resolver(r), changes = [];
+  const stop = api.observePhotoLibrary(reason => changes.push(reason));
+  try {
+    const photo = r.store.getState().rolls[0].photos[0];
+    await api.resolvePhoto(photo);
+    const requests = r.state.nativeRequests.length;
+    r.state.activeListener('background'); assert.equal(changes.length, 0);
+    r.state.activeListener('active'); assert.deepEqual(changes, ['refresh']);
+    r.state.libraryListener({ hasIncrementalChanges: true, insertedAssets: [], deletedAssets: [], updatedAssets: [] });
+    assert.deepEqual(changes, ['refresh'], 'an empty activation event must not turn a quiet refresh into a hard reset');
+    await api.resolvePhoto(photo);
+    assert.equal(r.state.nativeRequests.length, requests + 1, 'foreground bypasses stale JS cache so native modification-date render paths can update');
+    r.state.permission = false;
+    r.state.activeListener('active');
+    assert.equal((await api.resolvePhoto(photo)).status, 'permission-denied');
+    r.state.libraryListener({ hasIncrementalChanges: false });
+    assert.equal(changes.at(-1), 'invalidate', 'permission changes still revoke displayed pixels');
+    r.state.libraryListener({ hasIncrementalChanges: true, insertedAssets: [], deletedAssets: [], updatedAssets: [{ id: photo.assetId }] });
+    assert.equal(changes.at(-1), 'invalidate', 'real asset edits still invalidate');
   } finally { stop(); }
 });

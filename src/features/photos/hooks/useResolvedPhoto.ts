@@ -12,14 +12,22 @@ export function renderPixels(points: number) {
 export function useResolvedPhoto(photo: PhotoReference | undefined, size: 'thumbnail' | 'full' = 'thumbnail', pixels = 512, allowHigh = true) {
   const quality = useAppStore(state => size === 'full' && allowHigh ? state.photoQuality : 'optimized');
   const [revision, setRevision] = useState(0);
+  const [invalidation, setInvalidation] = useState(0);
   const [state, setState] = useState<{ identity: string; result: PhotoResolution }>();
   // Details and ordering changes do not invalidate image work.
-  const identity = JSON.stringify([photo?.id, photo?.provider, photo && ('localIdentifier' in photo ? photo.localIdentifier : undefined), photo && ('assetId' in photo ? photo.assetId : undefined), photo && ('cloudIdentifier' in photo ? photo.cloudIdentifier : undefined), photo && ('documentPath' in photo ? [photo.documentPath, photo.localUri] : undefined), revision]);
-  useEffect(() => observePhotoLibrary(() => setRevision(value => value + 1)), []);
+  const identity = JSON.stringify([photo?.id, photo?.provider, photo && ('localIdentifier' in photo ? photo.localIdentifier : undefined), photo && ('assetId' in photo ? photo.assetId : undefined), photo && ('cloudIdentifier' in photo ? photo.cloudIdentifier : undefined), photo && ('documentPath' in photo ? [photo.documentPath, photo.localUri] : undefined), invalidation]);
+  useEffect(() => observePhotoLibrary(change => {
+    // Returning to the app revalidates in place; actual library changes hide stale pixels.
+    if (change !== 'refresh') setInvalidation(value => value + 1);
+    setRevision(value => value + 1);
+  }), []);
   useEffect(() => {
     const controller = new AbortController();
+    const hadImage = state?.identity === identity && Boolean(state.result.uri);
     const publish = (result: PhotoResolution, preview = false) => {
-      if (!controller.signal.aborted) setState(previous => preview && result.status === 'ready' && previous?.identity === identity && previous.result.uri
+      if (!controller.signal.aborted) setState(previous => (result.status === 'temporary-error' || result.status === 'loading') && previous?.identity === identity && previous.result.uri
+        ? { identity, result: { status: result.status, uri: previous.result.uri } }
+        : preview && result.status === 'ready' && previous?.identity === identity && previous.result.uri
         ? previous : { identity, result });
     };
     if (photo) void (async () => {
@@ -38,7 +46,7 @@ export function useResolvedPhoto(photo: PhotoReference | undefined, size: 'thumb
       // Transient upgrade errors retain the verified preview; access failures remove it.
       if (result.status === 'temporary-error' || result.status === 'loading') {
         setState(previous => controller.signal.aborted ? previous : { identity, result: { status: 'temporary-error', uri: previous?.identity === identity ? previous.result.uri : undefined } });
-      } else publish(result);
+      } else publish(result, quality === 'high' && hadImage);
       if (result.status !== 'ready' || quality !== 'high') return;
       const high = await resolvePhoto(photo, 'thumbnail', Math.min(4096, screenPixels * 2), controller.signal);
       if (high.status === 'temporary-error' || high.status === 'loading') {
@@ -48,7 +56,7 @@ export function useResolvedPhoto(photo: PhotoReference | undefined, size: 'thumb
     return () => controller.abort();
     // Image identity deliberately excludes mutable captions, dates and order.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [identity, size, quality, pixels]);
+  }, [identity, revision, size, quality, pixels]);
   return {
     ...(state?.identity === identity ? state.result : { status: 'loading' as const }),
     renderKey: identity,

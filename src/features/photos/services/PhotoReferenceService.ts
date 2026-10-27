@@ -45,25 +45,33 @@ const metrics = { requests: 0, cacheHits: 0, coalesced: 0, cancelled: 0, complet
 export function photoRenderMetrics() { return { ...metrics }; }
 const cancelRequests = new Map<string, () => void>();
 const consumers = new Map<string, number>();
-const listeners = new Set<() => void>();
+export type PhotoLibraryChange = 'refresh' | 'invalidate';
+const listeners = new Set<(change?: PhotoLibraryChange) => void>();
 // One cloud-identifier lookup per stale reference until Retry, app activation or a library change.
 const recoveries = new Map<string, Promise<string | undefined>>();
 let epoch = 0;
 let stop: (() => void) | undefined;
-export function invalidatePhotoRenders() {
+function resetPhotoRenders(change: PhotoLibraryChange) {
   epoch++;
   // Cancel the previous generation before notifying hooks. A late old consumer
   // must never cancel a new request for the same asset and pixel tier.
   cancelRequests.forEach(cancel => cancel());
   cancelRequests.clear(); inFlight.clear();
-  cache.clear(); recoveries.clear(); listeners.forEach(listener => listener());
+  cache.clear(); recoveries.clear(); listeners.forEach(listener => listener(change));
 }
-export function observePhotoLibrary(listener: () => void) {
+export function invalidatePhotoRenders() { resetPhotoRenders('invalidate'); }
+export function observePhotoLibrary(listener: (change?: PhotoLibraryChange) => void) {
   listeners.add(listener);
   if (!stop) {
-    const app = AppState.addEventListener('change', state => { if (state === 'active') invalidatePhotoRenders(); });
+    const app = AppState.addEventListener('change', state => { if (state === 'active') resetPhotoRenders('refresh'); });
     let library: ReturnType<typeof MediaLibrary.addListener> | undefined;
-    try { library = MediaLibrary.addListener(invalidatePhotoRenders); } catch { /* Missing native module remains recoverable. */ }
+    try { library = MediaLibrary.addListener(event => {
+      // PhotoKit can notify on activation even when no assets actually changed.
+      if (event?.hasIncrementalChanges === true && event.insertedAssets?.length === 0 &&
+          event.deletedAssets?.length === 0 && event.updatedAssets?.length === 0) return;
+      // Permission changes, edits, deletions and unknown payloads remain hard invalidations.
+      invalidatePhotoRenders();
+    }); } catch { /* Missing native module remains recoverable. */ }
     stop = () => { app.remove(); library?.remove(); stop = undefined; };
   }
   return () => { listeners.delete(listener); if (!listeners.size) stop?.(); };
