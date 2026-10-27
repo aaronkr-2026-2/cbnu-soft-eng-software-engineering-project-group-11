@@ -1,0 +1,79 @@
+{
+  "identifier": "03DEC1A1",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "0.99",
+      "familyShareable": false,
+      "internalID": "2957524659",
+      "localizations": [
+        {
+          "description": "A small token of appreciation",
+          "displayName": "Buy me a coffee",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.manhduong2003.filog.tip.coffee",
+      "referenceName": "Coffee Tip",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "3.99",
+      "familyShareable": false,
+      "internalID": "1502398831",
+      "localizations": [
+        {
+          "description": "Help fuel development",
+          "displayName": "Buy me lunch",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.manhduong2003.filog.tip.lunch",
+      "referenceName": "Lunch Tip",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": false,
+      "internalID": "2329211989",
+      "localizations": [
+        {
+          "description": "Generous support for the app",
+          "displayName": "Buy me dinner",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.manhduong2003.filog.tip.dinner",
+      "referenceName": "Dinner Tip",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "29.99",
+      "familyShareable": false,
+      "internalID": "3063758392",
+      "localizations": [
+        {
+          "description": "A major contribution to FiLog",
+          "displayName": "Sponsor development",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.manhduong2003.filog.tip.sponsor",
+      "referenceName": "Sponsor Tip",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {
+    "_applicationInternalID": "",
+    "_developerTeamID": "ZBTP6S3362",
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

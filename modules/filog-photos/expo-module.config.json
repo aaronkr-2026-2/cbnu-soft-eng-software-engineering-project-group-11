@@ -1,1 +1,1 @@
-{"platforms": ["apple"], "apple": {"modules": ["FiLogPhotosModule", "FiLogCloudModule"]}}
+{"platforms": ["apple"], "apple": {"modules": ["FiLogPhotosModule", "FiLogCloudModule", "FiLogTipsModule"]}}

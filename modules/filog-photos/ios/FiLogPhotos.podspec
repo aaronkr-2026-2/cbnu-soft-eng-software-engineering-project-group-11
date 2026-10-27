@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   s.platform = :ios, '16.4'
   s.static_framework = true
   s.dependency 'ExpoModulesCore'
-  s.frameworks = 'Photos', 'PhotosUI', 'UIKit', 'CloudKit', 'CryptoKit'
+  s.frameworks = 'Photos', 'PhotosUI', 'UIKit', 'CloudKit', 'CryptoKit', 'StoreKit'
   s.swift_version = '5.9'
   s.source_files = '**/*.{swift,h,m}'
   s.public_header_files = 'FiLogCloudContainer.h'
