@@ -14,18 +14,22 @@ try {
   const info = parse(fs.readFileSync(path.join(app, 'Info.plist')));
   run('codesign', ['--verify', '--strict', app]);
   const signed = parse(run('codesign', ['-d', '--entitlements', ':-', app]));
-  const container = info.FILMERCloudContainer;
-  const environment = info.FILMERCloudEnvironment;
+  const container = info.FiLogCloudContainer;
+  // Xcode omits the environment key when signing for development; CloudKit then uses Development.
+  const environment = signed['com.apple.developer.icloud-container-environment'] ?? 'Development';
   const errors = [];
   if (!signed['com.apple.developer.icloud-services']?.includes('CloudKit')) errors.push('Signed app is missing com.apple.developer.icloud-services = CloudKit.');
   if (!signed['com.apple.developer.icloud-container-identifiers']?.includes(container)) errors.push('Signed app does not include the configured container.');
-  if (!['Development', 'Production'].includes(environment) || signed['com.apple.developer.icloud-container-environment'] !== environment) errors.push('Signed CloudKit environment does not match Info.plist.');
+  if (!['Development', 'Production'].includes(environment)) errors.push('Signed CloudKit environment is not Development or Production.');
   const profilePath = path.join(app, 'embedded.mobileprovision');
   if (fs.existsSync(profilePath)) {
-    const profile = parse(run('security', ['cms', '-D', '-i', profilePath]));
-    const allowed = profile.Entitlements ?? {};
-    if (new Date(profile.ExpirationDate).getTime() <= Date.now()) errors.push('Provisioning profile has expired.');
-    if (!allowed['com.apple.developer.icloud-services']?.includes('CloudKit')) errors.push('Provisioning profile does not authorize CloudKit.');
+    // Profiles contain <data>/<date> values that JSON cannot hold, so extract only the keys checked here.
+    const profile = run('security', ['cms', '-D', '-i', profilePath]);
+    const extract = (key, format) => execFileSync('plutil', ['-extract', key, format, '-o', '-', '-'], { input: profile, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+    const allowed = JSON.parse(extract('Entitlements', 'json'));
+    if (new Date(extract('ExpirationDate', 'raw').trim()).getTime() <= Date.now()) errors.push('Provisioning profile has expired.');
+    const services = allowed['com.apple.developer.icloud-services'];
+    if (services !== '*' && !services?.includes('CloudKit')) errors.push('Provisioning profile does not authorize CloudKit.');
     const containers = allowed['com.apple.developer.icloud-container-identifiers'] ?? [];
     if (!containers.includes(container) && !containers.includes('*')) errors.push('Provisioning profile does not authorize this container.');
     const environments = allowed['com.apple.developer.icloud-container-environment'];

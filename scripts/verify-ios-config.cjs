@@ -24,15 +24,20 @@ const entitlements = plist('ios/FiLog/FiLog.Cloud.entitlements');
 assert.equal(info.FiLogCloudSyncProvisioned, undefined, 'Availability must follow actual entitlements, not a hardcoded provisioning flag');
 const localEntitlements = plist('ios/FiLog/FiLog.entitlements');
 assert.equal(localEntitlements['com.apple.developer.icloud-services'], undefined, 'Default local-only build must work with a Personal Team');
-assert.ok(project.includes('CODE_SIGN_ENTITLEMENTS = \"$(FILMER_CODE_SIGN_ENTITLEMENTS)\";'));
-assert.ok(project.includes('FILMER_CODE_SIGN_ENTITLEMENTS = FILMER/FILMER.entitlements;'));
-assert.ok(entitlements['com.apple.developer.icloud-container-identifiers'].includes(info.FILMERCloudContainer));
+assert.ok(project.includes('CODE_SIGN_ENTITLEMENTS = \"$(FILOG_CODE_SIGN_ENTITLEMENTS)\";'));
+const selected = [...project.matchAll(/FILOG_CODE_SIGN_ENTITLEMENTS = (\S+);/g)].map(match => match[1]);
+assert.equal(selected.length, 2, 'Debug and Release must each select an entitlements file');
+assert.ok(selected.every(file => ['FiLog/FiLog.entitlements', 'FiLog/FiLog.Cloud.entitlements'].includes(file)), 'Entitlements must be the local-only or CloudKit file');
+assert.ok(entitlements['com.apple.developer.icloud-container-identifiers'].includes(info.FiLogCloudContainer));
 assert.ok(entitlements['com.apple.developer.icloud-services'].includes('CloudKit'));
-assert.equal(info.FILMERCloudEnvironment, '$(FILMER_CLOUD_ENVIRONMENT)');
-assert.equal(entitlements['com.apple.developer.icloud-container-environment'], info.FILMERCloudEnvironment);
-assert.ok(project.includes('FILMER_CLOUD_ENVIRONMENT = Development;'));
-assert.ok(project.includes('FILMER_CLOUD_ENVIRONMENT = Production;'));
-console.log('Local-only default and opt-in CloudKit container/environment declarations match. Runtime checks actual container availability; this is not live CloudKit verification.');
+assert.equal(info.FiLogCloudEnvironment, '$(FILOG_CLOUD_ENVIRONMENT)');
+// Optional: Xcode drops it when editing capabilities, development signing omits it, and distribution export adds it.
+const declaredEnvironment = entitlements['com.apple.developer.icloud-container-environment'];
+assert.ok(declaredEnvironment === undefined || declaredEnvironment === info.FiLogCloudEnvironment);
+assert.ok(project.includes('FILOG_CLOUD_ENVIRONMENT = Development;'));
+assert.ok(project.includes('FILOG_CLOUD_ENVIRONMENT = Production;'));
+console.log(`Entitlements (Debug, Release): ${selected.join(', ')}.`);
+console.log('Local-only and CloudKit container/environment declarations match. Runtime checks actual container availability; this is not live CloudKit verification.');
 
 console.log('Native iOS identity, Photos permission strings, limited-access setting, scheme, icon/launch resources and local module declaration match.');
 console.log('Maintained-native policy: iOS Info.plist / Xcode settings determine actual orientations, build number, signing and entitlements; app.json plugins are not automatically applied.');

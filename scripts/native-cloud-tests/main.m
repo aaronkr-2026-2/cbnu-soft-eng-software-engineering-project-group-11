@@ -30,19 +30,19 @@ static NSMutableData *Signed(NSDictionary *entitlements) {
 }
 @interface CloudTestDouble : NSObject
 + (CKContainer *)containerWithIdentifier:(NSString *)identifier;
-+ (NSDictionary *)availability:(NSString *)identifier environment:(NSString *)environment;
++ (NSDictionary *)availability:(NSString *)identifier;
 @end
 @implementation CloudTestDouble
 + (CKContainer *)containerWithIdentifier:(NSString *)identifier {
   initializations++;
   @throw [NSException exceptionWithName:@"CKException" reason:@"unrelated test exception" userInfo:nil];
 }
-+ (NSDictionary *)availability:(NSString *)identifier environment:(NSString *)environment { return @{ @"configured": @YES }; }
++ (NSDictionary *)availability:(NSString *)identifier { return @{ @"configured": @YES, @"environment": @"Development" }; }
 @end
 int main(void) { @autoreleasepool {
   NSString *identifier = @"iCloud.com.manhduong2003.filog";
   NSDictionary *valid = @{ @"com.apple.developer.icloud-services": @[@"CloudKit"], @"com.apple.developer.icloud-container-identifiers": @[identifier], @"com.apple.developer.icloud-container-environment": @"Development" };
-  NSDictionary *(^check)(NSDictionary *) = ^(NSDictionary *input) { return [FilmerCloudContainer checkEntitlements:input identifier:identifier environment:@"Development"]; };
+  NSDictionary *(^check)(NSDictionary *) = ^(NSDictionary *input) { return [FiLogCloudContainer checkEntitlements:input identifier:identifier]; };
   Check([check(valid)[@"configured"] boolValue], @"Valid signed CloudKit entitlement policy");
   Check([check(nil)[@"reason"] isEqual:@"signing-unavailable"], @"Unreadable signing fails closed");
   Check([check(@{})[@"reason"] isEqual:@"missing-entitlement"], @"Local signed app is not CloudKit enabled");
@@ -52,9 +52,14 @@ int main(void) { @autoreleasepool {
   Check([check(changed)[@"reason"] isEqual:@"missing-entitlement"], @"Malformed entitlement rejected");
   changed = valid.mutableCopy; changed[@"com.apple.developer.icloud-container-identifiers"] = @[@"iCloud.other"];
   Check([check(changed)[@"reason"] isEqual:@"container-mismatch"], @"Wrong container rejected");
+  Check([check(valid)[@"environment"] isEqual:@"Development"], @"Signed Development environment reported");
   changed = valid.mutableCopy; changed[@"com.apple.developer.icloud-container-environment"] = @"Production";
-  Check([check(changed)[@"reason"] isEqual:@"environment-mismatch"], @"Wrong environment rejected");
-  Check([[FilmerCloudContainer checkEntitlements:valid identifier:@"invalid" environment:@"Development"][@"reason"] isEqual:@"configuration"], @"Invalid identifier rejected");
+  Check([check(changed)[@"configured"] boolValue] && [check(changed)[@"environment"] isEqual:@"Production"], @"Distribution-signed Production environment used");
+  [changed removeObjectForKey:@"com.apple.developer.icloud-container-environment"];
+  Check([check(changed)[@"configured"] boolValue] && [check(changed)[@"environment"] isEqual:@"Development"], @"Development signing without environment key uses Development");
+  changed[@"com.apple.developer.icloud-container-environment"] = @"Staging";
+  Check([check(changed)[@"reason"] isEqual:@"environment-mismatch"], @"Unknown environment rejected");
+  Check([[FiLogCloudContainer checkEntitlements:valid identifier:@"invalid"][@"reason"] isEqual:@"configuration"], @"Invalid identifier rejected");
   NSMutableData *signedData = Signed(valid);
   Check([[FiLogCloudContainer signedEntitlements:signedData] isEqual:valid], @"Read actual Mach-O XML signature slot");
   Check([[FiLogCloudContainer signedEntitlements:Signed(@{})] isEqual:@{}], @"Empty signed entitlements stay empty");
@@ -73,13 +78,13 @@ int main(void) { @autoreleasepool {
   Method initializer = class_getClassMethod(CKContainer.class, @selector(containerWithIdentifier:));
   Method stub = class_getClassMethod(CloudTestDouble.class, @selector(containerWithIdentifier:));
   method_exchangeImplementations(initializer, stub);
-  Check([FilmerCloudContainer make:identifier environment:@"Development"] == nil, @"Unsigned test process does not initialize CloudKit");
+  Check([FiLogCloudContainer make:identifier] == nil, @"Unsigned test process does not initialize CloudKit");
   Check(initializations == 0, @"No initializer call before entitlement preflight");
-  Method availability = class_getClassMethod(FilmerCloudContainer.class, @selector(availability:environment:));
-  Method allowed = class_getClassMethod(CloudTestDouble.class, @selector(availability:environment:));
+  Method availability = class_getClassMethod(FiLogCloudContainer.class, @selector(availability:));
+  Method allowed = class_getClassMethod(CloudTestDouble.class, @selector(availability:));
   method_exchangeImplementations(availability, allowed);
   BOOL propagated = NO;
-  @try { [FilmerCloudContainer make:identifier environment:@"Development"]; }
+  @try { [FiLogCloudContainer make:identifier]; }
   @catch (NSException *exception) { propagated = [exception.reason isEqual:@"unrelated test exception"]; }
   Check(propagated && initializations == 1, @"Unrelated CKExceptions are not hidden after preflight");
   method_exchangeImplementations(availability, allowed); method_exchangeImplementations(initializer, stub);

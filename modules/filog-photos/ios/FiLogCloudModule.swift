@@ -20,10 +20,9 @@ public class FiLogCloudModule: Module {
     if !triedContainer {
       triedContainer = true
       if let identifier = identifier, identifier.hasPrefix("iCloud.") {
-        let environment = Bundle.main.object(forInfoDictionaryKey: "FILMERCloudEnvironment") as? String ?? ""
-        cachedAvailability = FilmerCloudContainer.availability(identifier, environment: environment)
+        cachedAvailability = FiLogCloudContainer.availability(identifier)
         if cachedAvailability["configured"] as? Bool == true {
-          cachedContainer = FilmerCloudContainer.make(identifier, environment: environment)
+          cachedContainer = FiLogCloudContainer.make(identifier)
         }
       }
     }
@@ -73,8 +72,10 @@ public class FiLogCloudModule: Module {
     }
     Constant("deviceID") { self.sessionID }
     Constant("namespace") {
-      (Bundle.main.object(forInfoDictionaryKey: "FILMERCloudContainer") as? String ?? "unconfigured") + "." +
-      (Bundle.main.object(forInfoDictionaryKey: "FILMERCloudEnvironment") as? String ?? "unknown")
+      // Journals follow the environment CloudKit actually uses, which a development-signed Release run makes Development.
+      _ = self.container()
+      return (self.identifier ?? "unconfigured") + "." + (self.cachedAvailability["environment"] as? String ??
+        Bundle.main.object(forInfoDictionaryKey: "FiLogCloudEnvironment") as? String ?? "unknown")
     }
     AsyncFunction("account") { () async -> [String: Any] in
       guard let container = self.container() else { return self.cachedAvailability }

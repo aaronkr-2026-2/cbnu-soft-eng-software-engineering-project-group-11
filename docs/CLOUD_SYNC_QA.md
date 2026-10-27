@@ -1,6 +1,6 @@
 # Settings and CloudKit — implementation and release gate
 
-2026-10-22. **NOT READY for App Store.** Real CloudKit API code is implemented, but the container, signing profiles, production schema and signed-device behavior have not been verified. `FILMERCloudSyncProvisioned` deliberately remains `false`; the shipping UI reports Not configured. No successful live iCloud sync, two-device restore or reinstall protection is claimed.
+2026-10-22. **NOT READY for App Store.** Real CloudKit API code is implemented, but the container, signing profiles, production schema and signed-device behavior have not been verified. Both configurations still sign with the empty `FiLog/FiLog.entitlements`, so the shipping UI reports Not configured. No successful live iCloud sync, two-device restore or reinstall protection is claimed.
 
 ## Latest revision — screenshot hierarchy and restore completeness
 
@@ -55,9 +55,9 @@ No archive reset, migration, original-photo deletion, cover deletion or legacy-C
 ## Apple Developer / Xcode setup — still required
 
 1. Use the registered `com.manhduong2003.filog` App ID and the intended paid team (current project team `ZBTP6S3362`). Enable iCloud/CloudKit, create/assign `iCloud.com.manhduong2003.filog`, and regenerate development/distribution provisioning profiles. Verify the bundle/team/container ownership before changing them.
-2. In Xcode Signing & Capabilities, verify iCloud → CloudKit and the exact container. Native entitlements are already in source. Debug uses `FILMER_CLOUD_ENVIRONMENT=Development`; Release uses Production. Native configuration is authoritative; do not run prebuild as a repair shortcut.
+2. In Xcode Signing & Capabilities, verify iCloud → CloudKit and the exact container. Native entitlements are already in source. Debug uses `FILOG_CLOUD_ENVIRONMENT=Development`; Release uses Production. The live environment is read from the signed entitlements: Xcode omits `icloud-container-environment` for development signing (including a Release run from Xcode), so CloudKit and the journal use Development; App Store/TestFlight export adds Production. Simulator entitlements are read from the `__TEXT,__entitlements` section because ad-hoc simulator signatures carry none. Native configuration is authoritative; do not run prebuild as a repair shortcut.
 3. In CloudKit Console, validate the Development private database with a signed build. The API creates private zone `FiLog-v1`. Record type is `FiLogEntity`, with String field `document` plus system fields; records use deterministic SHA-256 names. Zone-change fetches require no query index. Validate schema/security and deploy the record type/schema to Production after Development QA. Never delete existing zones/records to hide errors.
-4. `ios/FILMER/Info.plist` contains `FILMERCloudSyncProvisioned=false`. Only set it true in an explicitly provisioned build after container, signing and schema are confirmed. The source flag is a deployment gate, not evidence of successful sync. Unsigned builds cannot verify entitlements, account access, quota or production readiness.
+4. Cloud availability follows the entitlements embedded in the signed executable (`FiLogCloudContainer.m`), not an Info.plist flag. To enable, set `FILOG_CODE_SIGN_ENTITLEMENTS` to `FiLog/FiLog.Cloud.entitlements` (Debug and Release) only after the container and signing are confirmed. Unsigned builds cannot verify entitlements, account access, quota or production readiness.
 5. Test Development and Production independently with signed builds; namespaces/checkpoints are separate. Do not mark covers, originals or Copy bytes as protected. Recheck App Store privacy disclosures and existing release gaps.
 
 ## Required two-device / physical-iPhone QA

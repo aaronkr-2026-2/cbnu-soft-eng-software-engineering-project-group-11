@@ -2,7 +2,7 @@
 
 ## Authoritative update 2026-10-22 — simplified Settings and real CloudKit source
 
-**NOT READY for App Store.** Native private-CloudKit metadata sync, durable per-record journal, deterministic field conflicts, tombstones, guarded merge/restore and PhotoKit recovery integration are implemented. `FILMERCloudSyncProvisioned` remains **false** until Apple Developer signing/container/schema setup and live tests are complete. No live iCloud, two-device or reinstall protection is verified. Covers and legacy Copy bytes are not synchronized; originals remain in Apple Photos.
+**NOT READY for App Store.** Native private-CloudKit metadata sync, durable per-record journal, deterministic field conflicts, tombstones, guarded merge/restore and PhotoKit recovery integration are implemented. Cloud stays off (empty `FiLog.entitlements` in both configurations) until Apple Developer signing/container/schema setup and live tests are complete. No live iCloud, two-device or reinstall protection is verified. Covers and legacy Copy bytes are not synchronized; originals remain in Apple Photos.
 
 Settings now exposes only iCloud Sync / Sync Photos and Storage in the relevant groups. Earlier multi-page Settings proposals below are historical and superseded. Existing repositories, archives, covers and legacy files are preserved.
 

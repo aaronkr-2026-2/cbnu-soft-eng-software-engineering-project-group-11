@@ -2,6 +2,7 @@
 #import <mach-o/loader.h>
 #import <mach-o/fat.h>
 #import <mach-o/dyld.h>
+#import <mach-o/getsect.h>
 
 // Read only this process's executable. The OS validates its signature when launching a device app.
 // Unreadable/unsupported signatures fail closed; a provisioning profile alone is not proof of
@@ -79,9 +80,9 @@ static uint64_t BigLong(NSData *data, uint64_t offset) {
   }
   return nil;
 }
-+ (NSDictionary<NSString *, id> *)checkEntitlements:(nullable NSDictionary *)entitlements identifier:(NSString *)identifier environment:(NSString *)environment {
-  NSString *reason = nil;
-  if (![identifier hasPrefix:@"iCloud."] || ![@[@"Development", @"Production"] containsObject:environment]) reason = @"configuration";
++ (NSDictionary<NSString *, id> *)checkEntitlements:(nullable NSDictionary *)entitlements identifier:(NSString *)identifier {
+  NSString *reason = nil, *environment = nil;
+  if (![identifier hasPrefix:@"iCloud."]) reason = @"configuration";
   else if (!entitlements) reason = @"signing-unavailable";
   else {
     id services = entitlements[@"com.apple.developer.icloud-services"];
@@ -89,18 +90,32 @@ static uint64_t BigLong(NSData *data, uint64_t offset) {
     // FiLog requires authenticated private CloudKit; CloudKit-Anonymous cannot provide it.
     if (![services isKindOfClass:[NSArray class]] || ![services containsObject:@"CloudKit"]) reason = @"missing-entitlement";
     else if (![containers isKindOfClass:[NSArray class]] || ![containers containsObject:identifier]) reason = @"container-mismatch";
-    else if (![entitlements[@"com.apple.developer.icloud-container-environment"] isEqual:environment]) reason = @"environment-mismatch";
+    else {
+      // Xcode omits this key for development signing, where CloudKit uses Development; distribution
+      // exports add it. The signature, not the Info.plist build setting, decides the live environment.
+      id signedEnvironment = entitlements[@"com.apple.developer.icloud-container-environment"] ?: @"Development";
+      if ([@[@"Development", @"Production"] containsObject:signedEnvironment]) environment = signedEnvironment;
+      else reason = @"environment-mismatch";
+    }
   }
-  return reason ? @{ @"configured": @NO, @"reason": reason } : @{ @"configured": @YES };
+  return reason ? @{ @"configured": @NO, @"reason": reason } : @{ @"configured": @YES, @"environment": environment };
 }
-+ (NSDictionary<NSString *, id> *)availability:(NSString *)identifier environment:(NSString *)environment {
++ (NSDictionary<NSString *, id> *)availability:(NSString *)identifier {
+#if TARGET_OS_SIMULATOR
+  // Simulator builds are ad-hoc signed; Xcode embeds their entitlements in __TEXT,__entitlements instead.
+  unsigned long size = 0;
+  uint8_t *section = getsectiondata((const struct mach_header_64 *)_dyld_get_image_header(0), "__TEXT", "__entitlements", &size);
+  id plist = section && size ? [NSPropertyListSerialization propertyListWithData:[NSData dataWithBytes:section length:size] options:NSPropertyListImmutable format:nil error:nil] : nil;
+  NSDictionary *entitlements = [plist isKindOfClass:[NSDictionary class]] ? plist : nil;
+#else
   NSURL *url = NSBundle.mainBundle.executableURL;
   NSData *data = url ? [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:nil] : nil;
   NSDictionary *entitlements = data ? [self signedEntitlements:data] : nil;
-  return [self checkEntitlements:entitlements identifier:identifier environment:environment];
+#endif
+  return [self checkEntitlements:entitlements identifier:identifier];
 }
-+ (nullable CKContainer *)make:(NSString *)identifier environment:(NSString *)environment {
-  if (![[self availability:identifier environment:environment][@"configured"] boolValue]) return nil;
++ (nullable CKContainer *)make:(NSString *)identifier {
+  if (![[self availability:identifier][@"configured"] boolValue]) return nil;
   // Preflight passed. Do not hide unrelated CKExceptions or programming errors with @catch.
   return [CKContainer containerWithIdentifier:identifier];
 }
