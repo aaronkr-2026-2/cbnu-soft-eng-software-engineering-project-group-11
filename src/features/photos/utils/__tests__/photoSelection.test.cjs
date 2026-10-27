@@ -12,6 +12,7 @@ function load(relative, mocks = {}) {
   module.filename = filename; module.paths = Module._nodeModulePaths(path.dirname(filename));
   module.require = name => {
     if (name in mocks) return mocks[name];
+    if (name === 'react-native') return { Dimensions: { get: () => ({ width: 390, height: 844 }) }, PixelRatio: { get: () => 3 } };
     if (!name.startsWith('.')) return require(name);
     const base = path.resolve(path.dirname(filename), name);
     return load(path.relative(src, base + (fs.existsSync(base + '.ts') ? '.ts' : '.tsx')), mocks);
@@ -107,7 +108,7 @@ function gestureRuntime() {
     'expo-haptics': { ImpactFeedbackStyle: { Medium: 'medium' }, impactAsync: () => Promise.resolve(), selectionAsync: () => Promise.resolve() },
     '../../../constants/theme': { useThemedStyles: () => ({}), spacing: { sm: 8 } },
     '../../../i18n/useTranslation': { useTranslation: () => ({ t: key => key }) },
-    '../hooks/useResolvedPhoto': { useResolvedPhoto: () => { runner.hooks.useMemo(() => { resolutions++; }, []); return { uri: 'file:///photo.jpg', status: 'ready', failed() {} }; } },
+    '../hooks/useResolvedPhoto': { renderPixels: value => value * 3, useResolvedPhoto: () => { runner.hooks.useMemo(() => { resolutions++; }, []); return { uri: 'file:///photo.jpg', status: 'ready', failed() {} }; } },
     './PhotoResolutionStatus': { PhotoResolutionStatus: 'status' },
   };
   return { runner, mocks, load: relative => load(relative, mocks), render(fn) { gestures = []; return runner.render(fn); },
@@ -219,22 +220,85 @@ test('Photo resolution UI clears stale images on library change, ignores old req
 });
 
 
-test('Viewer quality changes its request while thumbnails keep their original size', async () => {
+test('Viewer loads thumbnail, screen, then bounded high quality; neighbours stop at screen size', async () => {
   const runner = hookRunner(); let quality = 'optimized'; const requests = [];
   const { useResolvedPhoto } = load('features/photos/hooks/useResolvedPhoto.ts', {
     react: runner.hooks,
     '../../../store/app-store': { useAppStore: selector => selector({ photoQuality: quality }) },
     '../services/PhotoReferenceService': {
       observePhotoLibrary: () => () => {}, invalidatePhotoRenders: () => {},
-      resolvePhoto: async (photo, size, pixels) => { requests.push({ size, pixels }); return { status: 'ready', uri: 'preview' }; },
+      resolvePhoto: async (photo, size, pixels) => { requests.push({ size, pixels }); return { status: 'ready', uri: String(pixels) }; },
     },
   });
   const photo = { id: 'p', provider: 'apple-photos', assetId: 'a', sortOrder: 0 };
-  runner.render(() => useResolvedPhoto(photo, 'full'));
-  assert.deepEqual(requests.at(-1), { size: 'thumbnail', pixels: 1600 });
-  quality = 'high';
-  runner.render(() => useResolvedPhoto(photo, 'full'));
-  assert.deepEqual(requests.at(-1), { size: 'full', pixels: 1600 });
-  runner.render(() => useResolvedPhoto(photo, 'thumbnail'));
-  assert.deepEqual(requests.at(-1), { size: 'thumbnail', pixels: 512 });
+  const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
+  runner.render(() => useResolvedPhoto(photo, 'full')); await flush();
+  assert.deepEqual(requests, [{ size: 'thumbnail', pixels: 512 }, { size: 'thumbnail', pixels: 2560 }]);
+  quality = 'high'; requests.length = 0;
+  runner.render(() => useResolvedPhoto(photo, 'full')); await flush();
+  assert.deepEqual(requests.map(r => r.pixels), [512, 2560, 4096]);
+  assert.ok(requests.every(r => r.size === 'thumbnail'), 'Viewer never requests original size');
+  requests.length = 0;
+  runner.render(() => useResolvedPhoto(photo, 'full', 512, false)); await flush();
+  assert.deepEqual(requests.map(r => r.pixels), [512, 2560]);
+});
+
+test('Rapid navigation cancels old work and cannot publish out-of-order images or restart on caption edits', async () => {
+  const runner = hookRunner(); const pending = [];
+  const { useResolvedPhoto } = load('features/photos/hooks/useResolvedPhoto.ts', {
+    react: runner.hooks,
+    '../../../store/app-store': { useAppStore: selector => selector({ photoQuality: 'optimized' }) },
+    '../services/PhotoReferenceService': {
+      observePhotoLibrary: () => () => {}, invalidatePhotoRenders: () => {},
+      resolvePhoto: (photo, size, pixels, signal) => new Promise(resolve => pending.push({ photo, resolve, signal })),
+    },
+  });
+  let photo = { id: 'a', provider: 'apple-photos', assetId: 'a', sortOrder: 0 };
+  const render = () => runner.render(() => useResolvedPhoto(photo));
+  const oldFailure = render().failed; photo = { ...photo, note: 'caption', sortOrder: 5 }; render();
+  assert.equal(pending.length, 1);
+  photo = { ...photo, id: 'b', assetId: 'b' }; render();
+  assert.equal(pending[0].signal.aborted, true);
+  pending[1].resolve({ status: 'ready', uri: 'b' }); await Promise.resolve();
+  pending[0].resolve({ status: 'ready', uri: 'a' }); await Promise.resolve();
+  assert.equal(render().uri, 'b');
+  oldFailure(); assert.equal(render().uri, 'b', 'a late decode failure from the previous frame cannot clear the current frame');
+});
+
+test('Progressive upgrade preserves preview on transient failures but removes it on missing-original results', async () => {
+  for (const status of ['temporary-error', 'unavailable', 'permission-denied', 'limited']) {
+    const runner = hookRunner(); const pending = [];
+    const { useResolvedPhoto } = load('features/photos/hooks/useResolvedPhoto.ts', {
+      react: runner.hooks,
+      '../../../store/app-store': { useAppStore: selector => selector({ photoQuality: 'optimized' }) },
+      '../services/PhotoReferenceService': {
+        observePhotoLibrary: () => () => {}, invalidatePhotoRenders: () => {},
+        resolvePhoto: () => new Promise(resolve => pending.push(resolve)),
+      },
+    });
+    const photo = { id: 'a', provider: 'apple-photos', assetId: 'a', sortOrder: 0 };
+    const render = () => runner.render(() => useResolvedPhoto(photo, 'full'));
+    render(); pending[0]({ status: 'ready', uri: 'preview' }); await Promise.resolve();
+    assert.equal(render().uri, 'preview');
+    pending[1]({ status }); await Promise.resolve();
+    assert.equal(render().uri, status === 'temporary-error' ? 'preview' : undefined);
+  }
+});
+
+
+test('Grid window preserves original frame indices and limits mounted cells around the viewport', () => {
+  const r = gestureRuntime();
+  const { ReorderablePhotoGrid } = r.load('features/photos/components/ReorderablePhotoGrid.tsx');
+  const many = Array.from({ length: 1000 }, (_, index) => ({ id: String(index), sortOrder: index }));
+  let viewport = { top: 0, height: 600 };
+  const props = { photos: many, onPhotoPress() {}, onReorder() {}, onDraggingChange() {}, onAdd() {} };
+  const grid = () => r.render(() => ReorderablePhotoGrid({ ...props, viewport })).props.children[1].props.children;
+  grid().props.onLayout({ nativeEvent: { layout: { width: 320, y: 200 } } });
+  const initial = grid().props.children[0];
+  assert.equal(initial.length, 30); assert.equal(initial[0].props.initialIndex, 0);
+  viewport = { top: 3000, height: 600 };
+  const scrolled = grid().props.children[0];
+  assert.equal(scrolled.length, 51); assert.ok(scrolled[0].props.initialIndex > 0);
+  assert.ok(scrolled.every(cell => cell.props.photo.id === String(cell.props.initialIndex)));
+  viewport = undefined; assert.equal(grid().props.children[0].length, 1000, 'callers without a viewport retain compatibility');
 });

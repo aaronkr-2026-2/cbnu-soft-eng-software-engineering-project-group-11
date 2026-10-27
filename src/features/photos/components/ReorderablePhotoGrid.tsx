@@ -8,7 +8,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { useThemedStyles } from '../../../constants/theme';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type { PhotoReference } from '../types';
-import { useResolvedPhoto } from '../hooks/useResolvedPhoto';
+import { renderPixels, useResolvedPhoto } from '../hooks/useResolvedPhoto';
 import { PhotoResolutionStatus } from './PhotoResolutionStatus';
 import { createReorderablePhotoGridStyles, gridGap } from '../styles/reorderable-photo-grid.styles';
 import { usePhotoSelectionGesture } from '../hooks/usePhotoSelectionGesture';
@@ -24,6 +24,7 @@ const ignoreRange = (_start: number, _end: number) => {};
 type Positions = Record<string, number>;
 
 type Props = {
+  viewport?: { top: number; height: number };
   photos: PhotoReference[];
   onPhotoPress: (photo: PhotoReference, index: number) => void;
   /** Returns false when the new order could not be saved. */
@@ -61,10 +62,11 @@ function movePosition(positions: Positions, from: number, to: number): Positions
   return next;
 }
 
-export function ReorderablePhotoGrid({ photos, onPhotoPress, onReorder, onDraggingChange, onAdd, adding = false,
+export function ReorderablePhotoGrid({ viewport, photos, onPhotoPress, onReorder, onDraggingChange, onAdd, adding = false,
   selectionMode = false, selectedIds = emptySelection, onToggleSelection, onSelectRange = ignoreRange, interactionDisabled = false }: Props) {
   const styles = useThemedStyles(createReorderablePhotoGridStyles);
   const { t } = useTranslation();
+  const [gridY, setGridY] = useState(0);
   const [width, setWidth] = useState(0);
   const size = Math.max(0, (width - gridGap * (columns - 1)) / columns);
   const positions = useSharedValue<Positions>(positionsOf(photos));
@@ -92,8 +94,12 @@ export function ReorderablePhotoGrid({ photos, onPhotoPress, onReorder, onDraggi
   return <>
     {selectionMode || photos.length === 0 ? <Text style={styles.hint}>{t(selectionMode ? 'selectionDragHint' : 'attachPhotos')}</Text> : null}
     <GestureDetector gesture={selectionGesture}>
-    <View onLayout={(event) => setWidth(event.nativeEvent.layout.width)} style={[styles.grid, { height: size > 0 && rows > 0 ? rows * size + (rows - 1) * gridGap : 0 }]}>
-      {size > 0 ? photos.map((photo, index) => <PhotoTile
+    <View onLayout={(event) => { setWidth(event.nativeEvent.layout.width); setGridY(event.nativeEvent.layout.y); }} style={[styles.grid, { height: size > 0 && rows > 0 ? rows * size + (rows - 1) * gridGap : 0 }]}>
+      {size > 0 ? photos.map((photo, index) => ({ photo, index })).filter(({ index }) => {
+        if (!viewport) return true;
+        const y = Math.floor(index / columns) * (size + gridGap) + gridY;
+        return y + size >= viewport.top - viewport.height && y <= viewport.top + viewport.height * 2;
+      }).map(({ photo, index }) => <PhotoTile
         key={photo.id}
         photo={photo}
         initialIndex={index}
@@ -130,7 +136,7 @@ const PhotoTile = memo(function PhotoTile({ photo, initialIndex, size, count, po
   const styles = useThemedStyles(createReorderablePhotoGridStyles);
   const { t } = useTranslation();
   const id = photo.id;
-  const resolution = useResolvedPhoto(photo);
+  const resolution = useResolvedPhoto(photo, 'thumbnail', renderPixels(size));
   const { uri } = resolution;
   const onPress = useCallback(() => {
     if (interactionDisabled) return;

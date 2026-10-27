@@ -10,7 +10,9 @@
     "lint": "eslint app src",
     "typecheck": "tsc --noEmit",
     "test": "node --test",
+    "check:cloudkit-signing": "node scripts/verify-cloudkit-signing.cjs",
     "check:ios-config": "node scripts/verify-ios-config.cjs",
+    "test:native-cloud": "xcrun clang -fobjc-arc -fblocks -framework Foundation -framework CloudKit -I modules/filmer-photos/ios modules/filmer-photos/ios/FilmerCloudContainer.m scripts/native-cloud-tests/main.m -o /private/tmp/filmer-cloud-preflight-tests && /private/tmp/filmer-cloud-preflight-tests",
     "test:native-selection": "swiftc -module-cache-path /private/tmp/filmer-swift-selection-cache modules/filmer-photos/ios/OrderedPhotoSelection.swift scripts/native-selection-tests/main.swift -o /private/tmp/filmer-selection-tests && /private/tmp/filmer-selection-tests"
   },
   "dependencies": {

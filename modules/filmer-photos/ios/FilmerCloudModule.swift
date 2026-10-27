@@ -11,6 +11,7 @@ public class FilmerCloudModule: Module {
   private let containerLock = NSLock()
   private var triedContainer = false
   private var cachedContainer: CKContainer?
+  private var cachedAvailability: [String: Any] = ["configured": false, "reason": "configuration"]
   private var identifier: String? {
     return Bundle.main.object(forInfoDictionaryKey: "FILMERCloudContainer") as? String
   }
@@ -19,7 +20,11 @@ public class FilmerCloudModule: Module {
     if !triedContainer {
       triedContainer = true
       if let identifier = identifier, identifier.hasPrefix("iCloud.") {
-        cachedContainer = FilmerCloudContainer.make(identifier)
+        let environment = Bundle.main.object(forInfoDictionaryKey: "FILMERCloudEnvironment") as? String ?? ""
+        cachedAvailability = FilmerCloudContainer.availability(identifier, environment: environment)
+        if cachedAvailability["configured"] as? Bool == true {
+          cachedContainer = FilmerCloudContainer.make(identifier, environment: environment)
+        }
       }
     }
     return cachedContainer
@@ -72,7 +77,7 @@ public class FilmerCloudModule: Module {
       (Bundle.main.object(forInfoDictionaryKey: "FILMERCloudEnvironment") as? String ?? "unknown")
     }
     AsyncFunction("account") { () async -> [String: Any] in
-      guard let container = self.container() else { return ["configured": false, "reason": "configuration"] }
+      guard let container = self.container() else { return self.cachedAvailability }
       do {
         let status = try await container.accountStatus()
         guard status == .available else { return ["configured": true, "available": false, "status": status.rawValue] }

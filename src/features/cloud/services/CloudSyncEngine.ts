@@ -9,7 +9,7 @@ export type Journal = {
   lastSync?: number;
 };
 export type RestoreProgress = { phase: 'downloading' | 'applying' | 'paused'; received: number };
-export type CloudUnavailableReason = 'native-build' | 'configuration';
+export type CloudUnavailableReason = 'native-build' | 'configuration' | 'signing-unavailable' | 'missing-entitlement' | 'container-mismatch' | 'environment-mismatch';
 export type CloudState = { unavailableReason?: CloudUnavailableReason; restore?: RestoreProgress; configured: boolean; enabled: boolean; status: 'unavailable' | 'off' | 'syncing' | 'pending' | 'metadata-synced' | 'error'; pending: number; lastSync?: number; error?: string; errorKind?: 'account' | 'account-changed' | 'review' | 'network' | 'quota' | 'configuration' | 'incomplete' | 'unknown' };
 export type ServerItem = { document: string; tag: string };
 export type CloudTransport = {
@@ -189,7 +189,7 @@ export class CloudSyncEngine {
       this.show({ status: pending ? 'pending' : 'metadata-synced', restore: undefined });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Cloud sync failed';
-      const nativeKind = (error as { kind?: string }).kind;
+      const nativeKind = (error as { kind?: string } | null)?.kind;
       const errorKind = message.includes('account changed') ? 'account-changed' : message.includes('account unavailable') ? 'account' : message.includes('review required') ? 'review' : ['network', 'quota', 'configuration', 'account', 'incomplete'].includes(nativeKind ?? '') ? nativeKind as 'network' | 'quota' | 'configuration' | 'account' | 'incomplete' : 'unknown';
       this.show({ status: 'error', error: message, errorKind, restore: restoring ? { phase: 'paused', received } : undefined });
       throw error;

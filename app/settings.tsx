@@ -7,7 +7,7 @@ import { languageLabels } from '../src/i18n/translations';
 import { SettingsSelectModal } from '../src/features/settings/components/SettingsSelectModal';
 import { SettingsGroup as Group, SettingsPage, SettingsRow as Row, SettingsNote as Note } from '../src/features/settings/components/SettingsPage';
 import { setCloudEnabled, syncNow, useCloudStore } from '../src/features/cloud/services/cloudSync';
-import { cloudLabels, cloudErrorLabels } from '../src/features/cloud/services/cloudLabels';
+import { cloudLabels, cloudErrorLabels, cloudUnavailableLabels } from '../src/features/cloud/services/cloudLabels';
 import { privacyPolicyUrl, supportUrl } from '../src/constants/links';
 
 export default function Settings() {
@@ -31,7 +31,7 @@ export default function Settings() {
             onValueChange={value => { void setCloudEnabled(value).catch(() => Alert.alert(t('prefsCloudSync'), t('prefsFailed'))); }} /> : undefined} />
         <Row icon="▧" label={t('prefsSyncPhotos')} onPress={() => open('sync-photos')} />
       </Group>
-      {!sync.configured && sync.status === 'unavailable' && <Note>{t('cloudBuildUnavailable')}</Note>}
+      {!sync.configured && sync.status === 'unavailable' && <Note>{t(cloudUnavailableLabels[sync.unavailableReason ?? 'configuration'])}</Note>}
       {sync.configured && <Note>{t(cloudLabels[sync.status])} · {t('cloudBeta')}{sync.lastSync ? ` · ${t('cloudLastSync')}: ${new Date(sync.lastSync).toLocaleString(language)}` : ''}{sync.pending ? ` · ${t('cloudPendingCount', { count: sync.pending })}` : ''}</Note>}
       {sync.error && <Note>{t(cloudErrorLabels[sync.errorKind ?? 'unknown'])}</Note>}
       {sync.status === 'metadata-synced' && photosUnresolved !== 0 && <Note>{photosUnresolved === null ? t('cloudPhotosUnchecked') : t('cloudPhotosUnresolved', { count: photosUnresolved })}</Note>}

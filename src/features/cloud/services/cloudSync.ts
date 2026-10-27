@@ -19,7 +19,16 @@ type NativeResponse<T> = T | { error: { code: string; kind?: string; message: st
 type NativeCloud = { addListener(event: 'onAccountChanged', listener: () => void): { remove(): void }; deviceID: string; namespace: string; account(): Promise<NativeResponse<Awaited<ReturnType<CloudTransport['account']>>>>;
   fetch(token: string | null, account: string): Promise<NativeResponse<Awaited<ReturnType<CloudTransport['fetch']>>>>;
   save(key: string, document: string, tag: string | null, account: string): Promise<NativeResponse<Awaited<ReturnType<CloudTransport['save']>>>> };
-const native = requireOptionalNativeModule<NativeCloud>('FilmerCloud');
+// An optional bridge (including its constants) must not abort root-module evaluation.
+const bridge = (() => {
+  try {
+    const native = requireOptionalNativeModule<NativeCloud>('FilmerCloud');
+    return { native, namespace: native?.namespace ?? 'unconfigured', deviceID: native?.deviceID ?? 'unconfigured' };
+  } catch {
+    return { native: null, namespace: 'unconfigured', deviceID: 'unconfigured' };
+  }
+})();
+const { native } = bridge;
 async function unwrap<T>(promise: Promise<NativeResponse<T>>): Promise<T> {
   const value = await promise;
   if (value && typeof value === 'object' && 'error' in value) throw Object.assign(new Error(value.error.message), value.error);
@@ -27,7 +36,7 @@ async function unwrap<T>(promise: Promise<NativeResponse<T>>): Promise<T> {
 }
 const initial: CloudState = { configured: false, enabled: false, status: 'unavailable', pending: 0 };
 export const useCloudStore = create<{ sync: CloudState; photosUnresolved: number | null }>(() => ({ sync: initial, photosUnresolved: null }));
-const key = 'filmer.cloud.v1.' + (native?.namespace ?? 'unconfigured');
+const key = 'filmer.cloud.v1.' + bridge.namespace;
 function local(): CloudProjection {
   if ([useRollStore.getState().archive, useFilmStore.getState().archive, useCameraStore.getState().archive].some(archive => archive.status !== 'ready')) throw new Error('Local archive requires recovery; sync paused');
   return { rolls: useRollStore.getState().rolls, films: useFilmStore.getState().films.filter(item => item.isCustom), cameras: useCameraStore.getState().cameras.filter(item => item.isCustom) };
@@ -47,7 +56,7 @@ function instance() {
     read: () => { const raw = Storage.getItemSync(key); return raw === null ? undefined : JSON.parse(raw) as Journal; },
     write: journal => Storage.setItemSync(key, JSON.stringify(journal)), local, apply,
   }, {
-    deviceID: native?.deviceID ?? 'unconfigured',
+    deviceID: bridge.deviceID,
     account: () => native ? unwrap(native.account()) : Promise.resolve({ configured: false, reason: 'native-build' as const }),
     fetch: (token, account) => native ? unwrap(native.fetch(token ?? null, account)) : Promise.reject(new Error('Native CloudKit module unavailable')),
     save: (key, document, tag, account) => native ? unwrap(native.save(key, document, tag ?? null, account)) : Promise.reject(new Error('Native CloudKit module unavailable')),
@@ -70,7 +79,7 @@ export function syncNow() {
         } catch { useCloudStore.setState({ photosUnresolved: null }); }
       }
     } catch (error) {
-      const delay = Math.max((error as { retryAfter?: number }).retryAfter ?? 0, Math.min(300, 5 * 2 ** Math.min(++failures, 6)));
+      const delay = Math.max((error as { retryAfter?: number } | null)?.retryAfter ?? 0, Math.min(300, 5 * 2 ** Math.min(++failures, 6)));
       retryAfter = Date.now() + delay * 1000;
       if (!engine) useCloudStore.setState({ sync: { ...initial, status: 'error', error: error instanceof Error ? error.message : 'Cloud journal unavailable' } });
     }
@@ -94,17 +103,31 @@ export function startCloudSync() {
       }
     }, 800);
   };
-  const unsubscribers = [useRollStore.subscribe(changed), useFilmStore.subscribe(changed), useCameraStore.subscribe(changed)];
-  const listener = AppState.addEventListener('change', state => {
-    if (state === 'active') void syncNow();
-    else { try { instance().capture(); } catch { /* Next foreground pass reports/retries without resetting the local archive. */ } }
-  });
+  const unsubscribers: (() => void)[] = [];
+  let listener: { remove(): void } | undefined;
   let accountListener: { remove(): void } | undefined;
-  try { accountListener = native?.addListener('onAccountChanged', () => { void syncNow(); }); }
-  catch { /* Older native builds keep foreground/polling checks until rebuilt. */ }
-  const interval = setInterval(() => { if (AppState.currentState === 'active' && Date.now() >= retryAfter) void syncNow(); }, 30000);
-  void syncNow();
-  return () => { clearInterval(interval); clearTimeout(debounce); listener.remove(); accountListener?.remove(); unsubscribers.forEach(unsubscribe => unsubscribe()); };
+  let interval: ReturnType<typeof setInterval> | undefined;
+  const cleanup = () => {
+    clearInterval(interval); clearTimeout(debounce);
+    for (const remove of [...unsubscribers, () => listener?.remove(), () => accountListener?.remove()]) {
+      try { remove(); } catch { /* Optional service cleanup must not interrupt navigation. */ }
+    }
+  };
+  try {
+    for (const store of [useRollStore, useFilmStore, useCameraStore]) unsubscribers.push(store.subscribe(changed));
+    listener = AppState.addEventListener('change', state => {
+      if (state === 'active') void syncNow();
+      else { try { instance().capture(); } catch { /* Next foreground pass reports/retries without resetting the local archive. */ } }
+    });
+    try { accountListener = native?.addListener('onAccountChanged', () => { void syncNow(); }); }
+    catch { /* Older native builds keep foreground/polling checks until rebuilt. */ }
+    interval = setInterval(() => { if (AppState.currentState === 'active' && Date.now() >= retryAfter) void syncNow(); }, 30000);
+    void syncNow();
+  } catch (error) {
+    cleanup();
+    useCloudStore.setState({ sync: { ...initial, status: 'error', error: error instanceof Error ? error.message : 'Cloud initialization failed' } });
+  }
+  return cleanup;
 }
 
 export function recordReferenceCheck(result: RepairReport) {

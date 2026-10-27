@@ -7,7 +7,7 @@ import { isValidLocation, locationLabel } from '../../src/features/location/serv
 import { createRollDetailStyles } from '../../src/features/rolls/styles/roll-detail.styles';
 import { useTranslation } from '../../src/i18n/useTranslation';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Dimensions, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePreventRemove } from 'expo-router/react-navigation';
@@ -53,6 +53,8 @@ export default function RollDetail() {
   const deleteRoll = useRollStore((state) => state.deleteRoll);
   const [contactSheetRoll, setContactSheetRoll] = useState<Roll | null>(null);
   const [locationVisible, setLocationVisible] = useState(false);
+  const [viewport, setViewport] = useState({ top: 0, height: Dimensions.get('window').height });
+  const [contentY, setContentY] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [message, setMessage] = useState<TranslationKey | null>(null);
   const [addedCount, setAddedCount] = useState<number | null>(null);
@@ -97,7 +99,9 @@ export default function RollDetail() {
     finally { setIsPickingPhotos(false); }
   }
 
-  return <Screen><ScrollView scrollEnabled={!dragging} contentContainerStyle={[styles.container,
+  return <Screen><ScrollView scrollEnabled={!dragging} scrollEventThrottle={64}
+    onLayout={event => { const height = event.nativeEvent.layout.height; setViewport(value => ({ ...value, height })); }}
+    onScroll={event => { const top = event.nativeEvent.contentOffset.y; setViewport(value => Math.abs(value.top - top) > 80 ? { ...value, top } : value); }} contentContainerStyle={[styles.container,
     selection.selectionMode && styles.selectionContent,
     selection.selectionMode && { paddingBottom: styles.selectionContent.paddingBottom + insets.bottom,
       paddingTop: styles.container.paddingTop + (Platform.OS === 'android' ? insets.top : 0) }]}>
@@ -114,7 +118,7 @@ export default function RollDetail() {
         }} /> : null}
       </>}
     </View>
-    {roll ? <View>
+    {roll ? <View onLayout={event => setContentY(event.nativeEvent.layout.y)}>
       <View style={styles.filmHeader}>
         <FilmImage film={film} style={styles.filmImage} />
         <Text style={styles.title}>{film ? `${film.brand} ${film.name}` : roll.filmName}</Text>
@@ -135,7 +139,7 @@ export default function RollDetail() {
       {message === 'photoAccessHelp' || message === 'photoPermission' ? <Pressable accessibilityRole="button" style={{ paddingVertical: 12 }} onPress={() => {
         void applePhotosProvider.manageAccess().catch(() => Alert.alert(t('photosAccessRequired'), t('photoAccessHelp'))).finally(invalidatePhotoRenders);
       }}><Text style={styles.message}>{t('managePhotosAccess')}</Text></Pressable> : null}
-      <ReorderablePhotoGrid adding={isPickingPhotos} onAdd={handleAddPhotos} onDraggingChange={setDragging} onReorder={reorder}
+      <ReorderablePhotoGrid viewport={{ top: viewport.top - contentY, height: viewport.height }} adding={isPickingPhotos} onAdd={handleAddPhotos} onDraggingChange={setDragging} onReorder={reorder}
         onPhotoPress={openPhoto} photos={photos} selectionMode={selection.selectionMode} selectedIds={selection.selectedIds}
         onToggleSelection={selection.toggle} onSelectRange={selection.addRange} interactionDisabled={batchBusy} />
     </View> : <View style={styles.notFound}><Text style={styles.title}>{t('rollMissing')}</Text><Text style={styles.description}>{t('rollMissingInfo')}</Text></View>}

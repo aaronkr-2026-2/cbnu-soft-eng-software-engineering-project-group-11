@@ -2,6 +2,8 @@ import ExpoModulesCore
 import Photos
 import PhotosUI
 import UIKit
+import CryptoKit
+import os.log
 
 private final class ReferencePickerDelegate: NSObject, PHPickerViewControllerDelegate, UIAdaptivePresentationControllerDelegate {
   var finish: (([PHPickerResult]) -> Void)?
@@ -17,10 +19,51 @@ private final class ReferencePickerDelegate: NSObject, PHPickerViewControllerDel
 }
 
 public class FilmerPhotosModule: Module {
+  private let renderLog = OSLog(subsystem: "app.filmer.photos", category: .pointsOfInterest)
+  private let renderQueue = DispatchQueue(label: "filmer.photo-renders", qos: .userInitiated)
+  private let imageManager = PHCachingImageManager()
+  private var cancellations: [String: () -> Void] = [:]
+  private var memoryObserver: NSObjectProtocol?
+  private var rendersSinceSweep = 32
   private var pickerDelegate: ReferencePickerDelegate?
 
   public func definition() -> ModuleDefinition {
     Name("FilmerPhotos")
+    OnCreate { [weak self] in
+      self?.memoryObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil) { [weak self] _ in
+        guard let self else { return }
+        self.renderQueue.async {
+          Array(self.cancellations.values).forEach { $0() }
+          self.imageManager.stopCachingImagesForAllAssets()
+        }
+      }
+    }
+    OnDestroy {
+      if let observer = self.memoryObserver { NotificationCenter.default.removeObserver(observer) }
+      self.renderQueue.async {
+        Array(self.cancellations.values).forEach { $0() }
+        self.imageManager.stopCachingImagesForAllAssets()
+      }
+    }
+    AsyncFunction("preheat") { (identifiers: [String], pixels: Int, start: Bool) in
+      self.renderQueue.async {
+        let assets = identifiers.compactMap { self.lookup($0).asset }
+        let side = CGFloat(min(4096, max(64, pixels)))
+        let options = PHImageRequestOptions()
+        options.isNetworkAccessAllowed = true
+        options.deliveryMode = .highQualityFormat
+        options.resizeMode = .exact
+        options.version = .current
+        if start {
+          self.imageManager.startCachingImages(for: assets, targetSize: CGSize(width: side, height: side), contentMode: .aspectFit, options: options)
+        } else {
+          self.imageManager.stopCachingImages(for: assets, targetSize: CGSize(width: side, height: side), contentMode: .aspectFit, options: options)
+        }
+      }
+    }
+    AsyncFunction("cancelRender") { (identifier: String, full: Bool, pixels: Int) in
+      self.renderQueue.async { self.cancellations["\(identifier):\(full):\(pixels)"]?() }
+    }
     // Keep legacy label/theme arguments for bridge compatibility; the system owns all picker UI.
     AsyncFunction("pick") { (single: Bool, labels: [String: String], dark: Bool, promise: Promise) in
       DispatchQueue.main.async {
@@ -75,27 +118,47 @@ public class FilmerPhotosModule: Module {
       }
     }
     AsyncFunction("resolve") { (identifier: String, full: Bool, pixels: Int, promise: Promise) in
-      DispatchQueue.main.async {
+      self.renderQueue.async {
         let lookup = self.lookup(identifier)
         guard let asset = lookup.asset else { promise.resolve(lookup.result); return }
-        let manager = PHImageManager.default()
+        let manager = self.imageManager
+        let requestKey = "\(identifier):\(full):\(pixels)"
+        // A new library generation can supersede an older request for the same dimensions.
+        self.cancellations[requestKey]?()
         let options = PHImageRequestOptions()
         options.isNetworkAccessAllowed = true
         options.deliveryMode = .highQualityFormat
         options.resizeMode = full ? .none : .exact
         options.version = .current
-        let side = CGFloat(min(1600, max(64, pixels)))
+        let side = CGFloat(min(4096, max(64, pixels)))
         let size = full ? PHImageManagerMaximumSize : CGSize(width: side, height: side)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filmer-photo-renders", isDirectory: true)
+        let stamp = asset.modificationDate?.timeIntervalSince1970 ?? 0
+        let digest = SHA256.hash(data: Data("\(identifier):\(full):\(side):\(stamp)".utf8)).map { String(format: "%02x", $0) }.joined()
+        let url = directory.appendingPathComponent(digest + ".jpg")
+        if let values = try? url.resourceValues(forKeys: [.contentModificationDateKey]),
+           let modified = values.contentModificationDate, modified > Date().addingTimeInterval(-86400) {
+          os_signpost(.event, log: self.renderLog, name: "RenderCacheHit")
+          promise.resolve(["status": "ready", "uri": url.absoluteString]); return
+        }
+        let trace = OSSignpostID(log: self.renderLog)
+        os_signpost(.begin, log: self.renderLog, name: "PhotoRender", signpostID: trace, "pixels=%d full=%d", pixels, full ? 1 : 0)
         var finished = false
         var request: PHImageRequestID = PHInvalidImageRequestID
         // Serialize callbacks with the timeout to settle each promise exactly once.
         func finish(_ value: [String: Any]) {
           guard !finished else { return }
           finished = true
+          os_signpost(.end, log: self.renderLog, name: "PhotoRender", signpostID: trace)
+          self.cancellations.removeValue(forKey: requestKey)
           promise.resolve(value)
         }
+        self.cancellations[requestKey] = {
+          finish(["status": "loading"])
+          manager.cancelImageRequest(request)
+        }
         request = manager.requestImage(for: asset, targetSize: size, contentMode: .aspectFit, options: options) { image, info in
-          DispatchQueue.main.async {
+          self.renderQueue.async {
             guard !finished else { return }
             if (info?[PHImageResultIsDegradedKey] as? Bool) == true { return }
             let fresh = self.lookup(identifier)
@@ -105,26 +168,20 @@ public class FilmerPhotosModule: Module {
               finish(["status": "temporary-error"]); return
             }
             do {
-              let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filmer-photo-renders", isDirectory: true)
               try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
               // Bound disk lifetime without touching originals, Documents or unrelated caches.
-              if let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.contentModificationDateKey]) {
-                let cutoff = Date().addingTimeInterval(-86400)
-                for file in files where file.pathExtension == "jpg" {
-                  if let values = try? file.resourceValues(forKeys: [.contentModificationDateKey]),
-                     let modified = values.contentModificationDate, modified < cutoff {
-                    try? FileManager.default.removeItem(at: file)
-                  }
-                }
+              self.rendersSinceSweep += 1
+              if self.rendersSinceSweep >= 32 {
+                self.rendersSinceSweep = 0
+                self.pruneRenders(directory)
               }
               // Only derived, disposable render files. Never write into Documents or Photos.
-              let url = directory.appendingPathComponent(UUID().uuidString + ".jpg")
               try data.write(to: url, options: .atomic)
               finish(["status": "ready", "uri": url.absoluteString])
             } catch { finish(["status": "temporary-error"]) }
           }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 45) {
+        self.renderQueue.asyncAfter(deadline: .now() + 45) {
           guard !finished else { return }
           finish(["status": "temporary-error"])
           manager.cancelImageRequest(request)
@@ -157,6 +214,20 @@ public class FilmerPhotosModule: Module {
         count += 1
       }
       return count
+    }
+  }
+
+  // Sweep on the render queue, never on a navigation or UI callback. Only our disposable JPEGs.
+  private func pruneRenders(_ directory: URL) {
+    guard let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey]) else { return }
+    let entries = files.filter { $0.pathExtension == "jpg" }.compactMap { url -> (URL, Date, Int)? in
+      guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey]) else { return nil }
+      return (url, values.contentModificationDate ?? .distantPast, values.fileSize ?? 0)
+    }.sorted { $0.1 < $1.1 }
+    var bytes = entries.reduce(0) { $0 + $1.2 }
+    let cutoff = Date().addingTimeInterval(-86400)
+    for (url, date, size) in entries where date < cutoff || bytes > 128 * 1024 * 1024 {
+      if (try? FileManager.default.removeItem(at: url)) != nil { bytes -= size }
     }
   }
 

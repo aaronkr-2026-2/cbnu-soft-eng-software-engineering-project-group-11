@@ -1908,3 +1908,65 @@ test('An older native CloudKit bridge without events can still sync and stop saf
     assert.equal(driver.useCloudStore.getState().sync.status, 'metadata-synced');
   } finally { stop(); }
 });
+
+test('Signed entitlement preflight failures reach Settings state without cloud writes or local data changes', async () => {
+  for (const reason of ['signing-unavailable', 'missing-entitlement', 'container-mismatch', 'environment-mismatch']) {
+    const r = runtime(); const before = r.state.kv.get('filmer.rolls.v1'); let fetches = 0;
+    r.state.cloudBridge = { deviceID: 'test', namespace: 'signing-' + reason, async account() { return { configured: false, reason }; }, async fetch() { fetches++; throw new Error('must not fetch'); } };
+    const driver = r.load('features/cloud/services/cloudSync.ts'); await driver.syncNow();
+    const sync = driver.useCloudStore.getState().sync;
+    assert.equal(sync.configured, false); assert.equal(sync.status, 'unavailable');
+    assert.equal(sync.unavailableReason, reason); assert.equal(sync.lastSync, undefined);
+    assert.equal(fetches, 0); assert.equal(r.state.kv.get('filmer.rolls.v1'), before);
+    r.store.getState().updateRoll('r1', { ...r.store.getState().rolls[0], notes: 'Offline edits still work' });
+    assert.equal(r.store.getState().rolls[0].notes, 'Offline edits still work');
+  }
+});
+
+test('Optional CloudKit bridge import and constant failures cannot abort application module initialization', async () => {
+  for (const failure of ['import', 'namespace', 'deviceID']) {
+    const r = runtime();
+    r.state.kv.set('filmer.cloud.v1.saved-device', '{"preserved":"cloud journal"}');
+    const before = [...r.state.kv];
+    if (failure === 'import') Object.defineProperty(r.state, 'cloudBridge', { get() { throw new TypeError('Native module initialization failed'); } });
+    else {
+      r.state.cloudBridge = { namespace: 'saved-device', deviceID: 'device' };
+      Object.defineProperty(r.state.cloudBridge, failure, { get() { throw new TypeError('Native constant unavailable'); } });
+    }
+    const driver = r.load('features/cloud/services/cloudSync.ts');
+    await driver.syncNow();
+    assert.equal(driver.useCloudStore.getState().sync.status, 'unavailable');
+    assert.deepEqual([...r.state.kv], before);
+    assert.deepEqual(r.state.deleted, []);
+    r.store.getState().updateRoll('r1', { ...r.store.getState().rolls[0], notes: 'Local editing remains available' });
+    assert.equal(r.store.getState().rolls[0].notes, 'Local editing remains available');
+  }
+});
+
+test('Optional CloudKit subscription initialization failures clean up partial subscriptions without escaping startup', () => {
+  const r = runtime(); const before = [...r.state.kv]; let removed = 0;
+  r.store.subscribe = () => () => { removed++; };
+  r.load('features/films/store/filmStore.ts').useFilmStore.subscribe = () => { throw new TypeError('Service not initialized'); };
+  const driver = r.load('features/cloud/services/cloudSync.ts');
+  const stop = driver.startCloudSync();
+  assert.equal(removed, 1);
+  assert.equal(driver.useCloudStore.getState().sync.status, 'error');
+  assert.doesNotThrow(stop);
+  assert.deepEqual([...r.state.kv], before);
+});
+
+test('Null native rejections, missing native methods and corrupt cloud journals stay isolated from local startup', async () => {
+  for (const failure of ['null-rejection', 'missing-method', 'journal']) {
+    const r = runtime();
+    r.state.cloudBridge = { deviceID: 'device', namespace: 'init-failure' };
+    if (failure === 'null-rejection') r.state.cloudBridge.account = async () => { throw null; };
+    if (failure === 'journal') r.state.kv.set('filmer.cloud.v1.init-failure', '{broken journal');
+    const before = [...r.state.kv];
+    const driver = r.load('features/cloud/services/cloudSync.ts');
+    await assert.doesNotReject(driver.syncNow());
+    assert.equal(driver.useCloudStore.getState().sync.status, 'error');
+    assert.deepEqual([...r.state.kv], before);
+    assert.equal(r.store.getState().archive.status, 'ready');
+    assert.deepEqual(r.state.deleted, []);
+  }
+});

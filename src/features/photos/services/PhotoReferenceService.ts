@@ -16,6 +16,8 @@ type NativePhotos = {
   pick(single: boolean, labels: Record<string, string>, dark: boolean): Promise<{ canceled: boolean; assets: PickedReference[] }>;
   verify(id: string): Promise<PhotoResolution>;
   resolve(id: string, full: boolean, pixels: number): Promise<PhotoResolution>;
+  preheat?(ids: string[], pixels: number, start: boolean): Promise<void>;
+  cancelRender?(id: string, full: boolean, pixels: number): Promise<void>;
   cacheInfo?(): Promise<{ bytes: number; files: number; uri: string }>;
   clearRenders(): Promise<number>;
   /** Absent in builds before cloud-identifier recovery. */
@@ -39,6 +41,9 @@ export { usableAssetId, usableCloudIdentifier } from '../utils/referenceIdentifi
 // Session-only derived renders. A cache hit always verifies current library access first.
 const cache = new Map<string, PhotoResolution>();
 const inFlight = new Map<string, Promise<PhotoResolution>>();
+const metrics = { requests: 0, cacheHits: 0, coalesced: 0, cancelled: 0, completed: 0, totalResolveMs: 0 };
+export function photoRenderMetrics() { return { ...metrics }; }
+const consumers = new Map<string, number>();
 const listeners = new Set<() => void>();
 // One cloud-identifier lookup per stale reference until Retry, app activation or a library change.
 const recoveries = new Map<string, Promise<string | undefined>>();
@@ -62,11 +67,11 @@ export async function verifyPhotoAsset(id: unknown): Promise<PhotoResolution> {
   try { return native ? await native.verify(id) : { status: 'temporary-error' }; }
   catch { return { status: 'temporary-error' }; }
 }
-export async function resolvePhoto(photo: PhotoReference, size: 'thumbnail' | 'full' = 'thumbnail', pixels = 512): Promise<PhotoResolution> {
-  try { return await resolvePhotoSafely(photo, size, pixels); }
+export async function resolvePhoto(photo: PhotoReference, size: 'thumbnail' | 'full' = 'thumbnail', pixels = 512, signal?: AbortSignal): Promise<PhotoResolution> {
+  try { return await resolvePhotoSafely(photo, size, pixels, signal); }
   catch { return { status: 'temporary-error' }; }
 }
-async function resolvePhotoSafely(photo: PhotoReference, size: 'thumbnail' | 'full', pixels: number): Promise<PhotoResolution> {
+async function resolvePhotoSafely(photo: PhotoReference, size: 'thumbnail' | 'full', pixels: number, signal?: AbortSignal): Promise<PhotoResolution> {
   if (photo.provider === 'filmer-copy') {
     const uri = PhotoStorageService.resolveUri(photo);
     return uri && new File(uri).exists ? { status: 'ready', uri } : { status: 'unavailable' };
@@ -81,29 +86,55 @@ async function resolvePhotoSafely(photo: PhotoReference, size: 'thumbnail' | 'fu
     if (generation !== epoch) return { status: 'loading' };
     if (recovered) { id = recovered; access = { status: 'ready' }; }
   }
-  if (access.status !== 'ready') { cache.clear(); return access; }
+  if (access.status !== 'ready') {
+    for (const key of cache.keys()) if (key.startsWith(`${id}:`)) cache.delete(key);
+    return access;
+  }
   const key = `${id}:${size}:${pixels}`;
   const hit = cache.get(key);
   if (hit?.uri) {
-    try { if (new File(hit.uri).exists) return hit; } catch { /* Regenerate a purged derived render. */ }
+    try { if (new File(hit.uri).exists) { metrics.cacheHits++; return hit; } } catch { /* Regenerate a purged derived render. */ }
     cache.delete(key);
   }
+  if (signal?.aborted) return { status: 'loading' };
   const requestKey = `${generation}:${key}`;
   let request = inFlight.get(requestKey);
   if (!request) {
+    metrics.requests++;
     request = native!.resolve(id, size === 'full', pixels);
     inFlight.set(requestKey, request);
   }
+  else metrics.coalesced++;
+  const started = Date.now();
+  consumers.set(requestKey, (consumers.get(requestKey) ?? 0) + 1);
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    const remaining = (consumers.get(requestKey) ?? 1) - 1;
+    if (remaining > 0) consumers.set(requestKey, remaining);
+    else {
+      consumers.delete(requestKey);
+      if (signal?.aborted && inFlight.get(requestKey) === request) {
+        metrics.cancelled++;
+        inFlight.delete(requestKey);
+        void native?.cancelRender?.(id, size === 'full', pixels).catch(() => {});
+      }
+    }
+  };
+  signal?.addEventListener('abort', release, { once: true });
   try {
     const result = await request;
+    if (signal?.aborted) return { status: 'loading' };
     if (generation !== epoch) return { status: 'loading' };
+    metrics.completed++; metrics.totalResolveMs += Date.now() - started;
     if (result.status === 'ready' && result.uri) {
       if (cache.size >= 256) cache.delete(cache.keys().next().value!);
       cache.set(key, result);
     }
     return result;
   } catch { return { status: 'temporary-error' }; }
-  finally { if (inFlight.get(requestKey) === request) inFlight.delete(requestKey); }
+  finally { signal?.removeEventListener('abort', release); release(); if (inFlight.get(requestKey) === request) inFlight.delete(requestKey); }
 }
 function recoverReference(photo: ApplePhotoReference, staleId: string) {
   const cloudId = photo.cloudIdentifier;
@@ -159,4 +190,11 @@ export async function checkPhotoReference(photo: ApplePhotoReference): Promise<P
 export async function photoCacheInfo() {
   if (!native?.cacheInfo) throw new Error('Native cache measurement requires an updated FILMER build');
   return native.cacheInfo();
+}
+
+/** Hint PhotoKit about the bounded viewer neighbourhood; no persistent references are changed. */
+export function preheatPhotoReferences(photos: PhotoReference[], pixels: number) {
+  const ids = photos.filter((photo): photo is ApplePhotoReference => photo.provider === 'apple-photos').map(referenceIdentifier).filter(usableAssetId);
+  void native?.preheat?.(ids, pixels, true).catch(() => {});
+  return () => { void native?.preheat?.(ids, pixels, false).catch(() => {}); };
 }

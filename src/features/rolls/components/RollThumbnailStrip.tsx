@@ -1,9 +1,10 @@
 import { useTranslation } from '../../../i18n/useTranslation';
+import { useState } from 'react';
 import { Image, Text, View } from 'react-native';
 
 import { useThemedStyles } from '../../../constants/theme';
 import type { PhotoReference } from '../../photos/types';
-import { useResolvedPhoto } from '../../photos/hooks/useResolvedPhoto';
+import { renderPixels, useResolvedPhoto } from '../../photos/hooks/useResolvedPhoto';
 import { PhotoResolutionStatus } from '../../photos/components/PhotoResolutionStatus';
 import { createRollThumbnailStripStyles } from '../styles/roll-thumbnail-strip.styles';
 
@@ -44,7 +45,8 @@ export function RollThumbnailStrip({ photos }: RollThumbnailStripProps) {
 
 function Thumbnail({ photo }: { photo: PhotoReference }) {
   const styles = useThemedStyles(createRollThumbnailStripStyles);
-  const resolution = useResolvedPhoto(photo);
-  return resolution.uri ? <Image source={{ uri: resolution.uri }} style={styles.image} onError={resolution.failed} />
-    : <PhotoResolutionStatus status={resolution.status} />;
+  const [width, setWidth] = useState(0);
+  const resolution = useResolvedPhoto(width ? photo : undefined, 'thumbnail', renderPixels(width));
+  return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[styles.image, { alignItems: 'center', justifyContent: 'center' }]}>{resolution.uri ? <Image source={{ uri: resolution.uri }} style={styles.image} onError={resolution.failed} />
+    : <PhotoResolutionStatus status={resolution.status} />}</View>;
 }

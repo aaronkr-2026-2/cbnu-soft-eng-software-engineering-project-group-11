@@ -1,7 +1,7 @@
 import { useTranslation } from '../src/i18n/useTranslation';
 import { createHomeStyles } from '../src/features/home/styles/home.styles';
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, SectionList, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { EmptyState } from '../src/components/ui/EmptyState';
@@ -31,16 +31,11 @@ export default function Home() {
   const router = useRouter();
   const [browseMode, setBrowseMode] = useState<RollBrowseMode>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const resultsScroll = useRef<ScrollView>(null);
   const { groups, totalCount, photoCount } = useRolls({
     query: searchQuery,
     browseMode,
     language,
   });
-
-  useEffect(() => {
-    resultsScroll.current?.scrollTo({ y: 0, animated: false });
-  }, [browseMode]);
 
   return (
     <Screen>
@@ -83,37 +78,30 @@ export default function Home() {
         </ScrollView>
       </View>
 
-      <ScrollView
-        ref={resultsScroll}
+      <SectionList
+        key={browseMode}
+        sections={groups.map(group => ({ ...group, data: group.rolls }))}
+        keyExtractor={roll => roll.id}
+        initialNumToRender={4}
+        maxToRenderPerBatch={4}
+        windowSize={5}
+        stickySectionHeadersEnabled={false}
         style={styles.resultsScroll}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-      >
-        {groups.length > 0 ? groups.map((group) => (
-          <View key={group.key}>
-            <View style={styles.sectionHeader}>
-              <Text accessibilityRole="header" style={styles.sectionTitle}>{group.title}</Text>
-              <Text style={styles.rollCount}>
-                {t(group.rolls.length === 1 ? 'rollCountOne' : 'rollCountOther', { count: group.rolls.length })}
-              </Text>
-            </View>
-            <View style={styles.rollList}>
-              {group.rolls.map((roll) => (
-                <RollCard key={roll.id} roll={roll}
-                  onPress={() => router.push({ pathname: '/rolls/[id]', params: { id: roll.id } })} />
-              ))}
-            </View>
-          </View>
-        )) : (
-          <View style={styles.emptyState}>
-            <EmptyState
-              description={t(totalCount === 0 && !searchQuery.trim() ? 'createRollToStart' : 'trySearch')}
-              title={t(emptyLabels[browseMode])}
-            />
-          </View>
-        )}
-      </ScrollView>
+        renderSectionHeader={({ section }) => <View style={styles.sectionHeader}>
+          <Text accessibilityRole="header" style={styles.sectionTitle}>{section.title}</Text>
+          <Text style={styles.rollCount}>{t(section.data.length === 1 ? 'rollCountOne' : 'rollCountOther', { count: section.data.length })}</Text>
+        </View>}
+        renderItem={({ item: roll, index, section }) => <View style={index < section.data.length - 1 ? { marginBottom: styles.rollList.gap } : undefined}>
+          <RollCard roll={roll} onPress={() => router.push({ pathname: '/rolls/[id]', params: { id: roll.id } })} />
+        </View>}
+        ListEmptyComponent={<View style={styles.emptyState}><EmptyState
+          description={t(totalCount === 0 && !searchQuery.trim() ? 'createRollToStart' : 'trySearch')}
+          title={t(emptyLabels[browseMode])}
+        /></View>}
+      />
 
       <View style={styles.newRollButton}>
         <PrimaryButton label={t('newRoll')} onPress={() => router.push('/new-roll')} />

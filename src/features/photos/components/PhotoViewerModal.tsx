@@ -1,6 +1,6 @@
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Image, Keyboard, Linking, KeyboardAvoidingView, Modal, Platform, Pressable, Text, View } from 'react-native';
+import { Alert, Dimensions, Image, Keyboard, Linking, KeyboardAvoidingView, Modal, Platform, Pressable, Text, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withDecay, withSpring, withTiming, type SharedValue } from 'react-native-reanimated';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,12 +10,12 @@ import { BackButton } from '../../../components/ui/BackButton';
 import { photoViewerModalStyles as styles } from '../styles/photo-viewer-modal.styles';
 import type { PhotoDetailsPatch, PhotoReference } from '../types';
 import { formatPhotoDate } from '../utils/photoDate';
-import { useResolvedPhoto } from '../hooks/useResolvedPhoto';
+import { renderPixels, useResolvedPhoto } from '../hooks/useResolvedPhoto';
 import { PhotoResolutionStatus } from './PhotoResolutionStatus';
 import { relinkPhoto } from '../services/PhotoRelinkService';
 import { PhotoShareService } from '../services/PhotoShareService';
 import { applePhotosProvider } from '../providers/ApplePhotosProvider';
-import { invalidatePhotoRenders } from '../services/PhotoReferenceService';
+import { invalidatePhotoRenders, preheatPhotoReferences } from '../services/PhotoReferenceService';
 import { PhotoInfoSheet } from './PhotoInfoSheet';
 
 // Gap between photos while paging, as in the Photos app.
@@ -104,9 +104,11 @@ function Viewer({ rollId, photos, initialIndex, title, subtitle, onClose, onPhot
   const [sheetOpen, setSheetOpen] = useState(false);
   const [chromeHidden, setChromeHidden] = useState(false);
 
+  useEffect(() => {
+    const screen = Dimensions.get('window');
+    return preheatPhotoReferences(photos.slice(Math.max(0, index - 1), index + 2), renderPixels(Math.max(screen.width, screen.height)));
+  }, [photos, index]);
   const current = photos[index];
-  const currentResolution = useResolvedPhoto(current, 'full');
-  const currentUri = currentResolution.uri;
   const rotation = current ? rotations[current.id] ?? 0 : 0;
   const fitted = fitSize(current ? naturalSizes[current.id] : undefined, stage, rotation);
 
@@ -348,7 +350,6 @@ function Viewer({ rollId, photos, initialIndex, title, subtitle, onClose, onPhot
   const sheetStyle = useAnimatedStyle(() => ({ transform: [{ translateY: (1 - sheet.value) * (sheetH.value + 40) }] }));
 
   async function share() {
-    if (!currentUri) return;
     if (!current) return;
     try { await PhotoShareService.sharePhotos([current]); } catch { Alert.alert(t('sharePhoto'), t('photoTemporaryError')); }
   }
@@ -392,7 +393,7 @@ function Viewer({ rollId, photos, initialIndex, title, subtitle, onClose, onPhot
             {dateLabel ? `${dateLabel} · ${position}` : position}
           </Text>
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel={t('sharePhoto')} disabled={!currentUri} onPress={share} style={styles.circleButton}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('sharePhoto')} disabled={!current} onPress={share} style={styles.circleButton}>
           <ShareIcon />
         </Pressable>
       </Animated.View>
@@ -429,8 +430,9 @@ function PhotoSlot({ photo, full, onRelink, photoIndex, stage, rotation, natural
 }) {
   const { t } = useTranslation();
   const relinking = useRef(false);
-  const resolution = useResolvedPhoto(photo, full ? 'full' : 'thumbnail');
+  const resolution = useResolvedPhoto(photo, 'full', 512, full);
   const { uri } = resolution;
+  const [decoded, setDecoded] = useState<{ key: string; uri: string }>();
   const fitted = fitSize(natural, stage, rotation);
   const sideways = rotation % 180 !== 0;
   const { indexSV, scale, tx, ty, dismissX, dismissY, sheet, sheetH } = shared;
@@ -468,22 +470,28 @@ function PhotoSlot({ photo, full, onRelink, photoIndex, stage, rotation, natural
             relinking.current = true;
             void onRelink().finally(() => { relinking.current = false; });
           } : undefined} /> : (
+            <View style={{ width: sideways ? fitted.height : fitted.width, height: sideways ? fitted.width : fitted.height, transform: [{ rotate: `${rotation}deg` }] }}>
+            {decoded?.key === resolution.renderKey && decoded.uri !== uri ? <Image source={{ uri: decoded.uri }} resizeMode="contain" style={{ position: 'absolute', width: '100%', height: '100%' }} /> : null}
             <Image
               source={{ uri }}
               resizeMode="contain"
               accessibilityLabel={t('rollPhoto')}
               onError={resolution.failed}
               onLoad={(event) => {
+                setDecoded({ key: resolution.renderKey, uri });
                 const { width, height } = event.nativeEvent.source;
                 if (width && height && (natural?.width !== width || natural?.height !== height)) onNaturalSize({ width, height });
               }}
               style={{
                 width: sideways ? fitted.height : fitted.width,
                 height: sideways ? fitted.width : fitted.height,
-                transform: [{ rotate: `${rotation}deg` }],
               }}
             />
+            </View>
           )}
+          {uri && resolution.status === 'temporary-error' ? <View style={{ position: 'absolute', bottom: 20 }}>
+            <PhotoResolutionStatus status="temporary-error" retry={resolution.retry} />
+          </View> : null}
         </Animated.View>
       </Animated.View>
     </View>
