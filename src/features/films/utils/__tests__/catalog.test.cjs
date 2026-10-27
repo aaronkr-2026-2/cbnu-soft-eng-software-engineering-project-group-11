@@ -48,7 +48,7 @@ test('Film Selection whole row selects and clears the previous override in both 
  for (const edit of [undefined,'r1']) {
   const updates=[],navigation=[]; const jsx=(type,props)=>({type,props});
   const mocks={react:{useMemo:fn=>fn(),useState:value=>[value,()=>{}],useEffect:()=>{}},'react/jsx-runtime':{jsx,jsxs:jsx},
-   'react-native':{Pressable:'Pressable',SectionList:'SectionList',Text:'Text',View:'View'},
+   'react-native':{Pressable:'Pressable',SectionList:'SectionList',Text:'Text',View:'View',KeyboardAvoidingView:'KeyboardAvoidingView',Platform:{OS:'ios'},Keyboard:{dismiss:()=>{}}},
    'expo-router':{useLocalSearchParams:()=>({edit,change:edit?'1':undefined}),useRouter:()=>({canGoBack:()=>true,back:()=>navigation.push('back'),push:r=>navigation.push(r)})},
    '../../../constants/theme':{useThemedStyles:()=>({})},'../../../i18n/useTranslation':{useTranslation:()=>({t:key=>key})},
    '../store/filmStore':{useFilmStore:fn=>fn({films:builtInFilms})},
@@ -56,7 +56,7 @@ test('Film Selection whole row selects and clears the previous override in both 
    '../utils/filterFilms':{filterFilms}};
   const exports={};const code=ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
   new Function('exports','require',code)(exports,name=>mocks[name]??{});
-  const row=exports.FilmSelectionScreen().props.children[0].props.renderItem({item:getFilmById('fujifilm-c200')});
+  const row=exports.FilmSelectionScreen().props.children[0].props.children[0].props.renderItem({item:getFilmById('fujifilm-c200')});
   assert.equal(row.type,'Pressable');row.props.onPress();
   assert.deepEqual(updates,[[edit?'edit':'create',{filmId:'fujifilm-c200',filmOverride:undefined}]]);
   assert.deepEqual(navigation,[edit?'back':'/new-roll/details']);
@@ -75,6 +75,7 @@ test('Shared FilmForm saves an isolated override with a persistent cover and can
   '../../../components/ui/SelectionChip':{SelectionChip:'Chip'},
   '../../catalog/components/CatalogItemModal':{CatalogItemModal:'Form',CatalogChoices:'Choices',CatalogField:'Field',CatalogImageField:'ImagePicker'},
   '../data/filmAssets':{FILM_ASSETS:{'fujifilm-c200':123}},
+  '../../catalog/utils/normalizeDisplayName':load(path.resolve(__dirname,'../../../catalog/utils/normalizeDisplayName.ts')),
   '../services/FilmCoverStorage':{filmImageUri:film=>film?.imageUri,FilmCoverStorage:{copy:async uri=>{copies.push(uri);return{imageUri:'file:///Documents/film-covers/cover-test.jpg',imageDocumentPath:'film-covers/cover-test.jpg'};},removeUnreferenced:()=>{}}},
  };
  const exports={};new Function('exports','require',ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)(exports,name=>mocks[name]??{});
@@ -188,6 +189,7 @@ test('Film form rollback cannot delete a cover after catalog commit or a complet
    '../../../i18n/useTranslation':{useTranslation:()=>({t:key=>key})},
    '../../../components/ui/SelectionChip':{},'../../catalog/components/CatalogItemModal':{CatalogItemModal:'Form'},'../data/filmAssets':{FILM_ASSETS:{}},
    '../store/filmStore':{useFilmStore:{getState:()=>({films:saved})}},
+   '../../catalog/utils/normalizeDisplayName':load(path.resolve(__dirname,'../../../catalog/utils/normalizeDisplayName.ts')),
    '../services/FilmCoverStorage':{filmImageUri:()=>undefined,FilmCoverStorage:{copy:async()=>cover,removeUnreferenced:(_paths,retained)=>{if(!retained.has(cover.imageDocumentPath))deleted=true;}}},
   };
   const exports={};new Function('exports','require',ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)(exports,name=>mocks[name]??{});

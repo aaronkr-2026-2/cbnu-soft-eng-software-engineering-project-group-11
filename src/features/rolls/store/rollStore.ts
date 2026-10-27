@@ -1,3 +1,4 @@
+import { normalizeDisplayName } from '../../catalog/utils/normalizeDisplayName';
 import { create } from 'zustand';
 
 import type { PhotoDetailsPatch, PhotoReference } from '../../photos/types';
@@ -21,6 +22,24 @@ export type CreateRollInput = {
   lab?: string;
   notes?: string;
 };
+
+function normalizeRollInput(input: CreateRollInput): CreateRollInput {
+  return {
+    ...input,
+    filmName: normalizeDisplayName(input.filmName),
+    cameraName: normalizeDisplayName(input.cameraName),
+    ...(input.filmOverride ? { filmOverride: {
+      ...input.filmOverride,
+      brand: normalizeDisplayName(input.filmOverride.brand),
+      name: normalizeDisplayName(input.filmOverride.name),
+    } } : {}),
+    ...(input.lab !== undefined ? { lab: normalizeDisplayName(input.lab) || undefined } : {}),
+    ...(input.location ? { location: {
+      ...input.location,
+      ...(input.location.name ? { name: normalizeDisplayName(input.location.name) } : {}),
+    } } : {}),
+  };
+}
 
 type RollState = {
   archive: ArchiveLoad;
@@ -110,18 +129,21 @@ export const useRollStore = create<RollState>((set, get) => {
         photo.provider !== 'filmer-copy' || !retainedPaths.has(photo.documentPath)));
       return true;
     },
-    updateRoll: (rollId, input) => save((state) => ({
-      rolls: state.rolls.map((roll) => roll.id === rollId ? {
-        ...roll,
-        filmId: input.filmId, filmName: input.filmName,
-        filmOverride: input.filmOverride,
-        cameraId: input.cameraId, cameraName: input.cameraName,
-        format: input.format, date: input.date,
-        frameCount: input.frameCount,
-        lab: input.lab?.trim() || undefined, notes: input.notes?.trim() || undefined,
-        location: input.location ? { ...input.location } : undefined,
-      } : roll),
-    })),
+    updateRoll: (rollId, input) => {
+      input = normalizeRollInput(input);
+      save((state) => ({
+        rolls: state.rolls.map((roll) => roll.id === rollId ? {
+          ...roll,
+          filmId: input.filmId, filmName: input.filmName,
+          filmOverride: input.filmOverride,
+          cameraId: input.cameraId, cameraName: input.cameraName,
+          format: input.format, date: input.date,
+          frameCount: input.frameCount,
+          lab: input.lab?.trim() || undefined, notes: input.notes?.trim() || undefined,
+          location: input.location ? { ...input.location } : undefined,
+        } : roll),
+      }));
+    },
     updatePhoto: (rollId, photoId, patch) => save((state) => ({
       rolls: state.rolls.map((roll) => roll.id !== rollId ? roll : {
         ...roll,
@@ -137,6 +159,7 @@ export const useRollStore = create<RollState>((set, get) => {
       }),
     })),
     createRoll: (input) => {
+      input = normalizeRollInput(input);
       const roll: Roll = {
         ...input,
         id: `roll-${Date.now()}-${++rollSequence}-${Math.random().toString(36).slice(2, 12)}`,

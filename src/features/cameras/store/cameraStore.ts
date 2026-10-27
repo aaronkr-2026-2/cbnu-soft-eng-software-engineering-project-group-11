@@ -1,3 +1,4 @@
+import { normalizeDisplayName } from '../../catalog/utils/normalizeDisplayName';
 import { create } from 'zustand';
 import type { Camera } from '../../../types/models';
 import { cameras as builtInCameras } from '../data/cameras';
@@ -18,7 +19,8 @@ export const useCameraStore = create<CameraState>((set, get) => {
     },
     retryLoad: () => { const archive = repository.load(); set(archive.status === 'ready' ? { archive, cameras: [...builtInCameras, ...archive.items] } : { archive }); },
     addCustomCamera: async input => {
-      const brand = input.brand.trim(), model = input.model.trim();
+      const brand = normalizeDisplayName(input.brand, builtInCameras.map(camera => camera.brand));
+      const model = normalizeDisplayName(input.model, builtInCameras.filter(camera => camera.brand.toLowerCase() === brand.toLowerCase()).map(camera => camera.model));
       if (!brand || !model || !['35mm','120','110'].includes(input.format)) throw new Error('Invalid Camera');
       if (get().archive.status === 'recovery') throw new Error('Catalog requires recovery');
       let committed = false;

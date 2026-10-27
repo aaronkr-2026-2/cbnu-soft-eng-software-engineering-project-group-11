@@ -1,3 +1,4 @@
+import { normalizeDisplayName } from '../../catalog/utils/normalizeDisplayName';
 import { create } from 'zustand';
 import { builtInFilms } from '../data/films';
 import type { Film } from '../../../types/models';
@@ -19,7 +20,9 @@ export const useFilmStore = create<FilmState>((set, get) => {
     addCustomFilm: input => {
       let id: string;
       do { id = `custom-film-${Date.now()}-${++sequence}-${Math.random().toString(36).slice(2, 10)}`; } while (get().films.some(f => f.id === id));
-      const film: Film = { ...input, id, isCustom: true, source: 'custom' };
+      const brand = normalizeDisplayName(input.brand, builtInFilms.map(film => film.brand));
+      const name = normalizeDisplayName(input.name, builtInFilms.filter(film => film.brand.toLowerCase() === brand.toLowerCase()).map(film => film.name));
+      const film: Film = { ...input, brand, name, id, isCustom: true, source: 'custom' };
       const films = [...get().films, film];
       try { repository.save(films.filter(f => f.isCustom)); }
       catch (error) { const archive = repository.getFailure(); if (archive) set({ archive }); throw error; }
