@@ -14,6 +14,8 @@ export const createSettingsStyles = (colors: ThemeColors) => StyleSheet.create({
   storageDeleteSection: { marginTop: 36 },
   screen: { flex: 1, backgroundColor: colors.background },
   rowIcon: { width: 24, textAlign: 'center', color: colors.text, fontSize: 20 },
+  rowBadge: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.secondaryText },
+  rowBadgeGlyph: { color: '#FFFFFF', fontSize: 16 },
   scanSummary: { flexDirection: 'row', backgroundColor: colors.surface, borderRadius: 16, padding: 16, gap: 8, marginTop: 24 },
   scanMetric: { flex: 1, alignItems: 'center', gap: 8 },
   scanValue: { fontSize: 28, fontWeight: '600', color: colors.text, fontVariant: ['tabular-nums'] },

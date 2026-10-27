@@ -9,7 +9,7 @@ import { SettingsSelectModal } from '../src/features/settings/components/Setting
 import { SettingsGroup as Group, SettingsPage, SettingsRow as Row, SettingsNote as Note } from '../src/features/settings/components/SettingsPage';
 import { setCloudEnabled, syncNow, useCloudStore } from '../src/features/cloud/services/cloudSync';
 import { cloudLabels, cloudErrorLabels, cloudUnavailableLabels } from '../src/features/cloud/services/cloudLabels';
-import { privacyPolicyUrl, supportUrl } from '../src/constants/links';
+import { supportUrl } from '../src/constants/links';
 
 export default function Settings() {
   const colors = useTheme();
@@ -40,11 +40,11 @@ export default function Settings() {
   return <>
     <SettingsPage title={t('settings')}>
       <Group title={t('cloudHeading')}>
-        <Row icon="☁" label={t('prefsCloudSync')} value={sync.configured ? undefined : t(cloudLabels[sync.status])}
+        <Row icon="☁" symbol="icloud.fill" iconColor="#3478F6" label={t('prefsCloudSync')} value={sync.configured ? undefined : t(cloudLabels[sync.status])}
           trailing={sync.configured ? <Switch accessibilityLabel={t('prefsCloudSync')} accessibilityHint={t('cloudSyncInfo')} value={sync.enabled}
             trackColor={{ false: colors.border, true: colors.accent }} thumbColor={sync.enabled ? colors.background : colors.text} ios_backgroundColor={colors.border}
             onValueChange={confirmCloud} /> : undefined} />
-        <Row icon="▧" label={t('prefsSyncPhotos')} onPress={() => open('sync-photos')} />
+        <Row icon="▧" symbol="photo.on.rectangle.angled" iconColor="#FF9500" label={t('prefsSyncPhotos')} onPress={() => open('sync-photos')} />
       </Group>
       {!sync.configured && sync.status === 'unavailable' && <Note>{t(cloudUnavailableLabels[sync.unavailableReason ?? 'configuration'])}</Note>}
       {sync.configured && <Note>{t('cloudSyncInfo')}</Note>}
@@ -52,16 +52,16 @@ export default function Settings() {
       {sync.error && <Note>{t(cloudErrorLabels[sync.errorKind ?? 'unknown'])}</Note>}
       {sync.status === 'metadata-synced' && photosUnresolved !== 0 && <Note>{photosUnresolved === null ? t('cloudPhotosUnchecked') : t('cloudPhotosUnresolved', { count: photosUnresolved })}</Note>}
       {sync.status === 'error' && <Row label={t('photoRetry')} onPress={() => { void syncNow(); }} />}
-      <Group title={t('cloudDataHeading')}><Row icon="▤" label={t('storage')} onPress={() => open('storage')} /></Group>
+      <Group title={t('cloudDataHeading')}><Row icon="▤" symbol="internaldrive.fill" iconColor="#8E8E93" label={t('storage')} onPress={() => open('storage')} /></Group>
       <Group title={t('settings')}>
-        <Row icon="文" label={t('language')} value={languageLabels[settings.language]} onPress={() => setSelector('language')} />
-        <Row icon="◐" label={t('appearance')} value={t(settings.appearance)} onPress={() => setSelector('appearance')} />
-        <Row icon="?" label={t('tourReplay')} onPress={replayTips} />
+        <Row icon="文" symbol="globe" iconColor="#34C759" label={t('language')} value={languageLabels[settings.language]} onPress={() => setSelector('language')} />
+        <Row icon="◐" symbol="circle.lefthalf.filled" iconColor="#5856D6" label={t('appearance')} value={t(settings.appearance)} onPress={() => setSelector('appearance')} />
+        <Row icon="?" symbol="lightbulb.fill" iconColor="#FFB800" label={t('tourReplay')} onPress={replayTips} />
       </Group>
       <Group title={t('privacySupport')}>
-        <Row icon="◇" label={t('privacyData')} onPress={() => router.push('/privacy')} />
-        {privacyPolicyUrl ? <Row icon="↗" label={t('privacyPolicyWeb')} onPress={() => openLink(privacyPolicyUrl, t('privacyPolicyWeb'))} /> : null}
-        {supportUrl ? <Row icon="↗" label={t('contactSupport')} onPress={() => openLink(supportUrl, t('contactSupport'))} /> : null}
+        <Row icon="♥" symbol="heart.fill" iconColor="#FF3B30" label={t('tipTitle')} onPress={() => open('support-development')} />
+        {supportUrl ? <Row icon="?" symbol="questionmark.bubble.fill" iconColor="#32ADE6" label={t('contactSupport')} onPress={() => openLink(supportUrl, t('contactSupport'))} /> : null}
+        <Row icon="◇" symbol="hand.raised.fill" iconColor="#007AFF" label={t('privacyData')} onPress={() => router.push('/privacy')} />
       </Group>
     </SettingsPage>
     {selector === 'language' ? <SettingsSelectModal title={t('language')} value={settings.language} options={(['vi', 'en', 'ko'] as const).map(value => ({ value, label: languageLabels[value] }))} onSelect={value => select(() => settings.setLanguage(value))} onClose={() => setSelector(null)} /> : null}

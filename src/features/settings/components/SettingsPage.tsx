@@ -2,6 +2,7 @@ import { useCallback, useRef, type ReactNode } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { SymbolView, type SFSymbol } from 'expo-symbols';
 import { useRouter, usePathname, useFocusEffect } from 'expo-router';
 import { BackButton } from '../../../components/ui/BackButton';
 import { useThemedStyles } from '../../../constants/theme';
@@ -39,12 +40,16 @@ export function SettingsGroup({ title, children }: { title?: string; children: R
     <View style={settingsStyles.card}>{children}</View>
   </View>;
 }
-export function SettingsRow({ label, value, description, icon, iconColor, trailing, onPress, disabled = false }: {
-  label: string; value?: string; description?: string; icon?: string; iconColor?: string; trailing?: ReactNode; onPress?: () => void; disabled?: boolean;
+/** `symbol` draws an iOS Settings-style badge filled with `iconColor`; `icon` stays the glyph fallback. */
+export function SettingsRow({ label, value, description, icon, iconColor, symbol, trailing, onPress, disabled = false }: {
+  label: string; value?: string; description?: string; icon?: string; iconColor?: string; symbol?: SFSymbol; trailing?: ReactNode; onPress?: () => void; disabled?: boolean;
 }) {
   const settingsStyles = useThemedStyles(createSettingsStyles);
   const content = <>
-    {icon && <Text accessible={false} style={[settingsStyles.rowIcon, iconColor ? { color: iconColor } : undefined]}>{icon}</Text>}
+    {symbol ? <View accessible={false} style={[settingsStyles.rowBadge, iconColor ? { backgroundColor: iconColor } : undefined]}>
+      <SymbolView name={symbol} size={17} weight="medium" tintColor="#FFFFFF" fallback={<Text style={settingsStyles.rowBadgeGlyph}>{icon}</Text>} />
+    </View>
+      : icon && <Text accessible={false} style={[settingsStyles.rowIcon, iconColor ? { color: iconColor } : undefined]}>{icon}</Text>}
     {description ? <View style={settingsStyles.rowCopy}>
       <Text style={settingsStyles.infoTitle}>{label}</Text>
       <Text style={settingsStyles.rowDescription}>{description}</Text>
