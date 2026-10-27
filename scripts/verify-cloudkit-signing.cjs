@@ -5,7 +5,7 @@ const { execFileSync } = require('node:child_process');
 // Read-only inspection of a built application. Never edits identifiers, signatures or profiles.
 const app = process.argv[2];
 if (!app || !fs.existsSync(path.join(app, 'Info.plist'))) {
-  console.error('Usage: node scripts/verify-cloudkit-signing.cjs /path/to/FILMER.app');
+  console.error('Usage: node scripts/verify-cloudkit-signing.cjs /path/to/FiLog.app');
   process.exit(1);
 }
 const parse = xml => JSON.parse(execFileSync('plutil', ['-convert', 'json', '-o', '-', '-'], { input: xml, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }));

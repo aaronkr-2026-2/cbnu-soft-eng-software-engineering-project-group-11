@@ -19,7 +19,7 @@ export function StartupScreen({ onReady }: { onReady: () => void }) {
     let minimumElapsed = false;
     const finish = () => { if (active) { active = false; onReady(); } };
     const finishWhenReady = () => { if (imagesReady && minimumElapsed) finish(); };
-    // Give the FILMER introduction a short pause while image preparation runs in parallel.
+    // Give the FiLog introduction a short pause while image preparation runs in parallel.
     const minimumDisplay = setTimeout(() => {
       minimumElapsed = true;
       finishWhenReady();
@@ -67,7 +67,7 @@ export function StartupScreen({ onReady }: { onReady: () => void }) {
       <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={[styles.frame, { borderColor: colors.text }]}>
         <View style={[styles.lens, { borderColor: colors.text }]} />
       </View>
-      <Text style={[styles.wordmark, { color: colors.text }]}>FILMER</Text>
+      <Text style={[styles.wordmark, { color: colors.text }]}>FiLog</Text>
       <Text style={[styles.subtitle, { color: colors.secondaryText }]}>{t('startupSubtitle')}</Text>
     </View>
 

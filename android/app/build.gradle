@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.manhduong2003.filmer'
+    namespace 'com.manhduong2003.filog'
     defaultConfig {
-        applicationId 'com.manhduong2003.filmer'
+        applicationId 'com.manhduong2003.filog'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

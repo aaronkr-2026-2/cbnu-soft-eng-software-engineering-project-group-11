@@ -22,7 +22,7 @@ type NativeCloud = { addListener(event: 'onAccountChanged', listener: () => void
 // An optional bridge (including its constants) must not abort root-module evaluation.
 const bridge = (() => {
   try {
-    const native = requireOptionalNativeModule<NativeCloud>('FilmerCloud');
+    const native = requireOptionalNativeModule<NativeCloud>('FiLogCloud');
     return { native, namespace: native?.namespace ?? 'unconfigured', deviceID: native?.deviceID ?? 'unconfigured' };
   } catch {
     return { native: null, namespace: 'unconfigured', deviceID: 'unconfigured' };

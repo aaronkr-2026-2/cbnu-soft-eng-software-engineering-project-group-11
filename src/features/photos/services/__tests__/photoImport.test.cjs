@@ -73,14 +73,14 @@ function runtime(previous, missingNative = false) {
     },
     async cacheInfo() {
       if (state.cacheInfoError || (state.failCacheAfterClear && state.didClear)) throw new Error('Cannot measure cache');
-      const prefix = 'file:///app/Cache/filmer-photo-renders/';
+      const prefix = 'file:///app/Cache/filog-photo-renders/';
       const entries = [...state.files].filter(([uri]) => uri.startsWith(prefix) && uri.endsWith('.jpg'));
       return { bytes: entries.reduce((sum, [, bytes]) => sum + bytes.length, 0), files: entries.length, uri: prefix };
     },
     async clearRenders() {
       state.didClear = true;
       let count = 0;
-      for (const uri of [...state.files.keys()]) if (uri.startsWith('file:///app/Cache/filmer-photo-renders/') && uri.endsWith('.jpg')) {
+      for (const uri of [...state.files.keys()]) if (uri.startsWith('file:///app/Cache/filog-photo-renders/') && uri.endsWith('.jpg')) {
         if (state.clearFailureAfter !== undefined && count >= state.clearFailureAfter) throw new Error('Cache removal failed');
         state.files.delete(uri); count++;
       }
@@ -97,7 +97,7 @@ function runtime(previous, missingNative = false) {
   };
   const mocks = {
     'expo-sharing': { isAvailableAsync: async () => !state.noSharing, shareAsync: async (uri,options) => { state.rawExport={uri,options}; } },
-    'expo-modules-core': { requireOptionalNativeModule: name => name === 'FilmerCloud' ? state.cloudBridge ?? null : missingNative ? null : native },
+    'expo-modules-core': { requireOptionalNativeModule: name => name === 'FiLogCloud' ? state.cloudBridge ?? null : missingNative ? null : native },
     'react-native': { Linking: { openSettings: async () => { state.settingsOpened=true; } }, AppState: { get currentState() { return state.appState ?? 'active'; }, addEventListener: (_event, fn) => { state.activeListener = fn; return { remove() {} }; } } },
     'expo-file-system': { File, Directory, Paths: { get document() { return new Directory(state.documentRoot); },
       get cache() { return new Directory('file:///app/Cache'); } } },
@@ -881,7 +881,7 @@ test('Emergency raw export preserves malformed text exactly and cannot change th
   const service=restarted.load('features/rolls/services/ArchiveRecoveryService.ts');
   await service.exportRawArchive(restarted.store.getState().archive.raw);
   assert.equal(r.state.files.get(r.state.rawExport.uri).toString(),raw);
-  assert.ok(r.state.rawExport.uri.startsWith('file:///app/Cache/filmer-recovery-'));
+  assert.ok(r.state.rawExport.uri.startsWith('file:///app/Cache/filog-recovery-'));
   assert.equal(r.state.kv.get('filmer.rolls.v1'),raw);
   r.state.noSharing=true; await assert.rejects(service.exportRawArchive(raw),/Sharing unavailable/);
   r.state.noSharing=false; r.state.failRecoveryExport=true; await assert.rejects(service.exportRawArchive(raw),/disk full/);
@@ -1339,20 +1339,20 @@ test('Photos Access reads full, limited, denied, undetermined and missing module
 
 test('Storage measures disjoint categories and clears only known previews, preserving all user files', async () => {
   const r = runtime();
-  for (const directory of ['Documents', 'Documents/SQLite', 'Documents/film-covers', 'Documents/camera-covers', 'Documents/photos', 'Documents/photos/r1', 'Cache', 'Cache/filmer-photo-renders']) r.state.directories.add('file:///app/' + directory);
+  for (const directory of ['Documents', 'Documents/SQLite', 'Documents/film-covers', 'Documents/camera-covers', 'Documents/photos', 'Documents/photos/r1', 'Cache', 'Cache/filog-photo-renders']) r.state.directories.add('file:///app/' + directory);
   const entries = [
     ['Documents/SQLite/ExpoSQLiteStorage', 100], ['Documents/SQLite/ExpoSQLiteStorage-wal', 20],
     ['Documents/film-covers/cover-a.jpg', 30], ['Documents/camera-covers/cover-b.jpg', 40],
     ['Documents/photos/r1/photo-a.jpg', 50], ['Documents/other.txt', 60],
-    ['Cache/filmer-photo-renders/a.jpg', 70], ['Cache/filmer-photo-renders/unknown.txt', 5], ['Cache/share.jpg', 80],
+    ['Cache/filog-photo-renders/a.jpg', 70], ['Cache/filog-photo-renders/unknown.txt', 5], ['Cache/share.jpg', 80],
   ];
   for (const [path, size] of entries) r.state.files.set('file:///app/' + path, Buffer.alloc(size));
   const service = r.load('features/settings/services/StorageService.ts').StorageService;
   const measured = await service.measure();
   assert.deepEqual([measured.database, measured.covers, measured.copies, measured.cache, measured.other, measured.total], [120, 70, 50, 70, 145, 455]);
   assert.equal(await service.clearPhotoCache(), 70);
-  assert.equal(r.state.files.has('file:///app/Cache/filmer-photo-renders/a.jpg'), false);
-  for (const [path] of entries.filter(([path]) => path !== 'Cache/filmer-photo-renders/a.jpg')) assert.equal(r.state.files.has('file:///app/' + path), true, path);
+  assert.equal(r.state.files.has('file:///app/Cache/filog-photo-renders/a.jpg'), false);
+  for (const [path] of entries.filter(([path]) => path !== 'Cache/filog-photo-renders/a.jpg')) assert.equal(r.state.files.has('file:///app/' + path), true, path);
   const after = await service.measure();
   assert.equal(after.cache, 0);
   // Unknown files are measured as Other and remain untouched.
@@ -1405,15 +1405,15 @@ test('Large storage measurement sums exact file bytes while retaining custom cov
 
 test('Partial cache deletion reports actual freed bytes and preserves every user-owned file', async () => {
   const r = runtime();
-  r.state.files.set('file:///app/Cache/filmer-photo-renders/a.jpg', Buffer.alloc(70));
-  r.state.files.set('file:///app/Cache/filmer-photo-renders/b.jpg', Buffer.alloc(30));
+  r.state.files.set('file:///app/Cache/filog-photo-renders/a.jpg', Buffer.alloc(70));
+  r.state.files.set('file:///app/Cache/filog-photo-renders/b.jpg', Buffer.alloc(30));
   const retained = ['file:///app/Documents/SQLite/ExpoSQLiteStorage', 'file:///app/Documents/film-covers/cover-a.jpg', 'file:///app/Documents/photos/r1/photo-a.jpg'];
   for (const uri of retained) r.state.files.set(uri, Buffer.from('user-data'));
   const { StorageService, PhotoCacheClearError } = r.load('features/settings/services/StorageService.ts');
   r.state.clearFailureAfter = 1;
   await assert.rejects(StorageService.clearPhotoCache(), error => error instanceof PhotoCacheClearError && error.freedBytes === 70);
   assert.ok(retained.every(uri => r.state.files.get(uri).toString() === 'user-data'));
-  assert.equal(r.state.files.has('file:///app/Cache/filmer-photo-renders/b.jpg'), true);
+  assert.equal(r.state.files.has('file:///app/Cache/filog-photo-renders/b.jpg'), true);
   r.state.clearFailureAfter = undefined;
   assert.equal(await StorageService.clearPhotoCache(), 30);
 });

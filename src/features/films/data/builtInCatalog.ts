@@ -8,7 +8,7 @@ const define = (brand: string, rows: Definition[]): Film[] => rows.map(([id, nam
   aliases, imageKey: `${brand.toLowerCase()}-${id}`, source: 'builtin', isCustom: false,
 }));
 
-/** FILMER definitions: artwork is decorative, never a source for ISO/process metadata. */
+/** FiLog definitions: artwork is decorative, never a source for ISO/process metadata. */
 export const builtInCatalog: Film[] = [
   ...define('Kodak', [
     ['portra-160', 'Portra 160', 160, 'color', 'C-41', 'current', ['35mm', '120']],

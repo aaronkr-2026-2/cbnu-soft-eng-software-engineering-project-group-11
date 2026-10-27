@@ -41,7 +41,7 @@ export default function Home() {
     <Screen>
       <View style={styles.browseHeader}>
         <View style={styles.header}>
-          <Text style={styles.wordmark}>FILMER</Text>
+          <Text style={styles.wordmark}>FiLog</Text>
           <View style={styles.headerActions}>
             <IconButton
               accessibilityLabel={t('settings')}

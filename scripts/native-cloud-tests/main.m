@@ -4,7 +4,7 @@
 #import <mach-o/fat.h>
 #import <mach-o/dyld.h>
 #import <objc/runtime.h>
-#import "FilmerCloudContainer.h"
+#import "FiLogCloudContainer.h"
 
 static NSUInteger checks = 0, initializations = 0;
 static void Check(BOOL condition, NSString *message) {
@@ -40,14 +40,14 @@ static NSMutableData *Signed(NSDictionary *entitlements) {
 + (NSDictionary *)availability:(NSString *)identifier environment:(NSString *)environment { return @{ @"configured": @YES }; }
 @end
 int main(void) { @autoreleasepool {
-  NSString *identifier = @"iCloud.com.manhduong2003.filmer";
+  NSString *identifier = @"iCloud.com.manhduong2003.filog";
   NSDictionary *valid = @{ @"com.apple.developer.icloud-services": @[@"CloudKit"], @"com.apple.developer.icloud-container-identifiers": @[identifier], @"com.apple.developer.icloud-container-environment": @"Development" };
   NSDictionary *(^check)(NSDictionary *) = ^(NSDictionary *input) { return [FilmerCloudContainer checkEntitlements:input identifier:identifier environment:@"Development"]; };
   Check([check(valid)[@"configured"] boolValue], @"Valid signed CloudKit entitlement policy");
   Check([check(nil)[@"reason"] isEqual:@"signing-unavailable"], @"Unreadable signing fails closed");
   Check([check(@{})[@"reason"] isEqual:@"missing-entitlement"], @"Local signed app is not CloudKit enabled");
   NSMutableDictionary *changed = valid.mutableCopy; changed[@"com.apple.developer.icloud-services"] = @[@"CloudKit-Anonymous"];
-  Check([check(changed)[@"reason"] isEqual:@"missing-entitlement"], @"Anonymous service cannot access FILMER private database");
+  Check([check(changed)[@"reason"] isEqual:@"missing-entitlement"], @"Anonymous service cannot access FiLog private database");
   changed[@"com.apple.developer.icloud-services"] = @"CloudKit";
   Check([check(changed)[@"reason"] isEqual:@"missing-entitlement"], @"Malformed entitlement rejected");
   changed = valid.mutableCopy; changed[@"com.apple.developer.icloud-container-identifiers"] = @[@"iCloud.other"];
@@ -56,20 +56,20 @@ int main(void) { @autoreleasepool {
   Check([check(changed)[@"reason"] isEqual:@"environment-mismatch"], @"Wrong environment rejected");
   Check([[FilmerCloudContainer checkEntitlements:valid identifier:@"invalid" environment:@"Development"][@"reason"] isEqual:@"configuration"], @"Invalid identifier rejected");
   NSMutableData *signedData = Signed(valid);
-  Check([[FilmerCloudContainer signedEntitlements:signedData] isEqual:valid], @"Read actual Mach-O XML signature slot");
-  Check([[FilmerCloudContainer signedEntitlements:Signed(@{})] isEqual:@{}], @"Empty signed entitlements stay empty");
-  Check([FilmerCloudContainer signedEntitlements:[NSData data]] == nil, @"Unsigned input rejected");
-  Check([FilmerCloudContainer signedEntitlements:[signedData subdataWithRange:NSMakeRange(0, 60)]] == nil, @"Truncated signature rejected");
+  Check([[FiLogCloudContainer signedEntitlements:signedData] isEqual:valid], @"Read actual Mach-O XML signature slot");
+  Check([[FiLogCloudContainer signedEntitlements:Signed(@{})] isEqual:@{}], @"Empty signed entitlements stay empty");
+  Check([FiLogCloudContainer signedEntitlements:[NSData data]] == nil, @"Unsigned input rejected");
+  Check([FiLogCloudContainer signedEntitlements:[signedData subdataWithRange:NSMakeRange(0, 60)]] == nil, @"Truncated signature rejected");
   NSMutableData *corrupt = signedData.mutableCopy; SetBig(corrupt, 52, UINT32_MAX);
-  Check([FilmerCloudContainer signedEntitlements:corrupt] == nil, @"Out-of-range superblob rejected");
+  Check([FiLogCloudContainer signedEntitlements:corrupt] == nil, @"Out-of-range superblob rejected");
   corrupt = signedData.mutableCopy; SetBig(corrupt, 64, UINT32_MAX);
-  Check([FilmerCloudContainer signedEntitlements:corrupt] == nil, @"Out-of-range slot rejected");
+  Check([FiLogCloudContainer signedEntitlements:corrupt] == nil, @"Out-of-range slot rejected");
   corrupt = signedData.mutableCopy; SetBig(corrupt, 60, 7);
-  Check([FilmerCloudContainer signedEntitlements:corrupt] == nil, @"No XML slot fails closed");
+  Check([FiLogCloudContainer signedEntitlements:corrupt] == nil, @"No XML slot fails closed");
   NSMutableData *fat = [NSMutableData dataWithLength:4096 + signedData.length];
   SetBig(fat, 0, FAT_MAGIC); SetBig(fat, 4, 1); SetBig(fat, 8, (uint32_t)_dyld_get_image_header(0)->cputype); SetBig(fat, 12, (uint32_t)_dyld_get_image_header(0)->cpusubtype); SetBig(fat, 16, 4096); SetBig(fat, 20, (uint32_t)signedData.length);
   [fat replaceBytesInRange:NSMakeRange(4096, signedData.length) withBytes:signedData.bytes];
-  Check([[FilmerCloudContainer signedEntitlements:fat] isEqual:valid], @"Universal executable uses matching CPU slice");
+  Check([[FiLogCloudContainer signedEntitlements:fat] isEqual:valid], @"Universal executable uses matching CPU slice");
   Method initializer = class_getClassMethod(CKContainer.class, @selector(containerWithIdentifier:));
   Method stub = class_getClassMethod(CloudTestDouble.class, @selector(containerWithIdentifier:));
   method_exchangeImplementations(initializer, stub);

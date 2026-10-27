@@ -1,9 +1,9 @@
 
-# User Personas – Filmer
+# User Personas – FiLog
 
 ## Project Overview
 
-Filmer is a mobile application designed for film photography enthusiasts. It helps users organize their film photographs into digital albums, record film roll information, and easily revisit their photography memories.
+FiLog is a mobile application designed for film photography enthusiasts. It helps users organize their film photographs into digital albums, record film roll information, and easily revisit their photography memories.
 
 The goal of the MVP is to provide a simple and intuitive way to manage film photography collections.
 
@@ -110,5 +110,5 @@ These three personas represent different levels of film photography experience: 
 
 Although their photography habits are different, they share a common need: organizing scanned film photographs in a simple and convenient way.
 
-Therefore, the Filmer MVP focuses on album creation, photo importing, film information management, and photo browsing. These features address the core needs of the target users without adding unnecessary complexity.
+Therefore, the FiLog MVP focuses on album creation, photo importing, film information management, and photo browsing. These features address the core needs of the target users without adding unnecessary complexity.
 

@@ -19,7 +19,7 @@ Uses `react-native-maps` 1.27.2 and `expo-location` ~57.0.20, installed with `np
 
 Android standalone builds require a Google Maps API key/configuration before deployment. No key was invented or checked in. Android native geocoding also requires location permission; denied/unavailable search reports a localized error and manual map selection remains available. On iOS, search does not require device-location permission. The native map feature targets iOS/Android, not web.
 
-Map tiles, address availability, and returned address language depend on the native providers/network. FILMER controls and messages support English, Vietnamese, and Korean. Saved addresses are user data and are not retranslated when the app language changes.
+Map tiles, address availability, and returned address language depend on the native providers/network. FiLog controls and messages support English, Vietnamese, and Korean. Saved addresses are user data and are not retranslated when the app language changes.
 
 Existing in-memory/mock Rolls have no legacy string locations. The dormant database schema's `location TEXT` column was not modified or cleared; a future SQLite Roll repository must serialize the structured location and explicitly handle legacy strings.
 

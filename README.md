@@ -1,12 +1,12 @@
-# FILMER
+# FiLog
 
 **A Digital Archive for Film Photography**
 
-FILMER is a mobile app that helps film photography enthusiasts organize their film rolls, cameras, and scanned photos in one place.
+FiLog is a mobile app that helps film photography enthusiasts organize their film rolls, cameras, and scanned photos in one place.
 
 ## Product Vision
 
-FILMER aims to make film photography archiving simple and convenient.
+FiLog aims to make film photography archiving simple and convenient.
 
 Users can organize photos by film roll, record camera and film information, and easily revisit their photography memories.
 
@@ -68,7 +68,7 @@ The following features are still under development:
 
 ## User Personas & Stories
 
-FILMER targets beginner, experienced, and casual film photographers.
+FiLog targets beginner, experienced, and casual film photographers.
 
 **Example User Story:**
 
@@ -78,7 +78,7 @@ See [personas.md](personas.md) for detailed user personas and stories.
 
 ## Design
 
-[FILMER Figma Design](https://www.figma.com/design/p87D59J5BkCPvYnHbt2P5s)
+[FiLog Figma Design](https://www.figma.com/design/p87D59J5BkCPvYnHbt2P5s)
 
-![FILMER Design Preview](https://github.com/user-attachments/assets/04034014-f4b0-4c1f-8855-1e290b656b5c)
+![FiLog Design Preview](https://github.com/user-attachments/assets/04034014-f4b0-4c1f-8855-1e290b656b5c)
 

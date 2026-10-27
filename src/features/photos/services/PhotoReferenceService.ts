@@ -23,11 +23,11 @@ type NativePhotos = {
   /** Absent in builds before cloud-identifier recovery. */
   locate?(cloudIdentifier: string): Promise<{ status: PhotoStatus; assetId?: string }>;
 };
-const native = requireOptionalNativeModule<NativePhotos>('FilmerPhotos');
-/** False in Expo Go and older builds, which lack the FILMER PhotoKit module. */
+const native = requireOptionalNativeModule<NativePhotos>('FiLogPhotos');
+/** False in Expo Go and older builds, which lack the FiLog PhotoKit module. */
 export const photoModuleAvailable = !!native;
 export async function pickPhotoReferences(single: boolean) {
-  if (!native) throw new Error('FILMER PhotoKit module requires a new iOS build');
+  if (!native) throw new Error('FiLog PhotoKit module requires a new iOS build');
   const settings = useAppStore.getState();
   const text = translations[settings.language];
   return native.pick(single, {
@@ -188,7 +188,7 @@ export async function checkPhotoReference(photo: ApplePhotoReference): Promise<P
   return access.status;
 }
 export async function photoCacheInfo() {
-  if (!native?.cacheInfo) throw new Error('Native cache measurement requires an updated FILMER build');
+  if (!native?.cacheInfo) throw new Error('Native cache measurement requires an updated FiLog build');
   return native.cacheInfo();
 }
 

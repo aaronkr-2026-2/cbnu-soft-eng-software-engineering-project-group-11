@@ -6,7 +6,7 @@
 	<string>$(FILMER_CLOUD_ENVIRONMENT)</string>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
-		<string>iCloud.com.manhduong2003.filmer</string>
+		<string>iCloud.com.manhduong2003.filog</string>
 	</array>
 	<key>com.apple.developer.icloud-services</key>
 	<array>

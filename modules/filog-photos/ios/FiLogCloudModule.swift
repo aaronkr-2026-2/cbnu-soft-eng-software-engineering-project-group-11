@@ -4,8 +4,8 @@ import CryptoKit
 import Foundation
 
 /** Metadata-only transport. Availability follows the signed container entitlements, never a UI flag. */
-public class FilmerCloudModule: Module {
-  private let zoneID = CKRecordZone.ID(zoneName: "FILMER-v1", ownerName: CKCurrentUserDefaultName)
+public class FiLogCloudModule: Module {
+  private let zoneID = CKRecordZone.ID(zoneName: "FiLog-v1", ownerName: CKCurrentUserDefaultName)
   private let sessionID = UUID().uuidString
   private var accountObserver: NSObjectProtocol?
   private let containerLock = NSLock()
@@ -13,7 +13,7 @@ public class FilmerCloudModule: Module {
   private var cachedContainer: CKContainer?
   private var cachedAvailability: [String: Any] = ["configured": false, "reason": "configuration"]
   private var identifier: String? {
-    return Bundle.main.object(forInfoDictionaryKey: "FILMERCloudContainer") as? String
+    return Bundle.main.object(forInfoDictionaryKey: "FiLogCloudContainer") as? String
   }
   private func container() -> CKContainer? {
     containerLock.lock(); defer { containerLock.unlock() }
@@ -50,13 +50,13 @@ public class FilmerCloudModule: Module {
                        "retryAfter": (error as NSError).userInfo[CKErrorRetryAfterKey] as? Double ?? 30]]
   }
   private func item(_ record: CKRecord) throws -> [String: Any] {
-    guard record.recordType == "FilmerEntity", let document = record["document"] as? String else {
-      throw NSError(domain: "FILMERCloud", code: 2, userInfo: [NSLocalizedDescriptionKey: "Unsupported cloud record; sync paused"])
+    guard record.recordType == "FiLogEntity", let document = record["document"] as? String else {
+      throw NSError(domain: "FiLogCloud", code: 2, userInfo: [NSLocalizedDescriptionKey: "Unsupported cloud record; sync paused"])
     }
     return ["document": document, "tag": record.recordChangeTag ?? ""]
   }
   public func definition() -> ModuleDefinition {
-    Name("FilmerCloud")
+    Name("FiLogCloud")
     Events("onAccountChanged")
     OnStartObserving {
       self.accountObserver = NotificationCenter.default.addObserver(forName: .CKAccountChanged, object: nil, queue: .main) { [weak self] _ in
@@ -101,7 +101,7 @@ public class FilmerCloudModule: Module {
         if let token = token {
           guard let bytes = Data(base64Encoded: token),
                 let decoded = try NSKeyedUnarchiver.unarchivedObject(ofClass: CKServerChangeToken.self, from: bytes) else {
-            throw NSError(domain: "FILMERCloud", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid saved cloud checkpoint"])
+            throw NSError(domain: "FiLogCloud", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid saved cloud checkpoint"])
           }
           config.previousServerChangeToken = decoded
         }
@@ -121,7 +121,7 @@ public class FilmerCloudModule: Module {
           // Physical cloud deletion has no field/tombstone history: pause instead of guessing a merge.
           operation.recordWithIDWasDeletedBlock = { _, _ in
             lock.lock(); defer { lock.unlock() }
-            failure = NSError(domain: "FILMERCloud", code: 4, userInfo: [NSLocalizedDescriptionKey: "Cloud records were removed outside FILMER; sync paused"])
+            failure = NSError(domain: "FiLogCloud", code: 4, userInfo: [NSLocalizedDescriptionKey: "Cloud records were removed outside FiLog; sync paused"])
           }
           operation.recordZoneFetchResultBlock = { _, result in
             lock.lock(); defer { lock.unlock() }
@@ -162,7 +162,7 @@ public class FilmerCloudModule: Module {
         } catch let error as CKError where error.code == .unknownItem {
           // A known record disappearing must not resurrect it as a new record.
           guard expectedTag == nil else { throw error }
-          record = CKRecord(recordType: "FilmerEntity", recordID: recordID)
+          record = CKRecord(recordType: "FiLogEntity", recordID: recordID)
         }
         record["document"] = document as CKRecordValue
         do {

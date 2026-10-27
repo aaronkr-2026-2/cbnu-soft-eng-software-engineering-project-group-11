@@ -1,4 +1,4 @@
-package com.manhduong2003.filmer
+package com.manhduong2003.filog
 
 import android.app.Application
 import android.content.res.Configuration

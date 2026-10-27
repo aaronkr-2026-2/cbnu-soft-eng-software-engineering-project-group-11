@@ -46,7 +46,7 @@ reorder and metadata persistence. They do not prove native device behavior or ge
 ## Physical iPhone checks still required
 
 1. Import three photos in Reference, then three in Copy; confirm the correct success count and both display normally.
-2. Restart FILMER and confirm copied images and the selected import mode persist.
+2. Restart FiLog and confirm copied images and the selected import mode persist.
 3. Clear Image Cache; confirm copied images remain available.
 4. Confirm a copied image remains visible after its original is removed from Apple Photos.
 5. Import images with identical filenames and a batch of 20+; confirm no overwrite and responsive UI.

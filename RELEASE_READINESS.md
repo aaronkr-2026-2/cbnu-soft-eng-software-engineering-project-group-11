@@ -1,4 +1,4 @@
-# FILMER release readiness — NOT READY for App Store
+# FiLog release readiness — NOT READY for App Store
 
 ## Latest Storage / automatic-restore revision — 2026-10-22
 
@@ -43,7 +43,7 @@ Updated 2026-10-15 (Asia/Seoul), after SDK patch alignment, lint setup and Refer
 - New optional `cloudIdentifier` on Apple Photos References. Import and Relink store it when PhotoKit provides one; absence never fails an import. Existing records are not rewritten.
 - Apple APIs: `PHPhotoLibrary.cloudIdentifierMappings(forLocalIdentifiers:)`, `PHPhotoLibrary.localIdentifierMappings(for:)`, `PHCloudIdentifier(stringValue:)` / `.stringValue`, `PHPhotosError.Code.identifierNotFound` / `.multipleIdentifiersFound` (all iOS 15+; deployment target 16.4). Mapping for the picker result now runs off the main thread.
 - On `unavailable`/`limited` resolution, a stored cloud identifier is mapped to this device's localIdentifier, verified, then saved through the existing write-protected repository. Only `assetId`/`localIdentifier` change. Permission-denied/temporary errors never trigger it. One lookup per stale reference until Retry/app activation/library change. Manual Retry and Relink unchanged.
-- Validation: TypeScript and ESLint pass; **148/148 Node tests** (11 new recovery tests, mutation-checked); unsigned iOS Simulator Debug build succeeds with no FilmerPhotos warnings; Expo Doctor offline 19/21 (native config sync warning, and Directory check needs network).
+- Validation: TypeScript and ESLint pass; **148/148 Node tests** (11 new recovery tests, mutation-checked); unsigned iOS Simulator Debug build succeeds with no FiLogPhotos warnings; Expo Doctor offline 19/21 (native config sync warning, and Directory check needs network).
 - **Physical iPhone restore/migration is UNVERIFIED.** Cloud identifiers require iCloud Photos on the same Apple Account and are not a guaranteed cross-device recovery.
 
 ## Current results
@@ -90,9 +90,9 @@ The workspace already contained substantial catalog/artwork, recovery and Refere
 - `package.json`, `package-lock.json`, `ios/Podfile.lock`: six SDK patches, compatible lint tooling, reproducible verification scripts and reconciled native dependencies.
 - `eslint.config.js`: minimal Expo flat configuration and narrowly scoped existing-code exceptions.
 - `scripts/verify-ios-config.cjs`: read-only critical native-config assertions.
-- `modules/filmer-photos/ios/ReferenceSelectionViewController.swift`: native import grid, thumbnail lifecycle, drag range/edge scroll, localized access/loading/error/actions.
-- `modules/filmer-photos/ios/OrderedPhotoSelection.swift`, `scripts/native-selection-tests/main.swift`: deterministic ordered range model, edge velocity and 16 native assertions.
-- `modules/filmer-photos/ios/FilmerPhotosModule.swift`: multi-import presents the grid; single Relink retains PHPicker; returns IDs only.
+- `modules/filog-photos/ios/ReferenceSelectionViewController.swift`: native import grid, thumbnail lifecycle, drag range/edge scroll, localized access/loading/error/actions.
+- `modules/filog-photos/ios/OrderedPhotoSelection.swift`, `scripts/native-selection-tests/main.swift`: deterministic ordered range model, edge velocity and 16 native assertions.
+- `modules/filog-photos/ios/FiLogPhotosModule.swift`: multi-import presents the grid; single Relink retains PHPicker; returns IDs only.
 - `src/features/photos/services/PhotoReferenceService.ts`: sends localized picker labels and current theme to the native module.
 - `src/features/photos/providers/ApplePhotosProvider.ts`, `src/features/photos/services/PhotoImportService.ts`: verified ordered imports, duplicate prevention and single-commit behavior.
 - `src/features/photos/services/__tests__/photoImport.test.cjs`: five added regression cases and updated former duplicate-import expectation (120 → 125 tests).
@@ -118,8 +118,8 @@ Repository root unless noted. Logs/builds/exports go under `/private/tmp`, not a
 | `npm run test:native-selection` | 16 assertions passed; macOS Swift compiler, no UIKit gesture simulation |
 | `npm run check:ios-config` | Passed static critical-config assertions |
 | `npx expo export --platform ios --output-dir /private/tmp/filmer-picker-export` | Passed; iOS Hermes bundle 4.3 MB; `/private/tmp/filmer-picker-export.log` |
-| `xcodebuild -workspace ios/FILMER.xcworkspace -scheme FILMER -configuration Release -destination 'generic/platform=iOS' -derivedDataPath /private/tmp/filmer-picker-build CODE_SIGNING_ALLOWED=NO build` | **BUILD SUCCEEDED**, exit 0, arm64 device target, new native picker compiled/linked; `/private/tmp/filmer-picker-release-final.log` |
-| `xcodebuild -workspace ios/FILMER.xcworkspace -scheme FILMER -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /private/tmp/filmer-picker-build CODE_SIGNING_ALLOWED=NO build` | **BUILD SUCCEEDED**, exit 0, arm64 device target; `/private/tmp/filmer-picker-debug.log` |
+| `xcodebuild -workspace ios/FiLog.xcworkspace -scheme FiLog -configuration Release -destination 'generic/platform=iOS' -derivedDataPath /private/tmp/filmer-picker-build CODE_SIGNING_ALLOWED=NO build` | **BUILD SUCCEEDED**, exit 0, arm64 device target, new native picker compiled/linked; `/private/tmp/filmer-picker-release-final.log` |
+| `xcodebuild -workspace ios/FiLog.xcworkspace -scheme FiLog -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /private/tmp/filmer-picker-build CODE_SIGNING_ALLOWED=NO build` | **BUILD SUCCEEDED**, exit 0, arm64 device target; `/private/tmp/filmer-picker-debug.log` |
 | `git diff --check` | Passed production changes; repeated after documentation |
 | `npm audit --json` | Read-only review, 33 advisories (11 moderate/21 high/1 critical), not a passing security check; `/private/tmp/filmer-picker-npm-audit.json`. No broad audit fix/force upgrade performed |
 
@@ -137,17 +137,17 @@ CocoaPods reports an existing leading-newline plist-parser warning; plist syntax
 | P2 | Native config warning is understood/retained; documented portrait/iPad landscape and hardcoded version sources require deliberate maintenance, not destructive prebuild |
 | P2 | Previous audit's optional-frame-count clearing issue, settings corruption recovery limits, missing general custom catalog editing/deletion, English native permission prompts and decorative artwork inaccuracies remain as documented in the historical audit |
 
-Backup/Restore remains intentionally excluded from FILMER 1.0; emergency raw archive export is I-03 recovery only. Settings warns that uninstalling can permanently lose local Roll metadata; Apple Photos originals are not deleted. Nothing in these changes provides cloud backup. Since 2026-10-21, Reference recovery through PHCloudIdentifier can repair a stale photo link; it does not back up Roll metadata.
+Backup/Restore remains intentionally excluded from FiLog 1.0; emergency raw archive export is I-03 recovery only. Settings warns that uninstalling can permanently lose local Roll metadata; Apple Photos originals are not deleted. Nothing in these changes provides cloud backup. Since 2026-10-21, Reference recovery through PHCloudIdentifier can repair a stale photo link; it does not back up Roll metadata.
 
 ## Physical iPhone verification required
 
-1. Open `ios/FILMER.xcworkspace`, choose the authorized development team and a connected iPhone, build/run **over the existing app with the same bundle ID**. Do not uninstall. Record device/iOS/build/signing and preserve important data using an existing safe external process. For Debug Metro use `npm start`; separately test a signed Release without Metro.
+1. Open `ios/FiLog.xcworkspace`, choose the authorized development team and a connected iPhone, build/run **over the existing app with the same bundle ID**. Do not uninstall. Record device/iOS/build/signing and preserve important data using an existing safe external process. For Debug Metro use `npm start`; separately test a signed Release without Metro.
 2. Snapshot Roll/photo IDs, metadata/order, custom catalogs/covers, settings and existing Copy files. Update in place, force quit/reopen; compare all records. Confirm I-03 recovery on a disposable test database with malformed/future/read-failing archives, failed retry and exact raw export; never corrupt a valuable database for this test.
 3. In Add Photos: test one photo, several nonadjacent photos, horizontal-start drag across three rows, reverse drag, deselection from a selected anchor, Clear, Cancel and Add. Drag to both edges and hold to auto-scroll; vertical-start scrolling must stay usable. Test 100+ selections and a large library, no unintended photo opening, frozen UI or wrong reused-cell thumbnail. Repeat EN/VI/KO, large text, light/dark and supported iPad rotations.
 4. Add 36 photos in a deliberately nonchronological order; verify badges, final frame order and one batch. Retry the same assets; confirm no duplicate frames. Cancel changes nothing. Force quit/reopen, verify durable IDs still resolve and Reference import did not add original files under Documents.
 5. Test full/limited/denied access, including changing access while picker is open/backgrounded; Manage Access/Settings, Retry and inaccessible selected assets must fail safely without deleting frames. Single-photo Relink success/cancel/error preserves frame ID/order/metadata. Actual permission and thumbnail failures require hardware, not mocks.
 6. Test a cloud-only photo online, airplane-mode failure, then Retry online; use expendable assets to compare album-only removal with true Photos deletion. Existing frame becomes Photo unavailable only when inaccessible, and old cached image must not masquerade as current. Preserve legacy Copy access when its original is deleted; app cache clearing must preserve Copies/covers.
-7. Delete an expendable FILMER Roll; confirm no Apple Photos original was deleted. Smoke-test Viewer, reorder, sharing/contact sheets, custom Film/Camera cover persistence and startup recovery. Complete signed Release/TestFlight validation after privacy/signing requirements, without uploading as part of this task.
+7. Delete an expendable FiLog Roll; confirm no Apple Photos original was deleted. Smoke-test Viewer, reorder, sharing/contact sheets, custom Film/Camera cover persistence and startup recovery. Complete signed Release/TestFlight validation after privacy/signing requirements, without uploading as part of this task.
 8. Cloud-identifier recovery (iCloud Photos on): import expendable photos on device A and confirm records gain `cloudIdentifier`. Restore that device backup to device B (or migrate), open the Roll and confirm frames resolve without Relink, then force quit/reopen and confirm they stay resolved with unchanged frame IDs, order and details. Repeat with iCloud Photos off (expect Photo unavailable plus working Relink), with a photo deleted on A before migration, under limited and denied access, and offline (expect temporary error, no write).
 
 ## Next release actions

@@ -6,7 +6,7 @@ import { photoModuleAvailable, pickPhotoReferences, usableAssetId, usableCloudId
 class ApplePhotosProvider implements PhotoProvider {
   async pickMultiplePhotos(_rollId: string, single = false): Promise<PhotoPickResult> {
     // Persistent references require our PhotoKit bridge; never fall back to copying picker exports.
-    if (!photoModuleAvailable) throw new Error('FILMER PhotoKit module requires a new iOS build');
+    if (!photoModuleAvailable) throw new Error('FiLog PhotoKit module requires a new iOS build');
     let permission = await MediaLibrary.getPermissionsAsync(false, ['photo']);
     if (!permission.granted && permission.canAskAgain) permission = await MediaLibrary.requestPermissionsAsync(false, ['photo']);
     if (!permission.granted) return { status: 'permission-denied' };

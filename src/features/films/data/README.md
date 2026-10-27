@@ -1,6 +1,6 @@
-# FILMER built-in film catalog
+# FiLog built-in film catalog
 
-`builtInCatalog.ts` contains FILMER definitions. `films.ts` supplies the existing Zustand store
+`builtInCatalog.ts` contains FiLog definitions. `films.ts` supplies the existing Zustand store
 and resolves historical ID aliases. No external API, external cover URL, or imported dataset is
 used. Custom films remain separate in the existing store. Unknown archived stocks still use
 Roll's saved filmName; no Roll data is rewritten. Matching former IDs resolve in Roll Detail,

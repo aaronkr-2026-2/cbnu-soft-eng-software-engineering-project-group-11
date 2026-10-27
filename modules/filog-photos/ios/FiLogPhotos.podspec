@@ -1,10 +1,10 @@
 Pod::Spec.new do |s|
-  s.name = 'FilmerPhotos'
+  s.name = 'FiLogPhotos'
   s.version = '1.0.0'
-  s.summary = 'Read-only PhotoKit resolution for FILMER references'
+  s.summary = 'Read-only PhotoKit resolution for FiLog references'
   s.description = s.summary
   s.license = { :type => 'MIT' }
-  s.author = 'FILMER'
+  s.author = 'FiLog'
   s.homepage = 'https://expo.dev'
   s.source = { :git => 'https://expo.dev' }
   s.platform = :ios, '16.4'
@@ -13,5 +13,5 @@ Pod::Spec.new do |s|
   s.frameworks = 'Photos', 'PhotosUI', 'UIKit', 'CloudKit', 'CryptoKit'
   s.swift_version = '5.9'
   s.source_files = '**/*.{swift,h,m}'
-  s.public_header_files = 'FilmerCloudContainer.h'
+  s.public_header_files = 'FiLogCloudContainer.h'
 end

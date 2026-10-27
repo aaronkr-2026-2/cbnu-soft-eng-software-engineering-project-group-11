@@ -18,9 +18,9 @@ private final class ReferencePickerDelegate: NSObject, PHPickerViewControllerDel
   }
 }
 
-public class FilmerPhotosModule: Module {
-  private let renderLog = OSLog(subsystem: "app.filmer.photos", category: .pointsOfInterest)
-  private let renderQueue = DispatchQueue(label: "filmer.photo-renders", qos: .userInitiated)
+public class FiLogPhotosModule: Module {
+  private let renderLog = OSLog(subsystem: "app.filog.photos", category: .pointsOfInterest)
+  private let renderQueue = DispatchQueue(label: "filog.photo-renders", qos: .userInitiated)
   private let imageManager = PHCachingImageManager()
   private var cancellations: [String: () -> Void] = [:]
   private var memoryObserver: NSObjectProtocol?
@@ -28,7 +28,7 @@ public class FilmerPhotosModule: Module {
   private var pickerDelegate: ReferencePickerDelegate?
 
   public func definition() -> ModuleDefinition {
-    Name("FilmerPhotos")
+    Name("FiLogPhotos")
     OnCreate { [weak self] in
       self?.memoryObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil) { [weak self] _ in
         guard let self else { return }
@@ -78,7 +78,7 @@ public class FilmerPhotosModule: Module {
         // Frame order follows PHPicker results, not necessarily the order of taps.
         configuration.selection = .default
         let picker = PHPickerViewController(configuration: configuration)
-        // Use device language and system appearance, independent of FILMER's app theme.
+        // Use device language and system appearance, independent of FiLog's app theme.
         picker.overrideUserInterfaceStyle = .unspecified
         let delegate = ReferencePickerDelegate()
         delegate.finish = { [weak module = self] results in
@@ -132,7 +132,7 @@ public class FilmerPhotosModule: Module {
         options.version = .current
         let side = CGFloat(min(4096, max(64, pixels)))
         let size = full ? PHImageManagerMaximumSize : CGSize(width: side, height: side)
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filmer-photo-renders", isDirectory: true)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filog-photo-renders", isDirectory: true)
         let stamp = asset.modificationDate?.timeIntervalSince1970 ?? 0
         let digest = SHA256.hash(data: Data("\(identifier):\(full):\(side):\(stamp)".utf8)).map { String(format: "%02x", $0) }.joined()
         let url = directory.appendingPathComponent(digest + ".jpg")
@@ -189,7 +189,7 @@ public class FilmerPhotosModule: Module {
       }
     }
     AsyncFunction("cacheInfo") { () -> [String: Any] in
-      let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filmer-photo-renders", isDirectory: true)
+      let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filog-photo-renders", isDirectory: true)
       var bytes: Int64 = 0
       var files = 0
       if FileManager.default.fileExists(atPath: directory.path) {
@@ -204,7 +204,7 @@ public class FilmerPhotosModule: Module {
       return ["bytes": bytes, "files": files, "uri": directory.absoluteString]
     }
     AsyncFunction("clearRenders") { () -> Int in
-      let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filmer-photo-renders", isDirectory: true)
+      let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filog-photo-renders", isDirectory: true)
       guard FileManager.default.fileExists(atPath: directory.path) else { return 0 }
       var count = 0
       for file in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.isRegularFileKey]) {

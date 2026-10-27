@@ -28,7 +28,7 @@ context.strokeEllipse(in: CGRect(
 let image = context.makeImage()!
 for path in [
   "assets/icon.png",
-  "ios/FILMER/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png"
+  "ios/FiLog/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png"
 ] {
   let destination = CGImageDestinationCreateWithURL(URL(fileURLWithPath: path) as CFURL, UTType.png.identifier as CFString, 1, nil)!
   CGImageDestinationAddImage(destination, image, nil)

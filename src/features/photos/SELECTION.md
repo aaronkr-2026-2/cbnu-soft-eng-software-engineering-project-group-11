@@ -43,7 +43,7 @@ resize or base64 conversion is used. Only selected photos are passed. Cancellati
 Generic sharing uses native autolinking and needs no social-app query/plugin configuration.
 Expo Go does not include RNShare. Single-photo Viewer sharing uses React Native's built-in Share,
 so it can work in Expo Go even while batch sharing fails with `RNShare could not be found`.
-`npm start` targets the native app explicitly. Build/install FILMER with `npm run ios` (or
+`npm start` targets the native app explicitly. Build/install FiLog with `npm run ios` (or
 `npm run android`) before testing batch sharing; a Metro reload cannot add native modules to Expo Go.
 Reference sources are read through the shared URI resolver, with `Asset.getUri` recovery through
 existing library access if a picker URI expired or is provider-only. Original bytes are copied to
@@ -61,7 +61,7 @@ by Contact Sheet export. Each failed asset is counted separately, and success to
 only successful writes. Save and Share preserve the selection for another action.
 
 Removal confirmation explains that Apple Photos originals are preserved and exclusively owned
-FILMER copies may be deleted. `removePhotos` commits the updated Roll first, compacts surviving
+FiLog copies may be deleted. `removePhotos` commits the updated Roll first, compacts surviving
 `sortOrder` values, then delegates owned-file cleanup to `PhotoStorageService`. Copied paths used
 by another Roll or surviving photo are retained. No Apple Photos delete API is called. A failed
 archive write leaves records, selection and owned files intact. Successful removal exits selection.

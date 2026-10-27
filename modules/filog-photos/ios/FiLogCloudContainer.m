@@ -1,4 +1,4 @@
-#import "FilmerCloudContainer.h"
+#import "FiLogCloudContainer.h"
 #import <mach-o/loader.h>
 #import <mach-o/fat.h>
 #import <mach-o/dyld.h>
@@ -23,7 +23,7 @@ static uint64_t BigLong(NSData *data, uint64_t offset) {
   return CFSwapInt64BigToHost(value);
 }
 
-@implementation FilmerCloudContainer
+@implementation FiLogCloudContainer
 + (nullable NSDictionary *)signedEntitlements:(NSData *)data {
   uint64_t base = 0, sliceLength = data.length;
   const struct mach_header *running = _dyld_get_image_header(0);
@@ -86,7 +86,7 @@ static uint64_t BigLong(NSData *data, uint64_t offset) {
   else {
     id services = entitlements[@"com.apple.developer.icloud-services"];
     id containers = entitlements[@"com.apple.developer.icloud-container-identifiers"];
-    // FILMER requires authenticated private CloudKit; CloudKit-Anonymous cannot provide it.
+    // FiLog requires authenticated private CloudKit; CloudKit-Anonymous cannot provide it.
     if (![services isKindOfClass:[NSArray class]] || ![services containsObject:@"CloudKit"]) reason = @"missing-entitlement";
     else if (![containers isKindOfClass:[NSArray class]] || ![containers containsObject:identifier]) reason = @"container-mismatch";
     else if (![entitlements[@"com.apple.developer.icloud-container-environment"] isEqual:environment]) reason = @"environment-mismatch";
