@@ -41,7 +41,7 @@
           "isAndroidForegroundServiceEnabled": false,
           "locationAlwaysPermission": false,
           "locationAlwaysAndWhenInUsePermission": false,
-          "motionUsagePermission": false
+          "motionUsagePermission": "FiLog does not use motion data. The location library it uses includes motion features, but FiLog never requests this access."
         }
       ],
       "expo-sharing",

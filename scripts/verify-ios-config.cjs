@@ -9,6 +9,10 @@ const media = expo.plugins.find(item => Array.isArray(item) && item[0] === 'expo
 assert.equal(info.NSPhotoLibraryUsageDescription, media.photosPermission);
 assert.equal(info.NSPhotoLibraryAddUsageDescription, media.savePhotosPermission);
 assert.equal(info.PHPhotoLibraryPreventAutomaticLimitedAccessAlert, true);
+const location = expo.plugins.find(item => Array.isArray(item) && item[0] === 'expo-location')[1];
+assert.equal(info.NSLocationWhenInUseUsageDescription, location.locationWhenInUsePermission);
+// expo-location links CoreMotion, so App Store processing requires this string even though FiLog never asks for motion access.
+assert.equal(info.NSMotionUsageDescription, location.motionUsagePermission);
 assert.equal(info.CFBundleShortVersionString, expo.version);
 const bundleIdentifiers = [...project.matchAll(/PRODUCT_BUNDLE_IDENTIFIER = ([^;]+);/g)];
 assert.ok(bundleIdentifiers.length >= 2, 'Expected Debug and Release bundle identifiers');
