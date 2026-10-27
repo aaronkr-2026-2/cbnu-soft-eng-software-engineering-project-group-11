@@ -140,6 +140,7 @@ export const useRollStore = create<RollState>((set, get) => {
       const roll: Roll = {
         ...input,
         id: `roll-${Date.now()}-${++rollSequence}-${Math.random().toString(36).slice(2, 12)}`,
+        createdAt: new Date().toISOString(),
         photos: [],
       };
       save((state) => ({ rolls: [roll, ...state.rolls] }));

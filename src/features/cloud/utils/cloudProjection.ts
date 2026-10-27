@@ -9,7 +9,7 @@ import { cloudKey, materialize, type CloudDocument, type WireItem } from './clou
 export type CloudProjection = { rolls: Roll[]; films: Film[]; cameras: Camera[] };
 const remaining = (value: object, keys: string[]) => Object.fromEntries(Object.entries(value).filter(([key]) => !keys.includes(key)));
 const pick = (value: object, keys: string[]) => Object.fromEntries(Object.entries(value).filter(([key, value]) => keys.includes(key) && value !== undefined));
-const rollFields = ['filmId', 'filmName', 'cameraId', 'cameraName', 'date', 'format', 'frameCount', 'notes', 'lab', 'location', 'filmOverride'];
+const rollFields = ['createdAt', 'filmId', 'filmName', 'cameraId', 'cameraName', 'date', 'format', 'frameCount', 'notes', 'lab', 'location', 'filmOverride'];
 const photoFields = ['provider', 'sortOrder', 'takenAt', 'location', 'note', 'cloudIdentifier'];
 const filmFields = ['brand', 'name', 'iso', 'format', 'type', 'formats', 'process', 'status', 'imageKey', 'shortDescription', 'aliases', 'legacyIds', 'source', 'isCustom'];
 const cameraFields = ['brand', 'model', 'format', 'isCustom'];
@@ -50,6 +50,8 @@ export function projectCloud(documents: Record<string, CloudDocument>, local: Cl
       }
       const old = localRolls.get(document.id);
       const roll = { ...remaining(old ?? {}, rollFields), ...pick(data, rollFields), id: document.id, photos: [] } as unknown as Roll;
+      // An older cloud record without creation metadata must not erase a known local time.
+      if (roll.createdAt === undefined && old?.createdAt !== undefined) roll.createdAt = old.createdAt;
       if (roll.filmOverride) roll.filmOverride = { ...roll.filmOverride, ...pick(old?.filmOverride ?? {}, ['imageUri', 'imageDocumentPath']) };
       rolls.set(document.id, roll);
     } else if (document.kind === 'film') {

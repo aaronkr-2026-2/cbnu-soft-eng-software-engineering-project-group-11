@@ -302,3 +302,22 @@ test('Grid window preserves original frame indices and limits mounted cells arou
   assert.ok(scrolled.every(cell => cell.props.photo.id === String(cell.props.initialIndex)));
   viewport = undefined; assert.equal(grid().props.children[0].length, 1000, 'callers without a viewport retain compatibility');
 });
+
+test('A late thumbnail decode error cannot clear the upgraded viewer source', async () => {
+  const runner = hookRunner(), pending = [];
+  const { useResolvedPhoto } = load('features/photos/hooks/useResolvedPhoto.ts', {
+    react: runner.hooks,
+    '../../../store/app-store': { useAppStore: selector => selector({ photoQuality: 'optimized' }) },
+    '../services/PhotoReferenceService': {
+      observePhotoLibrary: () => () => {}, invalidatePhotoRenders() {},
+      resolvePhoto: () => new Promise(resolve => pending.push(resolve)),
+    },
+  });
+  const photo = { id: 'a', provider: 'apple-photos', assetId: 'a', sortOrder: 0 };
+  const render = () => runner.render(() => useResolvedPhoto(photo, 'full'));
+  render(); pending[0]({ status: 'ready', uri: 'preview' }); await Promise.resolve();
+  const previewFailure = render().failed;
+  pending[1]({ status: 'ready', uri: 'screen' }); await Promise.resolve();
+  previewFailure(); assert.equal(render().uri, 'screen');
+  render().failed(); assert.equal(render().status, 'temporary-error');
+});

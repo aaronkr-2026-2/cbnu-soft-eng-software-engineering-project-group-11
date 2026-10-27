@@ -43,6 +43,7 @@ const cache = new Map<string, PhotoResolution>();
 const inFlight = new Map<string, Promise<PhotoResolution>>();
 const metrics = { requests: 0, cacheHits: 0, coalesced: 0, cancelled: 0, completed: 0, totalResolveMs: 0 };
 export function photoRenderMetrics() { return { ...metrics }; }
+const cancelRequests = new Map<string, () => void>();
 const consumers = new Map<string, number>();
 const listeners = new Set<() => void>();
 // One cloud-identifier lookup per stale reference until Retry, app activation or a library change.
@@ -50,7 +51,12 @@ const recoveries = new Map<string, Promise<string | undefined>>();
 let epoch = 0;
 let stop: (() => void) | undefined;
 export function invalidatePhotoRenders() {
-  epoch++; cache.clear(); recoveries.clear(); listeners.forEach(listener => listener());
+  epoch++;
+  // Cancel the previous generation before notifying hooks. A late old consumer
+  // must never cancel a new request for the same asset and pixel tier.
+  cancelRequests.forEach(cancel => cancel());
+  cancelRequests.clear(); inFlight.clear();
+  cache.clear(); recoveries.clear(); listeners.forEach(listener => listener());
 }
 export function observePhotoLibrary(listener: () => void) {
   listeners.add(listener);
@@ -72,6 +78,7 @@ export async function resolvePhoto(photo: PhotoReference, size: 'thumbnail' | 'f
   catch { return { status: 'temporary-error' }; }
 }
 async function resolvePhotoSafely(photo: PhotoReference, size: 'thumbnail' | 'full', pixels: number, signal?: AbortSignal): Promise<PhotoResolution> {
+  if (signal?.aborted) return { status: 'loading' };
   if (photo.provider === 'filmer-copy') {
     const uri = PhotoStorageService.resolveUri(photo);
     return uri && new File(uri).exists ? { status: 'ready', uri } : { status: 'unavailable' };
@@ -103,6 +110,10 @@ async function resolvePhotoSafely(photo: PhotoReference, size: 'thumbnail' | 'fu
     metrics.requests++;
     request = native!.resolve(id, size === 'full', pixels);
     inFlight.set(requestKey, request);
+    cancelRequests.set(requestKey, () => {
+      metrics.cancelled++;
+      void native?.cancelRender?.(id, size === 'full', pixels).catch(() => {});
+    });
   }
   else metrics.coalesced++;
   const started = Date.now();
@@ -116,9 +127,9 @@ async function resolvePhotoSafely(photo: PhotoReference, size: 'thumbnail' | 'fu
     else {
       consumers.delete(requestKey);
       if (signal?.aborted && inFlight.get(requestKey) === request) {
-        metrics.cancelled++;
+        cancelRequests.get(requestKey)?.();
+        cancelRequests.delete(requestKey);
         inFlight.delete(requestKey);
-        void native?.cancelRender?.(id, size === 'full', pixels).catch(() => {});
       }
     }
   };
@@ -134,7 +145,7 @@ async function resolvePhotoSafely(photo: PhotoReference, size: 'thumbnail' | 'fu
     }
     return result;
   } catch { return { status: 'temporary-error' }; }
-  finally { signal?.removeEventListener('abort', release); release(); if (inFlight.get(requestKey) === request) inFlight.delete(requestKey); }
+  finally { signal?.removeEventListener('abort', release); release(); if (inFlight.get(requestKey) === request) { inFlight.delete(requestKey); cancelRequests.delete(requestKey); } }
 }
 function recoverReference(photo: ApplePhotoReference, staleId: string) {
   const cloudId = photo.cloudIdentifier;

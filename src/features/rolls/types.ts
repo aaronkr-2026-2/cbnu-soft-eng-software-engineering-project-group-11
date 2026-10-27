@@ -12,6 +12,8 @@ export type RollLocation = {
 
 export type Roll = {
   id: string;
+  /** Immutable ISO creation time; absent on legacy archives. */
+  createdAt?: string;
   filmId: string;
   filmOverride?: FilmOverride;
   filmName: string;

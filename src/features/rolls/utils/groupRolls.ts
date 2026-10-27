@@ -18,10 +18,25 @@ export function sortRollsByDate(rolls: Roll[]): Roll[] {
   });
 }
 
-/** Sections follow their newest roll, and every section uses the same date order. */
+/** Legacy IDs encode creation milliseconds; never substitute edit/sync time. */
+function creationTime(roll: Roll): number {
+  const timestamp = roll.createdAt === undefined ? Number.NaN : Date.parse(roll.createdAt);
+  if (Number.isFinite(timestamp)) return timestamp;
+  const legacy = /^roll-(\d+)(?:-|$)/.exec(roll.id);
+  const inferred = legacy ? Number(legacy[1]) : 0;
+  return Number.isFinite(inferred) ? inferred : 0;
+}
+
+/** Deterministic ties keep order independent of SQLite/CloudKit arrival order. */
+export function sortRollsByCreation(rolls: Roll[]): Roll[] {
+  return [...rolls].sort((left, right) => creationTime(right) - creationTime(left) ||
+    (left.id < right.id ? 1 : left.id > right.id ? -1 : 0));
+}
+
+/** All shows creation order; grouped tabs retain shooting-month order. */
 export function groupRolls(rolls: Roll[], mode: RollBrowseMode, context: RollBrowseContext): RollGroup[] {
   const groups = new Map<string, RollGroup>();
-  for (const roll of sortRollsByDate(rolls)) {
+  for (const roll of mode === 'all' ? sortRollsByCreation(rolls) : sortRollsByDate(rolls)) {
     let section: { key: string; title: string };
     switch (mode) {
       case 'date':

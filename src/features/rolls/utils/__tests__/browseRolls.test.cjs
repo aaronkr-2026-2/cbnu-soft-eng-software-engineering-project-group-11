@@ -11,7 +11,7 @@ require.extensions['.ts'] = (module, filename) => {
   module._compile(outputText, filename);
 };
 
-const { groupRolls, sortRollsByDate } = require('../groupRolls.ts');
+const { groupRolls, sortRollsByDate, sortRollsByCreation } = require('../groupRolls.ts');
 const { filterRolls } = require('../filterRolls.ts');
 const { createRollBrowseContext } = require('../rollBrowse.ts');
 const { translations } = require('../../../../i18n/translations.ts');
@@ -36,12 +36,13 @@ const rolls = Object.freeze([
   roll('same-month', '2026-10', { location: location({ name: 'Busan' }) }),
 ]);
 
-test('All sorts months descending without mutating or cloning Rolls', () => {
-  const groups = groupRolls(rolls, 'all', context());
+test('All sorts creation times descending without mutating or cloning Rolls', () => {
+  const input = rolls.map((r, index) => Object.freeze({ ...r, createdAt: `2026-10-0${index + 1}T12:00:00.000Z` }));
+  const groups = groupRolls(input, 'all', context());
   assert.equal(groups.length, 1);
   assert.equal(groups[0].title, 'Recently');
-  assert.deepEqual(groups[0].rolls.map(r => r.id), ['oct', 'same-month', 'sept', 'old']);
-  assert.equal(groups[0].rolls[0], rolls[2]);
+  assert.deepEqual(groups[0].rolls.map(r => r.id), ['same-month', 'oct', 'sept', 'old']);
+  assert.equal(groups[0].rolls[0], input[3]);
   assert.equal(rolls[0].id, 'old');
 });
 
@@ -51,7 +52,7 @@ test('Date groups full month/year across years, newest first', () => {
   assert.deepEqual(groups.map(g => g.rolls.length), [2, 1, 1]);
 });
 
-test('Date excludes missing, invalid and exact-day dates; All keeps them last', () => {
+test('Date excludes missing, invalid and exact-day dates; All keeps every Roll', () => {
   const input = [roll('empty', ''), roll('bad-month', '2026-13'), roll('day', '2026-10-06'), roll('valid', '2026-10')];
   assert.deepEqual(groupRolls(input, 'date', context()).flatMap(g => g.rolls.map(r => r.id)), ['valid']);
   assert.equal(sortRollsByDate(input)[0].id, 'valid');
@@ -150,4 +151,25 @@ test('Home film grouping and search use per-Roll overrides without changing cata
  const groups=groupRolls([custom,normal],'film',ctx);
  assert.equal(groups.length,2);assert.equal(groups[0].title,'My Fuji C200 @ 400');
  assert.equal(ctx.filmNames.get('portra'),'Kodak Portra 400');
+});
+
+
+test('All uses creation time independently of shooting month, edits and restore arrival order', () => {
+  const older = roll('older', '2026-12', { createdAt: '2026-10-01T00:00:00Z' });
+  const newer = roll('newer', '2020-01', { createdAt: '2026-10-25T00:00:00Z' });
+  const ids = input => groupRolls(input, 'all', context())[0].rolls.map(r => r.id);
+  assert.deepEqual(ids([older, newer]), ['newer', 'older']);
+  assert.deepEqual(ids([newer, { ...older, date: '2027-01', notes: 'edited' }]), ['newer', 'older']);
+  assert.deepEqual(ids(JSON.parse(JSON.stringify([older, newer]))), ['newer', 'older']);
+  assert.deepEqual(groupRolls([older, newer], 'date', context()).flatMap(g => g.rolls.map(r => r.id)), ['older', 'newer']);
+});
+
+test('Legacy creation IDs and ties sort deterministically without assigning restore time', () => {
+  const input = [roll('roll-1700000000000-1-a', '2026-10'), roll('unknown', '2026-12'),
+    roll('roll-1700000001000-1-b', '2020-01'),
+    roll('b', '2026-01', { createdAt: '2026-10-25T00:00:00Z' }),
+    roll('a', '2026-02', { createdAt: '2026-10-25T00:00:00Z' })];
+  const expected = ['b', 'a', 'roll-1700000001000-1-b', 'roll-1700000000000-1-a', 'unknown'];
+  assert.deepEqual(sortRollsByCreation(input).map(r => r.id), expected);
+  assert.deepEqual(sortRollsByCreation([...input].reverse()).map(r => r.id), expected);
 });

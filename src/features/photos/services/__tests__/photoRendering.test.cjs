@@ -60,3 +60,25 @@ test('Cache reuse verifies originals, regenerates purged renders and rejects inv
   assert.equal((await request).uri, undefined);
   r.missing(); assert.equal((await r.api.resolvePhoto(photo)).status, 'unavailable');
 });
+
+test('Invalidation cancels old generations before new work; late old abort cannot cancel the replacement', async () => {
+  const r = runtime(), old = new AbortController();
+  const first = r.api.resolvePhoto(photo, 'thumbnail', 512, old.signal);
+  await flush();
+  r.api.invalidatePhotoRenders();
+  assert.equal(r.cancelled.length, 1);
+  const replacement = r.api.resolvePhoto(photo); await flush();
+  old.abort();
+  assert.equal(r.cancelled.length, 1, 'old consumers cannot send another asset-wide native cancellation');
+  r.pending[0].resolve({ status: 'ready', uri: 'stale' });
+  r.pending[1].resolve({ status: 'ready', uri: 'current' });
+  assert.equal((await first).uri, undefined);
+  assert.equal((await replacement).uri, 'current');
+  assert.equal((await r.api.resolvePhoto(photo)).uri, 'current');
+});
+
+test('Already aborted navigation does not start a PhotoKit render', async () => {
+  const r = runtime(), controller = new AbortController(); controller.abort();
+  assert.equal((await r.api.resolvePhoto(photo, 'thumbnail', 512, controller.signal)).status, 'loading');
+  assert.equal(r.pending.length, 0);
+});

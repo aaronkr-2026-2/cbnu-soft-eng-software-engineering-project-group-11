@@ -1,5 +1,7 @@
 # Photo loading performance — 2026-10-24
 
+Current FiLog follow-up: [filter identity, invalidation cancellation and decode race fixes](2026-10-24-followup.md). The report below records earlier workspace work and historical build results; it is not fresh validation of the follow-up.
+
 ## Findings and implementation
 
 Source inspection confirmed the following work on critical paths. These findings are not device profiling results.

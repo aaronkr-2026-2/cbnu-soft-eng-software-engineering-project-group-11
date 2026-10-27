@@ -2,7 +2,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, Image, Keyboard, Linking, KeyboardAvoidingView, Modal, Platform, Pressable, Text, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withDecay, withSpring, withTiming, type SharedValue } from 'react-native-reanimated';
+import Animated, { cancelAnimation, Extrapolation, interpolate, useAnimatedStyle, useSharedValue, withDecay, withSpring, withTiming, type SharedValue } from 'react-native-reanimated';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -137,6 +137,8 @@ function Viewer({ rollId, photos, initialIndex, title, subtitle, onClose, onPhot
   const startX = useSharedValue(0);
   const startY = useSharedValue(0);
   const startScale = useSharedValue(1);
+  const pinchStartX = useSharedValue(0);
+  const pinchStartY = useSharedValue(0);
   const startSheet = useSharedValue(0);
   const originX = useSharedValue(0);
   const originY = useSharedValue(0);
@@ -207,22 +209,30 @@ function Viewer({ rollId, photos, initialIndex, title, subtitle, onClose, onPhot
   const pan = Gesture.Pan()
     .averageTouches(true)
     .onStart((event) => {
+      // Pinch owns the transform while both recognizers are active.
+      if (pinching.value) return;
+      cancelAnimation(tx); cancelAnimation(ty); cancelAnimation(scale);
       startX.value = tx.value; startY.value = ty.value; startSheet.value = sheet.value;
       rebase.value = false;
       if (closing.value) mode.value = NONE;
-      else if (pinching.value || scale.value > 1.01) mode.value = ZOOM_PAN;
+      else if (scale.value > 1.01) mode.value = ZOOM_PAN;
       else if (Math.abs(event.translationX) > Math.abs(event.translationY)) mode.value = PAGE;
       else if (sheetOpenSV.value || event.translationY < 0) mode.value = SHEET;
       else mode.value = DISMISS;
     })
     .onUpdate((event) => {
-      if (pinching.value) return;
+      if (pinching.value || event.numberOfPointers > 1) return;
       const base = pageOffset(indexSV.value);
       const lastPage = pageOffset(count.value - 1);
       if (mode.value === PAGE) {
         stripX.value = rubberBand(base + event.translationX, lastPage, 0);
       } else if (mode.value === ZOOM_PAN) {
-        if (rebase.value) { startX.value = tx.value - event.translationX; startY.value = ty.value - event.translationY; rebase.value = false; }
+        if (rebase.value) {
+          cancelAnimation(tx); cancelAnimation(ty); cancelAnimation(scale);
+          startX.value = tx.value - event.translationX;
+          startY.value = ty.value - event.translationY;
+          rebase.value = false;
+        }
         const bx = boundX(scale.value);
         const by = boundY(scale.value);
         const rawX = startX.value + event.translationX;
@@ -239,6 +249,8 @@ function Viewer({ rollId, photos, initialIndex, title, subtitle, onClose, onPhot
       }
     })
     .onEnd((event) => {
+      // Lifting a finger from a pinch must not start a competing decay/page spring.
+      if (pinching.value || rebase.value) { mode.value = NONE; return; }
       if (mode.value === PAGE) {
         settlePage(event.velocityX);
       } else if (mode.value === ZOOM_PAN) {
@@ -270,9 +282,13 @@ function Viewer({ rollId, photos, initialIndex, title, subtitle, onClose, onPhot
 
   const pinch = Gesture.Pinch()
     .onStart((event) => {
-      if (closing.value || sheetOpenSV.value || (mode.value !== NONE && mode.value !== ZOOM_PAN)) return;
-      pinching.value = true;
-      startScale.value = scale.value; startX.value = tx.value; startY.value = ty.value;
+      if (closing.value || sheetOpenSV.value) return;
+      // Stop double-tap/settle inertia before capturing the live transform.
+      cancelAnimation(scale); cancelAnimation(tx); cancelAnimation(ty);
+      cancelAnimation(stripX); cancelAnimation(dismissX); cancelAnimation(dismissY);
+      stripX.value = pageOffset(indexSV.value); dismissX.value = 0; dismissY.value = 0;
+      mode.value = ZOOM_PAN; pinching.value = true;
+      startScale.value = scale.value; pinchStartX.value = tx.value; pinchStartY.value = ty.value;
       originX.value = event.focalX - stageW.value / 2;
       originY.value = event.focalY - stageH.value / 2;
     })
@@ -281,11 +297,12 @@ function Viewer({ rollId, photos, initialIndex, title, subtitle, onClose, onPhot
       const next = clamp(startScale.value * event.scale, 1, maxScale);
       const ratio = next / startScale.value;
       // Keep the point between the fingers under the fingers, and follow them as they move.
-      tx.value = event.focalX - stageW.value / 2 - (originX.value - startX.value) * ratio;
-      ty.value = event.focalY - stageH.value / 2 - (originY.value - startY.value) * ratio;
+      tx.value = event.focalX - stageW.value / 2 - (originX.value - pinchStartX.value) * ratio;
+      ty.value = event.focalY - stageH.value / 2 - (originY.value - pinchStartY.value) * ratio;
       scale.value = next;
     })
-    .onEnd(() => {
+    .onFinalize(() => {
+      // Finalize also releases ownership if iOS cancels the recognizer.
       if (!pinching.value) return;
       pinching.value = false;
       rebase.value = true;

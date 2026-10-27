@@ -8,7 +8,7 @@ export type RepairIssue = { rollId: string; photoId: string; reason: 'unavailabl
 export type RepairReport = { issues: RepairIssue[]; total: number; checked: number; available: number; recovered: number; inaccessible: number; restricted: number; errors: number; skipped: number };
 let running = false;
 export const ReferenceRepairService = {
-  async run(onProgress: (report: RepairReport) => void = () => {}, signal?: AbortSignal, only?: ReadonlySet<string>): Promise<RepairReport> {
+  async run(onProgress: (report: RepairReport) => void = () => {}, signal?: AbortSignal, only?: ReadonlySet<string>, options: { refreshRenders?: boolean } = {}): Promise<RepairReport> {
     if (running) throw new Error('Reference check already running');
     if (useRollStore.getState().archive.status !== 'ready') throw new Error('Archive requires recovery');
     running = true;
@@ -28,7 +28,7 @@ export const ReferenceRepairService = {
       return index.get(photoId);
     }
     try {
-      invalidatePhotoRenders();
+      if (options.refreshRenders !== false) invalidatePhotoRenders();
       onProgress({ ...report, issues: [] });
       for (const record of records) {
         if (signal?.aborted) break;
@@ -51,6 +51,9 @@ export const ReferenceRepairService = {
         await new Promise(resolve => setTimeout(resolve, 0));
       }
       return report;
-    } finally { running = false; invalidatePhotoRenders(); }
+    } finally {
+      running = false;
+      if (options.refreshRenders !== false) invalidatePhotoRenders();
+    }
   },
 };

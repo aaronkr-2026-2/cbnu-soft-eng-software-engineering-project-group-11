@@ -74,7 +74,10 @@ export function syncNow() {
       if (instance().snapshot.status === 'metadata-synced') {
         // Reference repair is separate from CloudKit metadata success; never claim full photo restore.
         try {
-          const result = await ReferenceRepairService.run();
+          // A metadata poll must not clear visible previews. Reference checks verify
+          // access directly; repaired IDs update their own tiles through the store.
+          // Actual library/permission changes still invalidate via the Photos observer.
+          const result = await ReferenceRepairService.run(undefined, undefined, undefined, { refreshRenders: false });
           recordReferenceCheck(result);
         } catch { useCloudStore.setState({ photosUnresolved: null }); }
       }

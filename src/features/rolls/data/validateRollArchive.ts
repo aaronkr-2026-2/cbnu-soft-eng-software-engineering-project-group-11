@@ -42,6 +42,7 @@ export function validateRollArchive(value: unknown): Roll[] {
   for (const r of rolls) {
     if (!object(r) || !id(r.id) || ids.has(r.id) || !['filmId','filmName','cameraId','cameraName'].every(k => text(r[k])) ||
       !text(r.date) || !(/^\d{4}-(0[1-9]|1[0-2])$/.test(r.date) || day(r.date)) || !formats.includes(r.format as string) ||
+      (r.createdAt !== undefined && (!text(r.createdAt) || !Number.isFinite(Date.parse(r.createdAt)))) ||
       !optionalText(r, ['lab','notes']) || !location(r.location) || !override(r.filmOverride) ||
       (r.frameCount !== undefined && (!Number.isSafeInteger(r.frameCount) || (r.frameCount as number) <= 0)) ||
       !Array.isArray(r.photos) || !r.photos.every(photo) || new Set(r.photos.map(p => p.id)).size !== r.photos.length ||

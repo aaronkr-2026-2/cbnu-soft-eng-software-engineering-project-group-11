@@ -53,6 +53,8 @@ export function useResolvedPhoto(photo: PhotoReference | undefined, size: 'thumb
     ...(state?.identity === identity ? state.result : { status: 'loading' as const }),
     renderKey: identity,
     retry: invalidatePhotoRenders,
-    failed: () => setState(previous => previous?.identity === identity ? { identity, result: { status: 'temporary-error' } } : previous),
+    // Decode callbacks can arrive after a source upgrade on the same photo.
+    failed: () => setState(previous => previous?.identity === identity && previous.result.uri === state?.result.uri
+      ? { identity, result: { status: 'temporary-error' } } : previous),
   };
 }
