@@ -32,5 +32,5 @@ export default function Cameras() {
     }
   }
   const cameras = useCameraStore((state) => state.cameras);
-  return <Screen><ScrollView contentContainerStyle={styles.content}><View style={styles.back}><BackButton onPress={handleBack} /></View><Text style={styles.title}>{t('cameras')}</Text><View style={styles.grid}>{cameras.map((camera) => <CameraCard camera={camera} key={camera.id} onPress={() => select(camera.id)} selected={camera.id === (draft.cameraId ?? cameras[0]?.id)} />)}</View><PrimaryButton label={t('addCustomCamera')} onPress={() => setCustom(true)} /></ScrollView>{custom ? <CustomCameraModal visible onClose={() => setCustom(false)} onAdded={select} /> : null}</Screen>;
+  return <Screen><ScrollView contentContainerStyle={styles.content}><View style={styles.back}><BackButton onPress={handleBack} /></View><Text style={styles.title}>{t('cameras')}</Text><View style={styles.grid}>{cameras.map((camera) => <CameraCard camera={camera} key={camera.id} onPress={() => select(camera.id)} selected={camera.id === (draft.cameraId ?? cameras[0]?.id)} />)}</View><View style={styles.add}><PrimaryButton label={t('addCustomCamera')} onPress={() => setCustom(true)} /></View></ScrollView>{custom ? <CustomCameraModal visible onClose={() => setCustom(false)} onAdded={select} /> : null}</Screen>;
 }

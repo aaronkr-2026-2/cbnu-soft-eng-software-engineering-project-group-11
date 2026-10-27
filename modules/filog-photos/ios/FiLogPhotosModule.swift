@@ -29,6 +29,10 @@ public class FiLogPhotosModule: Module {
 
   public func definition() -> ModuleDefinition {
     Name("FiLogPhotos")
+    // User-initiated write only; never inspect clipboard contents.
+    AsyncFunction("copyText") { (text: String) in
+      UIPasteboard.general.string = text
+    }.runOnQueue(.main)
     OnCreate { [weak self] in
       self?.memoryObserver = NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil) { [weak self] _ in
         guard let self else { return }
@@ -202,6 +206,27 @@ public class FiLogPhotosModule: Module {
         }
       }
       return ["bytes": bytes, "files": files, "uri": directory.absoluteString]
+    }
+    // Crops a picked cover image. The rect is a 0...1 fraction of the upright image, so EXIF
+    // orientation and pixel size never leak into JS math. Output is a disposable JPEG.
+    AsyncFunction("cropImage") { (uri: String, x: Double, y: Double, width: Double, height: Double, maxWidth: Double) throws -> String in
+      guard let url = URL(string: uri), url.isFileURL, let image = UIImage(contentsOfFile: url.path),
+            width > 0, height > 0, x >= 0, y >= 0, x + width <= 1.0001, y + height <= 1.0001 else {
+        throw NSError(domain: "FiLogPhotos", code: 10, userInfo: [NSLocalizedDescriptionKey: "Image cannot be cropped"])
+      }
+      let crop = CGRect(x: x * image.size.width, y: y * image.size.height, width: width * image.size.width, height: height * image.size.height)
+      let scale = min(1, maxWidth / crop.width)
+      let format = UIGraphicsImageRendererFormat()
+      format.scale = 1
+      let output = UIGraphicsImageRenderer(size: CGSize(width: (crop.width * scale).rounded(), height: (crop.height * scale).rounded()), format: format).image { _ in
+        image.draw(in: CGRect(x: -crop.minX * scale, y: -crop.minY * scale, width: image.size.width * scale, height: image.size.height * scale))
+      }
+      guard let data = output.jpegData(compressionQuality: 0.9) else { throw NSError(domain: "FiLogPhotos", code: 11, userInfo: [NSLocalizedDescriptionKey: "Image cannot be encoded"]) }
+      let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filog-crops", isDirectory: true)
+      try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+      let file = directory.appendingPathComponent(UUID().uuidString + ".jpg")
+      try data.write(to: file, options: .atomic)
+      return file.absoluteString
     }
     AsyncFunction("clearRenders") { () -> Int in
       let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filog-photo-renders", isDirectory: true)

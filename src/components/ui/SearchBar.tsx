@@ -1,4 +1,5 @@
 import { Text, TextInput, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 
 import { useTheme, useThemedStyles } from '../../constants/theme';
 import { createSearchBarStyles } from './styles/search-bar.styles';
@@ -15,7 +16,8 @@ export function SearchBar({ onChangeText, placeholder, value }: SearchBarProps) 
 
   return (
     <View style={styles.container}>
-      <Text style={styles.icon}>⌕</Text>
+      <SymbolView name="magnifyingglass" size={17} weight="medium" tintColor={colors.secondaryText} style={styles.icon}
+        fallback={<Text style={styles.iconGlyph}>⌕</Text>} />
       <TextInput
         accessibilityLabel={placeholder}
         onChangeText={onChangeText}

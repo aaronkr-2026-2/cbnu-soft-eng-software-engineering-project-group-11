@@ -7,6 +7,8 @@ import { SelectionChip } from '../../../components/ui/SelectionChip';
 import { useTheme, useThemedStyles } from '../../../constants/theme';
 import type { Camera } from '../../../types/models';
 import { createCatalogItemModalStyles } from '../styles/catalog-item-modal.styles';
+import { cropAvailable } from '../services/ImageCropService';
+import { ImageCropModal } from './ImageCropModal';
 
 type CatalogItemModalProps = {
   title: string;
@@ -60,6 +62,7 @@ export function CatalogImageField({ label, imageUri, onChange, previewSource, on
   const styles = useThemedStyles(createCatalogItemModalStyles);
 
   const [picking, setPicking] = useState(false);
+  const [cropping, setCropping] = useState<{ uri: string; width: number; height: number } | null>(null);
   async function chooseImage() {
     if (picking) return;
     setPicking(true);
@@ -67,7 +70,11 @@ export function CatalogImageField({ label, imageUri, onChange, previewSource, on
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) { Alert.alert(t('photosAccess'), t('catalogPermission')); return; }
       const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1 });
-      if (!result.canceled) onChange(result.assets[0]?.uri);
+      const asset = result.canceled ? undefined : result.assets[0];
+      if (!asset) return;
+      // Covers are framed at one fixed ratio; let the user choose which part of the photo to keep.
+      if (cropAvailable && asset.width > 0 && asset.height > 0) setCropping({ uri: asset.uri, width: asset.width, height: asset.height });
+      else onChange(asset.uri);
     } catch {
       Alert.alert(t('photoError'));
     } finally {
@@ -75,5 +82,6 @@ export function CatalogImageField({ label, imageUri, onChange, previewSource, on
     }
   }
   const source = imageUri ? { uri: imageUri } : previewSource;
-  return <><Text style={styles.label}>{label}</Text><Pressable accessibilityRole="button" accessibilityLabel={source ? t('changeImage') : t('chooseImage')} disabled={picking} onPress={chooseImage} style={styles.imageButton}>{source ? <Image source={source} resizeMode="contain" style={styles.image} /> : <Text style={styles.imageText}>{picking ? t('openingPhotos') : t('chooseImage')}</Text>}</Pressable>{source && onRemove ? <Pressable accessibilityRole="button" onPress={onRemove}><Text style={styles.cancelText}>{t('removeFilmPhoto')}</Text></Pressable> : null}</>;
+  return <><Text style={styles.label}>{label}</Text><Pressable accessibilityRole="button" accessibilityLabel={source ? t('changeImage') : t('chooseImage')} disabled={picking} onPress={chooseImage} style={styles.imageButton}>{source ? <Image source={source} resizeMode="cover" style={styles.image} /> : <Text style={styles.imageText}>{picking ? t('openingPhotos') : t('chooseImage')}</Text>}</Pressable>{source && onRemove ? <Pressable accessibilityRole="button" onPress={onRemove} style={styles.remove}><Text style={styles.removeText}>{t('removeFilmPhoto')}</Text></Pressable> : null}
+    {cropping ? <ImageCropModal {...cropping} onCancel={() => setCropping(null)} onDone={uri => { setCropping(null); onChange(uri); }} /> : null}</>;
 }

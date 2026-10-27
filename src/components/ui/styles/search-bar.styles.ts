@@ -12,13 +12,8 @@ export const createSearchBarStyles = (colors: ThemeColors) => StyleSheet.create(
     height: 44,
     paddingHorizontal: 12,
   },
-  icon: {
-    color: colors.secondaryText,
-    fontSize: 23,
-    lineHeight: 23,
-    marginRight: spacing.sm,
-    transform: [{ rotate: '-20deg' }],
-  },
+  icon: { width: 18, height: 18, marginRight: spacing.sm },
+  iconGlyph: { color: colors.secondaryText, fontSize: 20, lineHeight: 20, textAlign: 'center' },
   input: {
     color: colors.text,
     flex: 1,
