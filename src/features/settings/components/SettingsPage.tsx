@@ -4,11 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter, usePathname, useFocusEffect } from 'expo-router';
 import { BackButton } from '../../../components/ui/BackButton';
-import { darkColors } from '../../../constants/colors';
+import { useThemedStyles } from '../../../constants/theme';
+import { useAppStore } from '../../../store/app-store';
 import { createSettingsStyles } from '../styles/settings.styles';
 
-export const settingsStyles = createSettingsStyles(darkColors);
 export function SettingsPage({ title, children }: { title: string; children: ReactNode }) {
+  const settingsStyles = useThemedStyles(createSettingsStyles);
+  const appearance = useAppStore(state => state.appearance);
   const router = useRouter();
   const pathname = usePathname();
   const scroll = useRef<ScrollView>(null);
@@ -17,11 +19,11 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
     return () => cancelAnimationFrame(frame);
   }, []));
   return <SafeAreaView style={settingsStyles.screen}>
-    <StatusBar style="light" />
+    <StatusBar style={appearance === 'dark' ? 'light' : 'dark'} />
     <ScrollView ref={scroll} contentOffset={topOffset} contentInsetAdjustmentBehavior="never" automaticallyAdjustContentInsets={false}>
       <View style={settingsStyles.content}>
       <View style={settingsStyles.header}>
-        <BackButton tone="dark" onPress={() => router.canGoBack() ? router.back() : router.replace(pathname === '/settings' ? '/' : '/settings')} />
+        <BackButton onPress={() => router.canGoBack() ? router.back() : router.replace(pathname === '/settings' ? '/' : '/settings')} />
         <Text accessibilityRole="header" style={settingsStyles.title}>{title}</Text>
         <View style={settingsStyles.spacer} />
       </View>
@@ -31,6 +33,7 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
   </SafeAreaView>;
 }
 export function SettingsGroup({ title, children }: { title?: string; children: ReactNode }) {
+  const settingsStyles = useThemedStyles(createSettingsStyles);
   return <View style={settingsStyles.group}>
     {title && <Text accessibilityRole="header" style={settingsStyles.heading}>{title.toLocaleUpperCase()}</Text>}
     <View style={settingsStyles.card}>{children}</View>
@@ -39,6 +42,7 @@ export function SettingsGroup({ title, children }: { title?: string; children: R
 export function SettingsRow({ label, value, description, icon, iconColor, trailing, onPress, disabled = false }: {
   label: string; value?: string; description?: string; icon?: string; iconColor?: string; trailing?: ReactNode; onPress?: () => void; disabled?: boolean;
 }) {
+  const settingsStyles = useThemedStyles(createSettingsStyles);
   const content = <>
     {icon && <Text accessible={false} style={[settingsStyles.rowIcon, iconColor ? { color: iconColor } : undefined]}>{icon}</Text>}
     {description ? <View style={settingsStyles.rowCopy}>
@@ -55,6 +59,7 @@ export function SettingsRow({ label, value, description, icon, iconColor, traili
     : <View accessible={!trailing} accessibilityLabel={[label, value, description].filter(Boolean).join(". ")} style={settingsStyles.row}>{content}</View>;
 }
 export function SettingsNote({ children }: { children: ReactNode }) {
+  const settingsStyles = useThemedStyles(createSettingsStyles);
   return <Text style={[settingsStyles.note, settingsStyles.noteInset, { marginBottom: 16 }]}>{children}</Text>;
 }
 

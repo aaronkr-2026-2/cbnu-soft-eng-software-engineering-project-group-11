@@ -6,7 +6,7 @@ import { LocationPicker } from '../../src/features/location/components/LocationP
 import { isValidLocation, locationLabel } from '../../src/features/location/services/locationService';
 import { createRollDetailStyles } from '../../src/features/rolls/styles/roll-detail.styles';
 import { useTranslation } from '../../src/i18n/useTranslation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Dimensions, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -28,6 +28,8 @@ import { RollActionsMenu } from '../../src/features/rolls/components/RollActions
 import { ContactSheetPreview } from '../../src/features/contact-sheet/components/ContactSheetPreview';
 import { usePhotoSelection } from '../../src/features/photos/hooks/usePhotoSelection';
 import { PhotoSelectionControls } from '../../src/features/photos/components/PhotoSelectionControls';
+import { PhotoImportGuide } from '../../src/features/photos/components/PhotoImportGuide';
+import { useAppStore } from '../../src/store/app-store';
 import type { PhotoDetailsPatch, PhotoReference } from '../../src/features/photos/types';
 
 export default function RollDetail() {
@@ -62,6 +64,10 @@ export default function RollDetail() {
   const [viewerVisible, setViewerVisible] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [batchBusy, setBatchBusy] = useState(false);
+  const photoGuideSeen = useAppStore((state) => state.photoGuideSeen);
+  const markPhotoGuideSeen = useAppStore((state) => state.markPhotoGuideSeen);
+  const [guideVisible, setGuideVisible] = useState(false);
+  const pickAfterGuide = useRef(false);
   const rollPhotos = roll?.photos;
   const photos = useMemo(
     () => rollPhotos ? [...rollPhotos].sort((left, right) => left.sortOrder - right.sortOrder) : [],
@@ -82,6 +88,25 @@ export default function RollDetail() {
   }, [id, reorderPhotos, setMessage]);
   const changePhoto = useCallback((photoId: string, patch: PhotoDetailsPatch) =>
     attemptSave(() => updatePhoto(id, photoId, patch)), [id, updatePhoto]);
+
+  function requestAddPhotos() {
+    if (isPickingPhotos) return;
+    if (photoGuideSeen || !photoModuleAvailable) { void handleAddPhotos(); return; }
+    setGuideVisible(true);
+  }
+  function continueFromGuide() {
+    // The guide should not block future imports if saving the preference fails.
+    try { markPhotoGuideSeen(); } catch { /* Shown again next time. */ }
+    setGuideVisible(false);
+    // iOS cannot present the picker while this sheet is still dismissing; wait for onDismiss.
+    if (Platform.OS === 'ios') pickAfterGuide.current = true;
+    else void handleAddPhotos();
+  }
+  function guideDismissed() {
+    if (!pickAfterGuide.current) return;
+    pickAfterGuide.current = false;
+    void handleAddPhotos();
+  }
 
   async function handleAddPhotos() {
     if (isPickingPhotos) return;
@@ -139,13 +164,14 @@ export default function RollDetail() {
       {message === 'photoAccessHelp' || message === 'photoPermission' ? <Pressable accessibilityRole="button" style={{ paddingVertical: 12 }} onPress={() => {
         void applePhotosProvider.manageAccess().catch(() => Alert.alert(t('photosAccessRequired'), t('photoAccessHelp'))).finally(invalidatePhotoRenders);
       }}><Text style={styles.message}>{t('managePhotosAccess')}</Text></Pressable> : null}
-      <ReorderablePhotoGrid viewport={{ top: viewport.top - contentY, height: viewport.height }} adding={isPickingPhotos} onAdd={handleAddPhotos} onDraggingChange={setDragging} onReorder={reorder}
+      <ReorderablePhotoGrid viewport={{ top: viewport.top - contentY, height: viewport.height }} adding={isPickingPhotos} onAdd={requestAddPhotos} onDraggingChange={setDragging} onReorder={reorder}
         onPhotoPress={openPhoto} photos={photos} selectionMode={selection.selectionMode} selectedIds={selection.selectedIds}
         onToggleSelection={selection.toggle} onSelectRange={selection.addRange} interactionDisabled={batchBusy} />
     </View> : <View style={styles.notFound}><Text style={styles.title}>{t('rollMissing')}</Text><Text style={styles.description}>{t('rollMissingInfo')}</Text></View>}
   </ScrollView>
     {selection.selectionMode ? <PhotoSelectionControls rollId={id} photos={selection.selectedPhotos}
       allSelected={selection.allSelected} onToggleAll={selection.toggleAll} onExit={selection.exit} onBusyChange={setBatchBusy} /> : null}
+    <PhotoImportGuide visible={guideVisible} onContinue={continueFromGuide} onClose={() => setGuideVisible(false)} onDismiss={guideDismissed} />
     {saved ? <Toast key={saved} message={t('changesSaved')} /> : null}
     {addedCount !== null ? <Toast message={t(addedCount === 1 ? 'photoAddedToRoll' : 'photosAddedToRoll', { count: addedCount })} /> : null}
     {contactSheetRoll ? <ContactSheetPreview roll={contactSheetRoll} onClose={() => setContactSheetRoll(null)} /> : null}

@@ -10,12 +10,13 @@ import { useRollStore } from '../src/features/rolls/store/rollStore';
 import { createRollBrowseContext } from '../src/features/rolls/utils/rollBrowse';
 import { activityYears, computeRollStats, rollShare, type StatCount } from '../src/features/rolls/utils/rollStats';
 import { createRollStatsStyles } from '../src/features/rolls/styles/roll-stats.styles';
-import { darkColors } from '../src/constants/colors';
+import { useThemedStyles } from '../src/constants/theme';
+import { useAppStore } from '../src/store/app-store';
 import { useTranslation } from '../src/i18n/useTranslation';
 
-const styles = createRollStatsStyles(darkColors);
-
 export default function Stats() {
+  const styles = useThemedStyles(createRollStatsStyles);
+  const appearance = useAppStore(state => state.appearance);
   const router = useRouter();
   const { t, language } = useTranslation();
   const rolls = useRollStore((state) => state.rolls);
@@ -41,10 +42,10 @@ export default function Stats() {
   }
 
   return <SafeAreaView style={styles.screen}>
-    <StatusBar style="light" />
+    <StatusBar style={appearance === 'dark' ? 'light' : 'dark'} />
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <BackButton tone="dark" onPress={handleClose} />
+        <BackButton onPress={handleClose} />
         <Text accessibilityRole="header" style={styles.title}>{t('statistics')}</Text>
         <View style={styles.spacer} />
       </View>
@@ -85,6 +86,7 @@ export default function Stats() {
 }
 
 function Tile({ value, label }: { value: number; label: string }) {
+  const styles = useThemedStyles(createRollStatsStyles);
   return <View accessible accessibilityLabel={`${label}: ${value}`} style={[styles.card, styles.tile]}>
     <Text numberOfLines={1} adjustsFontSizeToFit style={styles.tileValue}>{value}</Text>
     <Text style={styles.detail}>{label}</Text>
@@ -92,6 +94,7 @@ function Tile({ value, label }: { value: number; label: string }) {
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
+  const styles = useThemedStyles(createRollStatsStyles);
   return <View style={styles.group}>
     <Text accessibilityRole="header" style={styles.heading}>{title}</Text>
     <View style={styles.card}>{children}</View>
@@ -99,6 +102,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 function Ranking({ items, start = 1, onPress }: { items: StatCount[]; start?: number; onPress: (item: StatCount) => void }) {
+  const styles = useThemedStyles(createRollStatsStyles);
   const { t } = useTranslation();
   return <>{items.map((item, index) => <Pressable key={item.key} accessibilityRole="button" onPress={() => onPress(item)}
     accessibilityLabel={`${item.label}: ${t(item.count === 1 ? 'rollCountOne' : 'rollCountOther', { count: item.count })}`} style={({ pressed }) => [styles.row, index > 0 && styles.rowBorder, pressed && styles.pressed]}>

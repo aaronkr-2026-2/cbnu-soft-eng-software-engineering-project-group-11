@@ -1,3 +1,5 @@
+import { useThemedStyles, useTheme } from '../../../constants/theme';
+import { createSettingsStyles } from '../styles/settings.styles';
 import { useSettingsData } from '../hooks/useSettingsData';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Linking, Pressable, Text, View } from 'react-native';
@@ -15,12 +17,13 @@ import { ReferenceRepairService, type RepairReport, type RepairIssue } from '../
 import { PhotoCacheClearError, StorageService } from '../services/StorageService';
 import { useCloudStore, recordReferenceCheck } from '../../cloud/services/cloudSync';
 import { SettingsSelectModal } from './SettingsSelectModal';
-import { SettingsGroup as Group, SettingsNote as Note, SettingsPage, SettingsRow as Row, settingsStyles as styles } from './SettingsPage';
+import { SettingsGroup as Group, SettingsNote as Note, SettingsPage, SettingsRow as Row } from './SettingsPage';
 
 const issueLabels: Record<RepairIssue['reason'], TranslationKey> = {
   unavailable: 'photoUnavailable', 'permission-denied': 'cloudPermissionReason', limited: 'photoAccessLimited', 'temporary-error': 'photoTemporaryError',
 };
 export function SyncPhotosSettings() {
+  const styles = useThemedStyles(createSettingsStyles);
   const { t } = useTranslation();
   const router = useRouter();
   const rolls = useRollStore(state => state.rolls);
@@ -94,6 +97,8 @@ export function SyncPhotosSettings() {
 }
 const formatBytes = (bytes: number) => bytes < 1024 ? `${bytes} B` : bytes < 1024 ** 2 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 export function StorageSettings() {
+  const styles = useThemedStyles(createSettingsStyles);
+  const colors = useTheme();
   const { t } = useTranslation();
   const state = useSettingsData(StorageService.measure);
   const sync = useCloudStore(state => state.sync);
@@ -122,10 +127,10 @@ export function StorageSettings() {
       <View style={styles.storageSection}>
         <View style={styles.storageCard}>
           {data && !state.loading ? <>
-            <Row iconColor="#ff454b" icon="▧" label={t('storagePhotoCache')} value={data.cache === null ? '—' : formatBytes(data.cache)} disabled={clearing || data.cache === null || state.error} onPress={() => { void clear(); }} />
-            <Row iconColor="#ff454b" icon="▤" label={t('storageRollDatabase')} value={formatBytes(data.database)} />
-            <Row iconColor="#ff454b" icon="⚙" label={t('storageAppSettings')} value={t('storageSharedDatabase')} onPress={() => setQualitySheet(true)} />
-            {data.covers + data.copies + data.other > 0 && <Row iconColor="#ff454b" icon="▣" label={t('storageSavedFiles')} value={formatBytes(data.covers + data.copies + data.other)} />}
+            <Row iconColor={colors.destructive} icon="▧" label={t('storagePhotoCache')} value={data.cache === null ? '—' : formatBytes(data.cache)} disabled={clearing || data.cache === null || state.error} onPress={() => { void clear(); }} />
+            <Row iconColor={colors.destructive} icon="▤" label={t('storageRollDatabase')} value={formatBytes(data.database)} />
+            <Row iconColor={colors.destructive} icon="⚙" label={t('storageAppSettings')} value={t('storageSharedDatabase')} onPress={() => setQualitySheet(true)} />
+            {data.covers + data.copies + data.other > 0 && <Row iconColor={colors.destructive} icon="▣" label={t('storageSavedFiles')} value={formatBytes(data.covers + data.copies + data.other)} />}
           </> : <Row label={t(state.loading ? 'prefsLoading' : 'prefsUnavailable')} />}
         </View>
         <Note>{t('cloudLocalBody')}</Note>
@@ -157,7 +162,7 @@ export function StorageSettings() {
         </View>
       </View>
     </SettingsPage>
-    {qualitySheet && <SettingsSelectModal tone="dark" title={t('prefsQuality')} value={quality} options={[{ value: 'optimized', label: t('prefsOptimized') }, { value: 'high', label: t('prefsHigh') }]}
+    {qualitySheet && <SettingsSelectModal title={t('prefsQuality')} value={quality} options={[{ value: 'optimized', label: t('prefsOptimized') }, { value: 'high', label: t('prefsHigh') }]}
       onSelect={value => { try { useAppStore.getState().setPhotoQuality(value); setQualitySheet(false); } catch { Alert.alert(t('prefsQuality'), t('saveError')); } }} onClose={() => setQualitySheet(false)} />}
   </>;
 }

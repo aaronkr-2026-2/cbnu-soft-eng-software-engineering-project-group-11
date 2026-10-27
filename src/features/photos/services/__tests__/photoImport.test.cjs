@@ -1274,6 +1274,23 @@ test('Photo Quality defaults safely, persists alongside old preferences and cann
   const legacy = runtime(r.state);
   assert.equal(legacy.app.getState().photoQuality, 'optimized');
   assert.equal(legacy.app.getState().language, 'ko');
+  // Settings saved before the import guide existed still show it once.
+  assert.equal(legacy.app.getState().photoGuideSeen, false);
+  legacy.app.getState().markPhotoGuideSeen();
+  const guided = runtime(r.state);
+  assert.equal(guided.app.getState().photoGuideSeen, true);
+  assert.equal(guided.app.getState().language, 'ko');
+  assert.deepEqual(guided.app.getState().homeTourSeen, []);
+  guided.app.getState().markHomeTourSeen(['settings']);
+  guided.app.getState().markHomeTourSeen(['newRoll']);
+  assert.deepEqual(runtime(r.state).app.getState().homeTourSeen, ['newRoll', 'settings']);
+  r.state.kv.set('filmer.settings.v1', JSON.stringify({ homeTourSeen: ['stats', 'unknown', 3] }));
+  const filtered = runtime(r.state);
+  assert.deepEqual(filtered.app.getState().homeTourSeen, ['stats']);
+  filtered.app.getState().resetGuides();
+  const replayed = runtime(r.state);
+  assert.deepEqual(replayed.app.getState().homeTourSeen, []);
+  assert.equal(replayed.app.getState().photoGuideSeen, false);
 });
 
 test('Reference check distinguishes available, saved recovery, limited, missing and transient failures without downloading photos', async () => {
@@ -1831,7 +1848,9 @@ test('Empty cloud and unavailable accounts never publish a restored-data claim',
   const server = fakeCloud(); const b = cloudDevice(server, 'fresh'); b.r.store.getState().deleteRoll('r1');
   server.available = false;
   await assert.rejects(b.engine.run(), /account unavailable/);
-  assert.deepEqual(b.engine.snapshot.restore, { phase: 'paused', received: 0 });
+  // No account means nothing to restore: report the account, not an endlessly paused restore.
+  assert.equal(b.engine.snapshot.restore, undefined);
+  assert.equal(b.engine.snapshot.errorKind, 'account');
   assert.equal(b.engine.snapshot.lastSync, undefined);
   server.available = true; await b.engine.run();
   assert.equal(b.local().rolls.length, 0);
@@ -1969,4 +1988,76 @@ test('Null native rejections, missing native methods and corrupt cloud journals 
     assert.equal(r.store.getState().archive.status, 'ready');
     assert.deepEqual(r.state.deleted, []);
   }
+});
+
+test('Creation order updates immediately and survives persisted reload, edits and CloudKit restore', async () => {
+  const server = fakeCloud(), source = cloudDevice(server, 'creation-source');
+  const store = source.r.store;
+  store.getState().applyCloudRolls([{ ...store.getState().rolls[0], createdAt: '2020-01-01T00:00:00.000Z' }], store.getState().rolls);
+  const { sortRollsByCreation } = source.r.load('features/rolls/utils/groupRolls.ts');
+  const orderedIDs = device => sortRollsByCreation(device.r.store.getState().rolls).map(roll => roll.id);
+  let published;
+  const unsubscribe = store.subscribe(state => { published = sortRollsByCreation(state.rolls)[0].id; });
+  const created = store.getState().createRoll({ ...seedRoll, date: '2000-01' });
+  unsubscribe();
+  assert.ok(Number.isFinite(Date.parse(created.createdAt)));
+  assert.equal(published, created.id, 'Zustand publishes the saved new Roll without a reload');
+  const expected = [created.id, 'r1'];
+  assert.deepEqual(orderedIDs(source), expected);
+  source.edit({ date: '2026-12', notes: 'An edit must not promote this Roll', createdAt: '2099-01-01T00:00:00Z' });
+  assert.equal(store.getState().rolls.find(roll => roll.id === 'r1').createdAt, '2020-01-01T00:00:00.000Z');
+  assert.deepEqual(orderedIDs(source), expected);
+  const restarted = cloudDevice(server, 'creation-source-restarted', source.r.state);
+  assert.deepEqual(orderedIDs(restarted), expected);
+  await restarted.engine.run();
+  const restored = cloudDevice(server, 'creation-restored');
+  restored.r.store.getState().deleteRoll('r1');
+  await restored.engine.run();
+  assert.deepEqual(orderedIDs(restored), expected);
+  assert.equal(restored.r.store.getState().rolls.find(roll => roll.id === created.id).createdAt, created.createdAt);
+  restored.edit({ notes: 'Synced edit of older Roll' });
+  await restored.engine.run(); await restarted.engine.run();
+  assert.deepEqual(orderedIDs(restored), expected);
+  assert.deepEqual(orderedIDs(restarted), expected);
+  assert.deepEqual(orderedIDs(cloudDevice(server, 'creation-restored-restarted', restored.r.state)), expected);
+});
+
+test('Older cloud metadata preserves known local creation time and legacy archives remain readable', () => {
+  const r = runtime();
+  const { wireItems, projectCloud } = r.load('features/cloud/utils/cloudProjection.ts');
+  const { cloudKey, updateDocument } = r.load('features/cloud/utils/cloudModel.ts');
+  const legacy = { rolls: [seedRoll], films: [], cameras: [] };
+  const docs = Object.fromEntries(wireItems(legacy).map(item => [cloudKey(item), updateDocument(undefined, item, undefined, { n: 1, device: 'old-client' })]));
+  const local = { ...legacy, rolls: [{ ...seedRoll, createdAt: '2020-01-01T00:00:00.000Z' }] };
+  assert.equal(projectCloud(docs, local).rolls[0].createdAt, local.rolls[0].createdAt);
+  assert.equal(projectCloud(docs, legacy).rolls[0].createdAt, undefined);
+  const { validateRollArchive } = r.load('features/rolls/data/validateRollArchive.ts');
+  assert.equal(validateRollArchive([seedRoll])[0], seedRoll);
+  assert.throws(() => validateRollArchive([{ ...seedRoll, createdAt: 'not-a-time' }]), /Invalid/);
+});
+
+test('Repeated metadata polls preserve visible render cache while still checking unresolved references', async () => {
+  const { r } = await cloudImported(2);
+  const server = fakeCloud();
+  r.state.cloudBridge = { ...server.transport('quiet-poll'), namespace: 'quiet-poll' };
+  const api = resolver(r);
+  let invalidations = 0;
+  const stop = api.observePhotoLibrary(() => invalidations++);
+  try {
+    const photo = r.store.getState().rolls[0].photos[0];
+    const first = await api.resolvePhoto(photo);
+    const requests = r.state.nativeRequests.length;
+    const driver = r.load('features/cloud/services/cloudSync.ts');
+    await driver.syncNow(); await driver.syncNow(); await driver.syncNow();
+    assert.equal(driver.useCloudStore.getState().sync.status, 'metadata-synced');
+    assert.equal(invalidations, 0, 'automatic metadata checks must not blank every mounted image');
+    assert.equal((await api.resolvePhoto(photo)).uri, first.uri);
+    assert.equal(r.state.nativeRequests.length, requests, 'warm preview is reused');
+    r.state.permission = false;
+    await driver.syncNow();
+    assert.equal(driver.useCloudStore.getState().photosUnresolved, 2);
+    assert.equal((await api.resolvePhoto(photo)).status, 'permission-denied', 'cache never overrides fresh access verification');
+    await r.load('features/settings/services/ReferenceRepairService.ts').ReferenceRepairService.run();
+    assert.equal(invalidations, 2, 'explicit repair still refreshes views before and after checking');
+  } finally { stop(); }
 });

@@ -114,9 +114,10 @@ export class CloudSyncEngine {
       this.show({ configured: account.configured, unavailableReason: account.configured ? undefined : account.reason });
       if (!account.configured) { this.show({ status: 'unavailable', error: undefined, restore: undefined }); return; }
       if (!this.journal.enabled) { this.show({ status: 'off', error: undefined, restore: undefined }); return; }
+      // Without a signed-in account there is nothing to restore; report the account error only.
+      if (!account.available || !account.account) throw new Error('iCloud account unavailable');
       const local = this.io.local();
       restoring = !this.journal.lastSync && local.rolls.length === 0 && local.films.length === 0 && local.cameras.length === 0;
-      if (!account.available || !account.account) throw new Error('iCloud account unavailable');
       if (this.journal.account && this.journal.account !== account.account) throw new Error('iCloud account changed; return to the original account to sync this library');
       this.journal.account = account.account; this.persist();
       this.show({ status: 'syncing', error: undefined, restore: restoring ? { phase: 'downloading', received } : undefined });
