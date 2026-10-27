@@ -1,3 +1,5 @@
+import { normalizeDisplayName } from '../../catalog/utils/normalizeDisplayName';
+import { FilmCoverPrompt } from './FilmCoverPrompt';
 import { useFilmStore } from '../store/filmStore';
 import { useRef, useState } from 'react';
 import { Alert } from 'react-native';
@@ -42,7 +44,7 @@ export function FilmForm({ mode, initialValues, visible, onClose, onSubmit }: {
     let copied: Awaited<ReturnType<typeof FilmCoverStorage.copy>> | undefined;
     try {
       if (imageUri && (imageUri !== initialUri || !initialValues?.imageDocumentPath)) copied = await FilmCoverStorage.copy(imageUri);
-      onSubmit({ brand: brand.trim(), name: name.trim(), iso: parsedIso, type, format: formats[0], formats: [...formats],
+      onSubmit({ brand: normalizeDisplayName(brand), name: normalizeDisplayName(name), iso: parsedIso, type, format: formats[0], formats: [...formats],
         process: process.trim() || undefined, imageKey,
         imageUri: copied?.imageUri ?? imageUri,
         imageDocumentPath: copied?.imageDocumentPath ?? (imageUri === initialUri ? initialValues?.imageDocumentPath : undefined) });
@@ -66,5 +68,6 @@ export function FilmForm({ mode, initialValues, visible, onClose, onSubmit }: {
     <CatalogField label={t('filmProcess')} value={process} onChangeText={setProcess} placeholder="C-41" />
     <CatalogImageField label={t('filmImage')} imageUri={imageUri} previewSource={imageKey ? FILM_ASSETS[imageKey] : undefined}
       onChange={uri => { setImageUri(uri); setImageKey(null); }} onRemove={() => { setImageUri(undefined); setImageKey(null); }} />
+    <FilmCoverPrompt brand={brand} name={name} iso={iso} formats={formats} type={type} process={process} />
   </CatalogItemModal>;
 }

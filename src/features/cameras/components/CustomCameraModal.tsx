@@ -1,3 +1,4 @@
+import { CameraCoverPrompt } from './CameraCoverPrompt';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useRef, useState } from 'react';
 import { CatalogField, CatalogFormatField, CatalogImageField, CatalogItemModal } from '../../catalog/components/CatalogItemModal';
@@ -36,5 +37,6 @@ export function CustomCameraModal({ onAdded, onClose, visible }: CustomCameraMod
     <CatalogField label={t('model')} value={model} onChangeText={setModel} placeholder="T2" />
     <CatalogFormatField value={format} onChange={setFormat} />
     <CatalogImageField label={t('cameraImage')} imageUri={imageUri} onChange={setImageUri} />
+    <CameraCoverPrompt brand={brand} model={model} format={format} />
   </CatalogItemModal>;
 }

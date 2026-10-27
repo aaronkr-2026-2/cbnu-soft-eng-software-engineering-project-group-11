@@ -32,6 +32,10 @@ Photos and contact sheets are shared only when you select a share/export action.
 
 FiLog uses React Native, Expo, Zustand and native libraries for local storage, interface, maps, image selection, sharing and rendering. No standalone advertising or analytics backend is configured in the reviewed v1.0 code. Apple operates Photos, iCloud/CloudKit, Maps and App Store/TestFlight diagnostics; these system services are governed by Apple's terms and privacy practices. Any diagnostic information you choose to send to support will be used to investigate your request. Do not send originals or an archive unless you intend to share its contents.
 
+## Manual cover prompts
+
+When you tap Copy image prompt in the custom film or camera form, FiLog writes a text prompt to the system clipboard. A film prompt includes its brand, name, ISO, selected format, type and process; a camera prompt includes its brand, model and film format. FiLog does not read your clipboard or send that prompt or any image to ChatGPT automatically. If you choose to paste the prompt into ChatGPT or another service, that service processes what you submit under its own terms and privacy practices. No image upload is required by this workflow. Avoid including private information in product names or any content you choose to share.
+
 ## Retention and control
 
 You can edit or remove rolls and frames, manage Photos/location permissions and turn off iCloud Sync in Settings. Turning sync off stops future sync; it does not remove previously synced cloud data. Synced deletions may affect other devices. Cloud sync retains deletion markers to prevent deleted records from returning; it is not an immutable backup. Local review history may retain prior metadata for recovery purposes.
