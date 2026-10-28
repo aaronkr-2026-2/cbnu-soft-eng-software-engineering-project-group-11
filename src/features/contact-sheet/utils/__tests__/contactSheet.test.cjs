@@ -227,3 +227,293 @@ test('Cached contact-sheet exports revalidate sources before every Save/Share an
   assert.equal(r.state.shares.length,1); assert.equal(r.state.saves.length,0); assert.equal(generations,1);
   available=true; await session.save(); assert.equal(r.state.saves.length,1); assert.equal(checks,4);
 });
+
+const appearanceAPI = load('utils/contactSheetAppearance.ts');
+const { defaultContactSheetAppearance, contactSheetPalette, contactSheetBackgrounds, contactSheetFrameStyles, normalizeContactSheetHex } = appearanceAPI;
+
+test('Preset and custom backgrounds normalize hex and choose contrasting header colors', () => {
+  const expected = { black: '#000000', white: '#FFFFFF', cream: '#F4EBDD', gray: '#242424', kraft: '#C4A27A', slate: '#2F3B45', darkroom: '#2A0D0D', custom: '#12ABEF' };
+  for (const background of contactSheetBackgrounds) {
+    const palette = contactSheetPalette({ ...defaultContactSheetAppearance, background, customColor: '#12abef' });
+    assert.equal(palette.background, expected[background]);
+  }
+  assert.equal(contactSheetPalette({ ...defaultContactSheetAppearance, background: 'white' }).header, '#171717');
+  assert.equal(contactSheetPalette().header, '#EFECE5');
+  assert.equal(normalizeContactSheetHex(' aabbcc '), '#AABBCC');
+  for (const value of ['', '#123', '#12345678', 'orange', '#GG0000']) assert.equal(normalizeContactSheetHex(value), undefined);
+});
+
+test('Every frame style has bounded positive geometry and preserve actual photo ordering/counts', () => {
+  for (const style of contactSheetFrameStyles) for (const count of [0, 1, 7, 36, 72]) {
+    const layout = getContactSheetLayout('35mm', count, style);
+    assert.equal(layout.frameStyle, style); assert.equal(layout.vertical, style === 'film-strip-dark');
+    assert.ok(layout.frameHeight - layout.borderWidth * 2 > 0);
+    const photos = Array.from({ length: count }, (_, i) => ({ id: i, sortOrder: count - i }));
+    const ordered = orderedContactPhotos({ photos });
+    const rows = contactSheetRows(ordered, layout.columns);
+    assert.deepEqual(rows.flat().map(p => p.id), ordered.map(p => p.id));
+    assert.equal(rows.flat().length, count);
+    assert.ok(layout.stripPadding * 2 + layout.frameWidth * layout.columns + layout.frameGap * (layout.columns - 1) <= layout.width - layout.padding * 2);
+    assert.equal(layout.borderWidth, style === 'instant' ? 4 : ['white-border', 'black-border', 'warm-print'].includes(style) ? 6 : 0);
+    // Borders and the instant chin stay inside the gaps, so neighbouring frames never overlap.
+    assert.ok(layout.borderWidth * 2 <= layout.frameGap);
+    if (style === 'instant') assert.ok(layout.frameGap - layout.borderWidth * 2 >= 8, 'instant prints stay visibly separate');
+    assert.ok(layout.borderWidth + layout.chin <= layout.stripHeight - layout.photoTop - layout.frameHeight + layout.stripGap);
+    assert.equal(layout.perforated, ['film-strip', 'film-strip-dark', 'color-negative', 'bw-negative'].includes(style));
+    assert.equal(layout.strip, ['film-strip', 'color-negative', 'bw-negative', 'medium-format'].includes(style));
+  }
+});
+
+test('Contact-sheet preferences persist separately, validate old/corrupt settings, and do not publish failed writes', () => {
+  const kv = new Map([['filmer.rolls.v1', 'REAL_ARCHIVE_UNTOUCHED'], ['filmer.settings.v1', 'OTHER_SETTINGS_UNTOUCHED']]);
+  const writes = []; let fail = false;
+  const storage = { getItemSync: key => kv.get(key) ?? null, setItemSync: (key, value) => { if (fail) throw Error('Disk full'); writes.push(key); kv.set(key, value); } };
+  const createStore = () => load('store/contactSheetPreferences.ts', { 'expo-sqlite/kv-store': storage }).useContactSheetPreferences;
+  const store = createStore();
+  assert.deepEqual(store.getState().appearance, defaultContactSheetAppearance);
+  store.getState().updateAppearance({ background: 'custom', customColor: 'ab89ef', frameStyle: 'film-strip-dark' });
+  assert.deepEqual(createStore().getState().appearance, { background: 'custom', customColor: '#AB89EF', frameStyle: 'film-strip-dark' });
+  assert.equal(kv.get('filmer.rolls.v1'), 'REAL_ARCHIVE_UNTOUCHED');
+  assert.equal(kv.get('filmer.settings.v1'), 'OTHER_SETTINGS_UNTOUCHED');
+  assert.deepEqual(writes, ['filog.contactSheet.appearance.v1']);
+  const before = store.getState().appearance; fail = true;
+  assert.throws(() => store.getState().updateAppearance({ background: 'white' }), /Disk full/);
+  assert.equal(store.getState().appearance, before); fail = false;
+  for (const raw of ['{bad', JSON.stringify({ schema: 99, appearance: { background: 'white' } }), JSON.stringify({ schema: 1, appearance: { background: 'bad', customColor: '#ZZZZZZ', frameStyle: 'bad' } })]) {
+    kv.set('filog.contactSheet.appearance.v1', raw);
+    assert.deepEqual(createStore().getState().appearance, defaultContactSheetAppearance);
+    assert.equal(kv.get('filog.contactSheet.appearance.v1'), raw, 'reading preferences cannot rewrite stored bytes');
+  }
+});
+
+function appearanceCanvas(appearance, width) {
+  const jsx = (type, props) => ({ type, props });
+  const { ContactSheetCanvas } = load('components/ContactSheetCanvas.tsx', {
+    react: { useEffect: () => {}, useRef: value => ({ current: value }), useState: value => [value === null ? { width: 2000, height: 3000 } : value, () => {}] },
+    'react/jsx-runtime': { jsx, jsxs: jsx },
+    'react-native': { Image: 'Image', Text: 'Text', View: 'View', Platform: { OS: 'ios' } },
+  });
+  const layout = getContactSheetLayout('35mm', 7, appearance.frameStyle);
+  const rows = contactSheetRows(Array.from({ length: 7 }, (_, i) => ({ id: String(i), uri: `file:///image-${i}.jpg`, number: i + 1 })), layout.columns);
+  const tree = ContactSheetCanvas({ appearance, layout, rows, header: { left: '2026', center: 'Camera', right: '35mm' }, width, unavailableLabel: 'Unavailable' });
+  const nodes = [];
+  function visit(node) {
+    if (!node) return;
+    if (Array.isArray(node)) return node.forEach(visit);
+    if (typeof node.type === 'function') return visit(node.type(node.props));
+    if (node.type) nodes.push(node);
+    visit(node.props?.children);
+  }
+  visit(tree);
+  return { tree, nodes, layout };
+}
+
+test('Actual canvas styling and scaled geometry match between preview and exported views for every appearance', () => {
+  const geometry = new Set(['width', 'height', 'left', 'top', 'right', 'bottom', 'fontSize', 'lineHeight', 'paddingHorizontal', 'paddingTop', 'paddingBottom', 'marginBottom', 'gap', 'borderRadius', 'borderWidth', 'borderLeftWidth', 'borderRightWidth']);
+  for (const frameStyle of contactSheetFrameStyles) for (const background of contactSheetBackgrounds) {
+    const appearance = { background, customColor: '#5070A0', frameStyle };
+    const preview = appearanceCanvas(appearance, 300), exported = appearanceCanvas(appearance, 800);
+    assert.equal(preview.tree.props.style.backgroundColor, contactSheetPalette(appearance).background);
+    assert.equal(exported.tree.props.style.backgroundColor, preview.tree.props.style.backgroundColor);
+    const normalize = (nodes, width) => nodes.map(node => ({ type: node.type, uri: node.props.source?.uri,
+      style: Object.fromEntries(Object.entries(node.props.style ?? {}).filter(([key]) => key !== 'transform').map(([key, value]) =>
+        [key, typeof value === 'number' && geometry.has(key) ? Math.round(value / width * 2400 * 1e6) / 1e6 : value])) }));
+    assert.deepEqual(normalize(preview.nodes, 300), normalize(exported.nodes, 800));
+    assert.deepEqual(preview.nodes.filter(node => node.type === 'Image').map(node => node.props.source.uri), Array.from({ length: 7 }, (_, i) => `file:///image-${i}.jpg`));
+    assert.equal(preview.nodes.filter(node => node.type === 'Image').length, 7, 'no fake frames in the partial row');
+    if (frameStyle === 'film-strip-dark') {
+      assert.ok(preview.nodes.some(node => node.props.style?.backgroundColor === '#141414'));
+      assert.ok(preview.nodes.some(node => node.type === 'Text' && node.props.style?.color === '#D58B45'));
+    }
+  }
+});
+
+test('Appearance controls select backgrounds and frame styles, expose custom hex input, and lock during capture', () => {
+  const jsx = (type, props) => ({ type, props }), patches = [], hex = [];
+  const { ContactSheetAppearanceControls } = load('components/ContactSheetAppearanceControls.tsx', {
+    './ContactSheetColorSliders': { ContactSheetColorSliders: 'Sliders' },
+    'react/jsx-runtime': { jsx, jsxs: jsx },
+    'react-native': { Pressable: 'Button', View: 'View', Text: 'Text', TextInput: 'Input', ScrollView: 'ScrollView' },
+    '../../../constants/theme': { useThemedStyles: () => ({}), useTheme: () => ({}) },
+    '../../../i18n/useTranslation': { useTranslation: () => ({ t: key => key }) },
+  });
+  const nodes = (root, type) => !root || typeof root !== 'object' ? [] : Array.isArray(root) ? root.flatMap(node => nodes(node, type)) : [...(root.type === type ? [root] : []), ...nodes(root.props?.children, type)];
+  const props = { appearance: { ...defaultContactSheetAppearance, background: 'custom' }, disabled: false, hexValue: '#5070A0', onHexChange: value => hex.push(value), onChange: value => patches.push(value) };
+  const tree = ContactSheetAppearanceControls(props);
+  nodes(tree, 'Button').find(node => node.props.accessibilityLabel === 'csWhite').props.onPress();
+  nodes(tree, 'Button').find(node => node.props.accessibilityLabel === 'csFilmStripDark').props.onPress();
+  nodes(tree, 'Input')[0].props.onChangeText('#AABBCC');
+  assert.deepEqual(patches, [{ background: 'white' }, { frameStyle: 'film-strip-dark' }]); assert.deepEqual(hex, ['#AABBCC']);
+  assert.ok(nodes(ContactSheetAppearanceControls({ ...props, disabled: true }), 'Button').every(node => node.props.disabled));
+  assert.equal(nodes(ContactSheetAppearanceControls({ ...props, hexValue: '#xx' }), 'Text').filter(node => node.props.accessibilityRole === 'alert').length, 1);
+});
+
+test('Preview changes invalidate cached exports and capture the same appearance and layout shown on screen', async () => {
+  const r = exportRuntime(), values = [], dependencies = [], cleanups = []; let cursor = 0, effects = [];
+  const changed = (i, deps) => !dependencies[i] || deps.some((value, index) => !Object.is(value, dependencies[i][index]));
+  const react = {
+    useState(initial) { const i = cursor++; if (!(i in values)) values[i] = typeof initial === 'function' ? initial() : initial; return [values[i], value => { values[i] = typeof value === 'function' ? value(values[i]) : value; }]; },
+    useRef(initial) { const i = cursor++; if (!(i in values)) values[i] = { current: initial }; return values[i]; },
+    useMemo(fn, deps) { const i = cursor++; if (changed(i, deps)) { values[i] = fn(); dependencies[i] = deps; } return values[i]; },
+    useCallback(fn, deps) { return react.useMemo(() => fn, deps); },
+    useEffect(fn, deps) { const i = cursor++; if (changed(i, deps)) { dependencies[i] = deps; effects.push(() => { cleanups[i]?.(); cleanups[i] = fn(); }); } },
+  };
+  let appearance = { ...defaultContactSheetAppearance };
+  const jsx = (type, props) => ({ type, props });
+  const { ContactSheetPreview } = load('components/ContactSheetPreview.tsx', {
+    react, 'react/jsx-runtime': { jsx, jsxs: jsx },
+    'react-native': { View: 'View', Text: 'Text', Pressable: 'Button', ScrollView: 'ScrollView', Modal: 'Modal', SafeAreaView: 'SafeAreaView', KeyboardAvoidingView: 'KeyboardView', Platform: { OS: 'ios' }, Keyboard: { dismiss() {} }, PixelRatio: { get: () => 3 } },
+    '../../../constants/theme': { useThemedStyles: () => ({}), useTheme: () => ({}) },
+    '../../../i18n/useTranslation': { useTranslation: () => ({ language: 'en', t: key => key }) },
+    '../../../components/ui/BackButton': { BackButton: 'Back' }, '../../../components/ui/Toast': { Toast: 'Toast' },
+    '../../photos/hooks/useResolvedPhotos': { useResolvedPhotos: photos => ({ items: photos.map(photo => ({ status: 'ready', uri: photo.uri })) }) },
+    '../../photos/services/PhotoReferenceService': { resolvePhoto: async photo => ({ status: 'ready', uri: photo.uri }) },
+    '../store/contactSheetPreferences': { useContactSheetPreferences: selector => selector({ appearance, updateAppearance: patch => { appearance = { ...appearance, ...patch }; } }) },
+    '../services/ContactSheetExportService': r,
+    './ContactSheetCanvas': { ContactSheetCanvas: 'Canvas' }, './ContactSheetAppearanceControls': { ContactSheetAppearanceControls: 'Controls' },
+  });
+  const roll = { format: '35mm', date: '2026-10', cameraName: 'Camera', filmName: 'Film', photos: [{ id: 'p', uri: 'file:///p.jpg', sortOrder: 0 }] };
+  const nodes = (root, type) => !root || typeof root !== 'object' ? [] : Array.isArray(root) ? root.flatMap(node => nodes(node, type)) : [...(root.type === type ? [root] : []), ...nodes(root.props?.children, type)];
+  function render() { cursor = 0; effects = []; const tree = ContactSheetPreview({ roll, onClose() {} }); effects.forEach(fn => fn()); return tree; }
+  const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
+  let tree = render();
+  const stage = nodes(tree, 'View').find(node => node.props.onLayout);
+  assert.equal(stage.props.style[1].backgroundColor, '#000000', 'preview letterboxing uses the sheet background');
+  stage.props.onLayout({ nativeEvent: { layout: { width: 320, height: 450 } } });
+  tree = render();
+  async function saveAndCapture() {
+    const save = nodes(tree, 'Button').find(node => nodes(node, 'Text').some(text => text.props.children === 'saveImage'));
+    save.props.onPress(); await flush(); tree = render();
+    const canvas = nodes(tree, 'Canvas').find(node => node.props.canvasRef);
+    assert.ok(canvas, 'Save mounts a fresh dedicated export view');
+    const preview = nodes(tree, 'Canvas').find(node => !node.props.canvasRef);
+    assert.deepEqual(canvas.props.appearance, preview.props.appearance);
+    assert.deepEqual(canvas.props.layout, preview.props.layout);
+    canvas.props.canvasRef.current = {};
+    canvas.props.onReady(); await flush(); tree = render();
+  }
+  await saveAndCapture(); assert.equal(r.state.captures.length, 1);
+  const appearanceToggle = nodes(tree, 'Button').find(node => nodes(node, 'Text').some(text => text.props.children === 'csCustomize'));
+  appearanceToggle.props.onPress(); tree = render();
+  nodes(tree, 'Controls')[0].props.onChange({ background: 'cream', frameStyle: 'film-strip-dark' });
+  tree = render(); await flush();
+  assert.deepEqual(r.state.released, ['file:///cache/sheet.png'], 'old cached design is released on an appearance change');
+  await saveAndCapture();
+  assert.equal(r.state.captures.length, 2, 'new settings cannot reuse the old image');
+  const preview = nodes(tree, 'Canvas').find(node => !node.props.canvasRef);
+  assert.equal(preview.props.appearance.background, 'cream'); assert.equal(preview.props.layout.vertical, true);
+  // Invalid custom input cannot silently export the previous valid hex color.
+  nodes(tree, 'Controls')[0].props.onChange({ background: 'custom' }); tree = render();
+  nodes(tree, 'Controls')[0].props.onHexChange('#oops'); tree = render();
+  assert.ok(nodes(tree, 'Button').filter(node => nodes(node, 'Text').some(text => ['saveImage', 'share'].includes(text.props.children))).every(node => node.props.disabled));
+  cleanups.forEach(fn => fn?.()); await flush();
+});
+
+
+test('All frame styles preserve sheet dimensions and the photo aperture for every format', () => {
+  for (const format of ['35mm', '120', '110', 'other']) for (const count of [1, 7, 36, 72]) {
+    const baseline = getContactSheetLayout(format, count);
+    for (const style of contactSheetFrameStyles) {
+      const layout = getContactSheetLayout(format, count, style);
+      for (const key of ['width', 'height', 'frameWidth', 'frameHeight', 'photoTop', 'stripHeight', 'frameGap', 'stripPadding']) {
+        assert.equal(layout[key], baseline[key], key + ' changed for ' + style);
+      }
+    }
+  }
+  const aperture = style => appearanceCanvas({ ...defaultContactSheetAppearance, frameStyle: style }, 600).nodes
+    .filter(node => node.type === 'View' && node.props.style?.overflow === 'hidden')
+    .map(node => [node.props.style.width, node.props.style.height]);
+  for (const style of contactSheetFrameStyles) assert.deepEqual(aperture(style), aperture('none'));
+});
+
+test('RGB slider clamps touches and preserves the other two color channels', () => {
+  const { colorChannelAt, replaceColorChannel } = load('utils/contactSheetColor.ts');
+  assert.equal(colorChannelAt(-20, 100), 0);
+  assert.equal(colorChannelAt(50, 100), 128);
+  assert.equal(colorChannelAt(300, 100), 255);
+  assert.equal(replaceColorChannel('#123456', 1, 256), '#12FF56');
+  assert.equal(replaceColorChannel('#123456', 0, -20), '#003456');
+  assert.equal(replaceColorChannel('#123456', 2, 127.5), '#123480');
+});
+
+test('Color gestures preview locally and commit once on release; disabled sliders cannot start', () => {
+  const jsx = (type, props) => ({ type, props }), commits = [];
+  const { ContactSheetColorSliders } = load('components/ContactSheetColorSliders.tsx', {
+    react: { useState: value => [value, () => {}], useRef: value => ({ current: value }), useEffect: () => {} },
+    'react/jsx-runtime': { jsx, jsxs: jsx },
+    'react-native': { View: 'View', Text: 'Text' },
+    '../../../constants/theme': { useTheme: () => ({}) },
+    '../../../i18n/useTranslation': { useTranslation: () => ({ t: key => key }) },
+  });
+  const find = root => !root || typeof root !== 'object' ? [] : Array.isArray(root) ? root.flatMap(find) :
+    [...(root.props?.accessibilityRole === 'adjustable' ? [root] : []), ...find(root.props?.children)];
+  const props = { color: '#123456', disabled: false, onCommit: value => commits.push(value) };
+  const sliders = find(ContactSheetColorSliders(props));
+  assert.equal(sliders.length, 3);
+  const red = sliders[0].props;
+  red.onLayout({ nativeEvent: { layout: { width: 100 } } });
+  red.onResponderGrant({ nativeEvent: { locationX: 30 } });
+  red.onResponderMove({ nativeEvent: { locationX: 100 } });
+  assert.equal(commits.length, 0);
+  red.onResponderRelease();
+  assert.deepEqual(commits, ['#FF3456']);
+  assert.ok(find(ContactSheetColorSliders({ ...props, disabled: true })).every(node => !node.props.onStartShouldSetResponder()));
+});
+
+
+test('Refreshing a contact-sheet URI keeps the native image mounted while measuring its replacement', async () => {
+  const jsx = (type, props) => ({ type, props });
+  const values = [], deps = []; let cursor = 0, effects = [];
+  const react = {
+    useState(initial) { const i = cursor++; if (!(i in values)) values[i] = initial;
+      return [values[i], value => { values[i] = typeof value === 'function' ? value(values[i]) : value; }]; },
+    useRef(initial) { return { current: initial }; },
+    useEffect(fn, dependencies) { const i = cursor++;
+      if (!deps[i] || dependencies.some((value, index) => value !== deps[i][index])) {
+        deps[i] = dependencies; effects.push(fn);
+      }
+    },
+  };
+  const measurements = [];
+  function NativeImage() {}
+  NativeImage.getSize = () => new Promise(resolve => measurements.push(resolve));
+  const { ContactSheetCanvas } = load('components/ContactSheetCanvas.tsx', {
+    react, 'react/jsx-runtime': { jsx, jsxs: jsx },
+    'react-native': { Image: NativeImage, View: 'View', Text: 'Text', Platform: { OS: 'ios' } },
+  });
+  const layout = getContactSheetLayout('35mm', 1);
+  const canvas = ContactSheetCanvas({ layout, rows: [[{ id: 'p', uri: 'old', number: 1 }]],
+    header: { left: '', center: '', right: '' }, width: 300, unavailableLabel: '' });
+  const find = (root, predicate) => !root || typeof root !== 'object' ? [] : Array.isArray(root) ? root.flatMap(node => find(node, predicate)) :
+    [...(predicate(root) ? [root] : []), ...find(root.props?.children, predicate)];
+  const frame = find(canvas, node => node.type?.name === 'FilmFrame')[0];
+  // Isolate the frame's hook state from the canvas hooks.
+  values.length = 0; deps.length = 0;
+  function render(uri) {
+    cursor = 0; effects = [];
+    const tree = frame.type({ ...frame.props, frame: { ...frame.props.frame, uri } });
+    effects.forEach(fn => fn());
+    return tree;
+  }
+  render('old'); measurements[0]({ width: 1800, height: 1200 }); await Promise.resolve();
+  assert.equal(find(render('old'), node => node.type === NativeImage).length, 1);
+  render('new');
+  const pending = find(render('new'), node => node.type === NativeImage);
+  assert.equal(pending.length, 1, 'URI remeasurement cannot unmount the displayed image');
+  assert.equal(pending[0].props.fadeDuration, 0);
+  measurements[1]({ width: 1800, height: 1200 }); await Promise.resolve();
+  assert.equal(find(render('new'), node => node.type === NativeImage).length, 1);
+});
+
+test('Film rebate styles print their own strip colors and real-film edge numbering', () => {
+  const rendered = frameStyle => appearanceCanvas({ ...defaultContactSheetAppearance, frameStyle }, 600).nodes;
+  const labels = frameStyle => rendered(frameStyle).filter(node => node.type === 'Text' && node.props.style?.position === 'absolute').map(node => node.props.children);
+  assert.equal(labels('color-negative')[0], '1 ▸ 1A');
+  assert.equal(labels('medium-format')[0], '◂ 1 ▸');
+  assert.equal(labels('film-strip')[0], '1');
+  for (const [frameStyle, strip] of [['color-negative', '#B4632F'], ['bw-negative', '#1E1D1B'], ['medium-format', '#151515']]) {
+    assert.ok(rendered(frameStyle).some(node => node.props.style?.backgroundColor === strip), frameStyle + ' rebate');
+  }
+  assert.equal(getContactSheetLayout('35mm', 6, 'medium-format').perforated, false, '120 rebates have no sprocket holes');
+  assert.equal(getContactSheetLayout('120', 6, 'color-negative').perforated, false, 'only 35mm film is perforated');
+});

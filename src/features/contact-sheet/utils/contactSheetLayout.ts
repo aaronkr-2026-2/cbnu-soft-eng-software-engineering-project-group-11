@@ -1,25 +1,32 @@
+import { contactSheetStripStyles, type ContactSheetFrameStyle } from './contactSheetAppearance';
 import type { Roll, RollFormat } from '../../rolls/types';
 
 export const contactSheetWidth = 2400;
 
 /** Format-specific geometry; non-35mm formats use a simple archival grid for now. */
-export function getContactSheetLayout(format: RollFormat, photoCount: number) {
+export function getContactSheetLayout(format: RollFormat, photoCount: number, frameStyle: ContactSheetFrameStyle = 'film-strip') {
   const columns = 6;
   const padding = 96;
   const headerHeight = 104;
   const bottomPadding = 80;
   const stripGap = 36;
+  const vertical = frameStyle === 'film-strip-dark';
+  // Borders stay inside half the frame gap; instant prints keep a visible gap and use the space below for their chin.
+  const borderWidth = frameStyle === 'instant' ? 4 : ['white-border', 'black-border', 'warm-print'].includes(frameStyle) ? 6 : 0;
+  const chin = frameStyle === 'instant' ? 30 : 0;
+  const strip = contactSheetStripStyles.includes(frameStyle);
   const frameGap = 16;
   const stripPadding = 18;
   const frameWidth = Math.floor((contactSheetWidth - padding * 2 - stripPadding * 2 - frameGap * (columns - 1)) / columns);
   const frameHeight = Math.round(frameWidth * 2 / 3);
-  const perforated = format === '35mm';
-  const photoTop = perforated ? 70 : 42;
-  const stripHeight = photoTop + frameHeight + (perforated ? 46 : 18);
+  // 120 rebates have no sprocket holes.
+  const perforated = vertical || (strip && frameStyle !== 'medium-format' && format === '35mm');
+  const photoTop = format === '35mm' ? 70 : 42;
+  const stripHeight = photoTop + frameHeight + (format === '35mm' ? 46 : 18);
   const rows = Math.ceil(Math.max(0, photoCount) / columns);
   const height = padding + headerHeight + rows * stripHeight + Math.max(0, rows - 1) * stripGap + bottomPadding;
   return { width: contactSheetWidth, height, columns, padding, headerHeight, bottomPadding,
-    stripGap, frameGap, stripPadding, frameWidth, frameHeight, stripHeight, photoTop, perforated, rows };
+    stripGap, frameGap, stripPadding, frameWidth, frameHeight, stripHeight, photoTop, perforated, rows, frameStyle, borderWidth, chin, strip, vertical };
 }
 
 export type ContactSheetLayout = ReturnType<typeof getContactSheetLayout>;

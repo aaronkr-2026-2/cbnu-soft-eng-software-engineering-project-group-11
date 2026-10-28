@@ -2,10 +2,22 @@ import { StyleSheet } from 'react-native';
 import { type ThemeColors } from '../../../constants/theme';
 
 export const createContactSheetStyles = (colors: ThemeColors) => StyleSheet.create({
+  customizeButton: { minHeight: 44, paddingHorizontal: 10, justifyContent: 'center' },
+  appearanceScroll: { flexGrow: 0, flexShrink: 0, height: 240, maxHeight: '35%' },
+  appearance: { paddingHorizontal: 20, paddingTop: 10, gap: 8 },
+  appearanceLabel: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  options: { gap: 8, paddingBottom: 4 },
+  option: { borderWidth: 1, borderColor: colors.border, borderRadius: 10, paddingHorizontal: 12, minHeight: 44, justifyContent: 'center', backgroundColor: colors.surface },
+  swatchOption: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  swatch: { width: 18, height: 18, borderRadius: 9, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  optionSelected: { borderColor: colors.accent, borderWidth: 2 },
+  optionText: { color: colors.text, fontSize: 13 },
+  hexInput: { borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingHorizontal: 12, minHeight: 44, color: colors.text, fontSize: 14 },
+  hexError: { color: colors.destructive, fontSize: 12 },
   root: { flex: 1, backgroundColor: colors.background },
   toolbar: { paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },
   title: { color: colors.text, fontSize: 20, fontWeight: '600', flex: 1 },
-  stage: { flex: 1, marginHorizontal: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderRadius: 12, overflow: 'hidden' },
+  stage: { flex: 1, marginHorizontal: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background, overflow: 'hidden' },
   actions: { flexDirection: 'row', gap: 12, padding: 20, paddingBottom: 28 },
   button: { flex: 1, minHeight: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent, paddingHorizontal: 12 },
   buttonText: { color: colors.background, fontSize: 15, fontWeight: '600' },

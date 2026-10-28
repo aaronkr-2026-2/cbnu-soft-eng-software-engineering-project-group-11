@@ -52,3 +52,73 @@ portrait/landscape mixes, both app themes, and a PNG whose width is exactly 2400
 the full sheet appears without clipping, including the bottom strip, and a 36-photo export remains
 responsive. Check Save success/permission refusal, Share reusing the same image, and unavailable
 Reference images. Review Delete cancellation and confirmed deletion separately.
+
+## Appearance customization (2026-10-28)
+
+Open **Appearance** in the contact-sheet toolbar. Background choices are Black, White, Warm cream,
+Dark gray, Kraft paper, Slate, Darkroom red and Custom, each shown with a color swatch. Custom accepts six hexadecimal digits with an optional leading `#`;
+invalid input keeps the last valid preview color and disables Save/Share until corrected.
+Frame choices are None, Classic white border, Black border, Warm print, Instant print, Film strip, Film strip dark,
+Color negative, B&W negative and 120 film edge.
+The original black background/light horizontal film-strip treatment remains the default.
+
+Film strip dark uses segmented vertical rails, side perforations, spacing and orange frame numbers/
+small marks. Decorations are generic: no film logos or copied packaging text. The explicit dark
+style is decorative for every roll format, while the existing Film strip default continues to show
+35mm perforations only for 35mm rolls. Frame numbers/photos remain in saved row-major order;
+vertical rails do not reorder them. Partial rows never add photos or fictional numbered frames.
+
+`contactSheetAppearance.ts` validates appearance and derives a contrast-aware header palette.
+`contactSheetPreferences.ts` persists schema-1 preferences under the separate SQLite KV key
+`filog.contactSheet.appearance.v1`. Reads recover invalid preferences without writing data;
+updates persist before publication. Roll records, global appearance and sync projection are untouched.
+
+Both preview and export pass the same appearance to `ContactSheetCanvas`; frame geometry comes
+from `getContactSheetLayout(format, count, frameStyle)`. The capture canvas snapshots appearance
+at generation time. Any appearance change disposes the old cached export session and releases
+its temporary PNG before a new export. Controls lock during Save/Share, and existing availability,
+permission, timeout and failed-generation safeguards remain. Background/frame colors do not
+follow the app theme; the controls themselves support light/dark themes and en/vi/ko labels.
+
+Verification: TypeScript and ESLint passed; **246 tests passed**, including all original
+contact-sheet tests and six new appearance tests. Coverage includes backgrounds/hex validation,
+all styles/counts, persistence/reload/failure isolation, scaled actual-canvas rendering parity across
+35 appearance combinations, controls, and a preview/save integration that proves a style change
+cannot reuse the old exported image. iOS Metro/Hermes production export passed to
+`/private/tmp/filog-appearance-export`. No new native dependency or prebuild was needed.
+
+A standalone [visual QA gallery](../../../docs/qa/contact-sheet-appearance/styles.html) projects
+the actual canvas into browser DOM with synthetic SVG fixtures. It is visual layout evidence,
+not a native export screenshot or a production UI dependency. Native iPhone capture, keyboard
+interaction, Save/Share results and large-library memory behavior still require device checks.
+
+Current limits: fixed six columns, fixed border thickness, fixed vertical orientation for Dark,
+RGB sliders plus hex (no alpha/color wheel), and preferences apply globally to future sheets rather than
+to individual rolls. Future enhancements could add border width, strip orientation/group sizing,
+reusable appearance presets without changing roll metadata.
+
+
+Frame changes preserve the original six-column photo aperture, row positions and exported sheet
+dimensions for each format/count. Borders paint outside the photo opening; they never reduce or
+recrop it. Instant print adds a deeper white bottom edge; Warm print uses a cream paper edge.
+Dark strips use slim generic perforated side rails within the same fixed gutters.
+
+Custom backgrounds offer red, green and blue sliders, a live draft swatch, and optional hex entry.
+Dragging changes the swatch locally; lifting the finger applies the color to the sheet and persists
+once. Screen-reader increment/decrement actions are supported. No native dependency was added.
+
+Preview framing follows the selected sheet background, including any unused area needed to
+preserve the full sheet aspect ratio; there is no gray rounded backing panel. Frame URI refreshes
+retain their measured dimensions instead of unmounting the Image during remeasurement. Temporary
+refresh errors preserve ready previews; actual library invalidation or access loss still clears them.
+
+The Appearance panel reserves a fixed 240-point height (capped at 35% on compact screens).
+Switching a preset to Custom only adds scrollable content inside that panel, without resizing
+the preview. Background and frame choices stay above the custom RGB/hex controls.
+
+Film rebate styles (2026-10-28): Color negative prints an orange-mask strip with amber `12 ▸ 12A`
+half-frame numbering; B&W negative is a near-black strip with light numbers; 120 film edge is an
+unperforated dark strip with `◂ 12 ▸` arrows. Only 35mm rolls show sprocket holes. Instant print uses a
+4-unit border that keeps a visible gap between prints plus a 30-unit chin below the photo. The light
+Film strip draws an overlay edge so it stays visible on light paper. All of these keep the shared
+sheet size and photo aperture, so preview and export still match.
