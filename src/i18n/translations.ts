@@ -181,7 +181,6 @@ const en = {
   "useFilm": "Use {name}",
 
   "searchFilms": "Search films…",
-  "filmIndex": "Brand index, A to Z",
   "noFilms": "No matching films",
   "addCustomFilm": "Add custom film",
   "editFilm": "Edit Film",
@@ -506,7 +505,6 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
     "useFilm": "Dùng {name}",
 
     "searchFilms": "Tìm film…",
-    "filmIndex": "Chỉ mục hãng film từ A đến Z",
     "noFilms": "Không tìm thấy film phù hợp",
     "addCustomFilm": "Thêm film tùy chỉnh",
     "editFilm": "Sửa thông tin film",
@@ -828,7 +826,6 @@ export const translations: Record<AppLanguage, Record<TranslationKey, string>> =
     "useFilm": "{name} 사용",
 
     "searchFilms": "필름 검색…",
-    "filmIndex": "브랜드 색인 A–Z",
     "noFilms": "일치하는 필름이 없습니다",
     "addCustomFilm": "사용자 필름 추가",
     "editFilm": "필름 편집",
