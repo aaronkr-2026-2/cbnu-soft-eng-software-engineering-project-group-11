@@ -47,16 +47,17 @@ test('Film Selection whole row selects and clears the previous override in both 
  const filename=path.resolve(__dirname,'../../components/FilmSelectionScreen.tsx');
  for (const edit of [undefined,'r1']) {
   const updates=[],navigation=[]; const jsx=(type,props)=>({type,props});
-  const mocks={react:{useMemo:fn=>fn(),useState:value=>[value,()=>{}],useEffect:()=>{}},'react/jsx-runtime':{jsx,jsxs:jsx},
+  const mocks={react:{useMemo:fn=>fn(),useState:value=>[value,()=>{}],useEffect:()=>{},useRef:value=>({current:value})},'react/jsx-runtime':{jsx,jsxs:jsx},
    'react-native':{Pressable:'Pressable',SectionList:'SectionList',Text:'Text',View:'View',KeyboardAvoidingView:'KeyboardAvoidingView',Platform:{OS:'ios'},Keyboard:{dismiss:()=>{}}},
    'expo-router':{useLocalSearchParams:()=>({edit,change:edit?'1':undefined}),useRouter:()=>({canGoBack:()=>true,back:()=>navigation.push('back'),push:r=>navigation.push(r)})},
    '../../../constants/theme':{useThemedStyles:()=>({})},'../../../i18n/useTranslation':{useTranslation:()=>({t:key=>key})},
    '../store/filmStore':{useFilmStore:fn=>fn({films:builtInFilms})},
    '../../rolls/store/newRollDraftStore':{useNewRollDraftStore:fn=>fn({update:x=>updates.push(['create',x]),updateEdit:x=>updates.push(['edit',x])})},
-   '../utils/filterFilms':{filterFilms}};
+   '../utils/filterFilms':{filterFilms},'../utils/alphabetIndex':{letterSections:()=>new Map()}};
   const exports={};const code=ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
   new Function('exports','require',code)(exports,name=>mocks[name]??{});
-  const row=exports.FilmSelectionScreen().props.children[0].props.children[0].props.renderItem({item:getFilmById('fujifilm-c200')});
+  const find=(node,type)=>!node||typeof node!=='object'?undefined:node.type===type?node:[].concat(node.props?.children??[]).map(child=>find(child,type)).find(Boolean);
+  const row=find(exports.FilmSelectionScreen(),'SectionList').props.renderItem({item:getFilmById('fujifilm-c200')});
   assert.equal(row.type,'Pressable');row.props.onPress();
   assert.deepEqual(updates,[[edit?'edit':'create',{filmId:'fujifilm-c200',filmOverride:undefined}]]);
   assert.deepEqual(navigation,[edit?'back':'/new-roll/details']);
