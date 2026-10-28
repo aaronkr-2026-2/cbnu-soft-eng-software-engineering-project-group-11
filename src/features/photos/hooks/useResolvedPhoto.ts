@@ -1,8 +1,9 @@
 import { useAppStore } from '../../../store/app-store';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Dimensions, PixelRatio } from 'react-native';
 import type { PhotoReference } from '../types';
 import { invalidatePhotoRenders, observePhotoLibrary, resolvePhoto, type PhotoResolution } from '../services/PhotoReferenceService';
+import { referenceAffected } from '../utils/referenceIdentifier';
 
 /** Bucket physical pixels so small layout changes share renders. */
 export function renderPixels(points: number) {
@@ -16,7 +17,11 @@ export function useResolvedPhoto(photo: PhotoReference | undefined, size: 'thumb
   const [state, setState] = useState<{ identity: string; result: PhotoResolution }>();
   // Details and ordering changes do not invalidate image work.
   const identity = JSON.stringify([photo?.id, photo?.provider, photo && ('localIdentifier' in photo ? photo.localIdentifier : undefined), photo && ('assetId' in photo ? photo.assetId : undefined), photo && ('cloudIdentifier' in photo ? photo.cloudIdentifier : undefined), photo && ('documentPath' in photo ? [photo.documentPath, photo.localUri] : undefined), invalidation]);
-  useEffect(() => observePhotoLibrary(change => {
+  const current = useRef(photo);
+  useEffect(() => { current.current = photo; });
+  useEffect(() => observePhotoLibrary((change, assets) => {
+    // Edits and deletions of other assets must not reload this image.
+    if (!referenceAffected(current.current, assets)) return;
     // Returning to the app revalidates in place; actual library changes hide stale pixels.
     if (change !== 'refresh') setInvalidation(value => value + 1);
     setRevision(value => value + 1);

@@ -2105,8 +2105,34 @@ test('Foreground notifies an in-place refresh, ignores empty PhotoKit events and
     r.state.activeListener('active');
     assert.equal((await api.resolvePhoto(photo)).status, 'permission-denied');
     r.state.libraryListener({ hasIncrementalChanges: false });
-    assert.equal(changes.at(-1), 'invalidate', 'permission changes still revoke displayed pixels');
+    assert.equal(changes.at(-1), 'refresh', 'permission changes revalidate in place instead of blanking every image');
+    assert.equal((await api.resolvePhoto(photo)).status, 'permission-denied', 'a revoked reference still loses its pixels on revalidation');
     r.state.libraryListener({ hasIncrementalChanges: true, insertedAssets: [], deletedAssets: [], updatedAssets: [{ id: photo.assetId }] });
     assert.equal(changes.at(-1), 'invalidate', 'real asset edits still invalidate');
+  } finally { stop(); }
+});
+
+test('Library changes reload only the edited or deleted assets, never every visible image', async () => {
+  const r = runtime(); r.state.legacyCopyFixture = false; r.select(2); await r.service.addToRoll('r1');
+  const api = resolver(r), changes = [];
+  const stop = api.observePhotoLibrary((change, assets) => changes.push([change, assets && [...assets].sort()]));
+  try {
+    const [first, second] = r.store.getState().rolls[0].photos;
+    await api.resolvePhoto(first); await api.resolvePhoto(second);
+    const requests = r.state.nativeRequests.length;
+    // iCloud Photos sync and unrelated edits name assets FiLog does not show.
+    r.state.libraryListener({ hasIncrementalChanges: true, insertedAssets: [], deletedAssets: [], updatedAssets: [{ id: 'unrelated-asset' }] });
+    assert.deepEqual(changes.at(-1), ['invalidate', ['unrelated-asset']]);
+    await api.resolvePhoto(first); await api.resolvePhoto(second);
+    assert.equal(r.state.nativeRequests.length, requests, 'unrelated edits keep cached renders');
+    r.state.libraryListener({ hasIncrementalChanges: true, insertedAssets: [], deletedAssets: [], updatedAssets: [{ id: second.assetId }] });
+    assert.deepEqual(changes.at(-1), ['invalidate', [second.assetId]]);
+    await api.resolvePhoto(first); await api.resolvePhoto(second);
+    assert.equal(r.state.nativeRequests.length, requests + 1, 'only the edited asset renders again');
+    const notified = changes.length;
+    r.state.libraryListener({ hasIncrementalChanges: true, insertedAssets: [{ id: 'new-capture' }], deletedAssets: [], updatedAssets: [] });
+    assert.deepEqual(changes.slice(notified), [['refresh', undefined]], 'new captures can extend a limited selection, so revalidate in place');
+    r.state.libraryListener({ hasIncrementalChanges: true, insertedAssets: [], deletedAssets: [{}], updatedAssets: [] });
+    assert.deepEqual(changes.at(-1), ['refresh', undefined], 'an unnamed deletion revalidates every reference without blanking');
   } finally { stop(); }
 });

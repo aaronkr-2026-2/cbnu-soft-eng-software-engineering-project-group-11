@@ -46,7 +46,9 @@ export function photoRenderMetrics() { return { ...metrics }; }
 const cancelRequests = new Map<string, () => void>();
 const consumers = new Map<string, number>();
 export type PhotoLibraryChange = 'refresh' | 'invalidate';
-const listeners = new Set<(change?: PhotoLibraryChange) => void>();
+/** `assets` limits a change to these PhotoKit identifiers; undefined affects every reference. */
+export type PhotoLibraryListener = (change?: PhotoLibraryChange, assets?: ReadonlySet<string>) => void;
+const listeners = new Set<PhotoLibraryListener>();
 // One cloud-identifier lookup per stale reference until Retry, app activation or a library change.
 const recoveries = new Map<string, Promise<string | undefined>>();
 let epoch = 0;
@@ -59,18 +61,42 @@ function resetPhotoRenders(change: PhotoLibraryChange) {
   cancelRequests.clear(); inFlight.clear();
   cache.clear(); recoveries.clear(); listeners.forEach(listener => listener(change));
 }
+/** Drops renders of edited or deleted assets only; every other visible image keeps its pixels. */
+function invalidateAssets(assets: ReadonlySet<string>) {
+  const matches = (key: string) => assets.has(key.slice(0, key.indexOf(':')));
+  for (const key of [...cache.keys()]) if (matches(key)) cache.delete(key);
+  for (const requestKey of [...inFlight.keys()]) {
+    const key = requestKey.slice(requestKey.indexOf(':') + 1);
+    if (!matches(key)) continue;
+    cancelRequests.get(requestKey)?.();
+    cancelRequests.delete(requestKey); inFlight.delete(requestKey);
+  }
+  listeners.forEach(listener => listener('invalidate', assets));
+}
+/** Asset identifiers a PhotoKit change event names, or undefined when the event is not incremental. */
+export function changedPhotoAssets(event: unknown): { edited: Set<string>; inserted: boolean } | undefined {
+  const value = event as { hasIncrementalChanges?: boolean; insertedAssets?: unknown[]; deletedAssets?: unknown[]; updatedAssets?: unknown[] } | undefined;
+  if (value?.hasIncrementalChanges !== true) return undefined;
+  const ids = (items: unknown[] | undefined) => (items ?? []).map(item => (item as { id?: unknown } | null)?.id).filter(usableAssetId);
+  const edited = new Set([...ids(value.deletedAssets), ...ids(value.updatedAssets)]);
+  // An unnamed edit or deletion cannot be targeted.
+  if ((value.deletedAssets?.length ?? 0) + (value.updatedAssets?.length ?? 0) !== edited.size) return undefined;
+  return { edited, inserted: (value.insertedAssets?.length ?? 0) > 0 };
+}
 export function invalidatePhotoRenders() { resetPhotoRenders('invalidate'); }
-export function observePhotoLibrary(listener: (change?: PhotoLibraryChange) => void) {
+export function observePhotoLibrary(listener: PhotoLibraryListener) {
   listeners.add(listener);
   if (!stop) {
     const app = AppState.addEventListener('change', state => { if (state === 'active') resetPhotoRenders('refresh'); });
     let library: ReturnType<typeof MediaLibrary.addListener> | undefined;
     try { library = MediaLibrary.addListener(event => {
-      // PhotoKit can notify on activation even when no assets actually changed.
-      if (event?.hasIncrementalChanges === true && event.insertedAssets?.length === 0 &&
-          event.deletedAssets?.length === 0 && event.updatedAssets?.length === 0) return;
-      // Permission changes, edits, deletions and unknown payloads remain hard invalidations.
-      invalidatePhotoRenders();
+      // iCloud Photos sync, new captures and unrelated edits arrive here often. A global hard reset
+      // made every visible image blank and reload at once, so only named edits/deletions drop pixels.
+      const changed = changedPhotoAssets(event);
+      if (changed?.edited.size) invalidateAssets(changed.edited);
+      // Insertions can extend a limited selection; permission and non-incremental changes
+      // revalidate in place, and a revoked or deleted reference still loses its image.
+      if (!changed || changed.inserted) resetPhotoRenders('refresh');
     }); } catch { /* Missing native module remains recoverable. */ }
     stop = () => { app.remove(); library?.remove(); stop = undefined; };
   }

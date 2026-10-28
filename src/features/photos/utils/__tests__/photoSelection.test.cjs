@@ -405,7 +405,57 @@ test('Contact-sheet foreground refresh retains its displayed items while real li
   changed('refresh'); assert.equal(render().items[0].uri, 'sheet-preview');
   pending[1]({ status: 'ready', uri: 'sheet-preview' }); await flush();
   assert.equal(render().items[0].uri, 'sheet-preview');
+  changed('refresh'); render();
+  pending[2]({ status: 'temporary-error' }); await flush();
+  assert.equal(render().items[0].uri, 'sheet-preview', 'a transient refresh error must not blank displayed frames');
   changed('invalidate'); assert.equal(render().items[0].uri, undefined);
-  pending[2]({ status: 'unavailable' }); await flush();
+  pending[3]({ status: 'unavailable' }); await flush();
   assert.equal(render().items[0].status, 'unavailable');
+});
+
+test('A thumbnail ignores library edits of other assets and reloads only for its own asset', async () => {
+  const runner = hookRunner(), pending = []; let changed;
+  const { useResolvedPhoto } = load('features/photos/hooks/useResolvedPhoto.ts', {
+    react: runner.hooks,
+    '../services/PhotoReferenceService': {
+      observePhotoLibrary: listener => { changed = listener; return () => {}; }, invalidatePhotoRenders: () => changed('invalidate'),
+      resolvePhoto: () => new Promise(resolve => pending.push(resolve)),
+    },
+    '../../../store/app-store': { useAppStore: select => select({ photoQuality: 'optimized' }) },
+  });
+  const photo = { id: 'p', provider: 'apple-photos', assetId: 'asset', sortOrder: 0 };
+  const render = () => runner.render(() => useResolvedPhoto(photo));
+  render(); pending[0]({ status: 'ready', uri: 'file:///asset.jpg' }); await Promise.resolve();
+  const key = render().renderKey;
+  changed('invalidate', new Set(['someone-else']));
+  assert.equal(render().uri, 'file:///asset.jpg'); assert.equal(render().renderKey, key);
+  assert.equal(pending.length, 1, 'an unrelated edit must not start another render');
+  changed('invalidate', new Set(['asset']));
+  assert.equal(render().uri, undefined, 'its own edit hides the stale pixels'); assert.notEqual(render().renderKey, key);
+});
+
+test('Contact-sheet frames survive caption edits and lose pixels only for the edited asset', async () => {
+  const runner = hookRunner(), pending = []; let changed;
+  const { useResolvedPhotos } = load('features/photos/hooks/useResolvedPhotos.ts', {
+    react: runner.hooks,
+    '../services/PhotoReferenceService': {
+      observePhotoLibrary: listener => { changed = listener; return () => {}; },
+      resolvePhoto: photo => new Promise(resolve => pending.push([photo.assetId, resolve])),
+    },
+  });
+  let photos = [{ id: 'a', provider: 'apple-photos', assetId: 'asset-a', sortOrder: 0 }, { id: 'b', provider: 'apple-photos', assetId: 'asset-b', sortOrder: 1 }];
+  const render = () => runner.render(() => useResolvedPhotos(photos));
+  const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); };
+  const settle = async () => { for (const [asset, resolve] of pending.splice(0)) resolve({ status: 'ready', uri: asset }); await flush(); };
+  render(); await settle();
+  assert.deepEqual(render().items.map(item => item.uri), ['asset-a', 'asset-b']);
+  photos = photos.map(photo => photo.id === 'a' ? { ...photo, caption: 'Edited caption', sortOrder: 0 } : photo);
+  assert.deepEqual(render().items.map(item => item.uri), ['asset-a', 'asset-b'], 'detail edits keep every displayed frame');
+  assert.equal(pending.length, 0, 'detail edits do not resolve again');
+  changed('invalidate', new Set(['unrelated']));
+  assert.equal(pending.length, 0, 'unrelated library edits are ignored');
+  changed('invalidate', new Set(['asset-b']));
+  assert.deepEqual(render().items.map(item => item.uri), ['asset-a', undefined], 'only the edited frame hides its pixels');
+  await settle();
+  assert.deepEqual(render().items.map(item => item.uri), ['asset-a', 'asset-b']);
 });
