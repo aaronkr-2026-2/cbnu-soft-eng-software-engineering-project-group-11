@@ -25,6 +25,9 @@ export function FilmForm({ mode, initialValues, visible, onClose, onSubmit }: {
   const [imageKey, setImageKey] = useState<string | null>(initialValues?.imageKey ?? null);
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
+  const canSubmit = Boolean(brand.trim() && name.trim() && iso.trim() && Number.isFinite(Number(iso)) && Number(iso) > 0 && formats.length);
+  const fieldLabel = (label: string) => label.replace(/\s*\*$/, '');
   const dirty = brand !== (initialValues?.brand ?? '') || name !== (initialValues?.name ?? '') ||
     iso !== (initialValues ? String(initialValues.iso) : '') || type !== (initialValues?.type ?? 'color') ||
     process !== (initialValues?.process ?? '') || imageUri !== initialUri || imageKey !== (initialValues?.imageKey ?? null) ||
@@ -38,8 +41,8 @@ export function FilmForm({ mode, initialValues, visible, onClose, onSubmit }: {
   async function submit() {
     if (busy.current) return;
     const parsedIso = Number(iso);
-    if (!brand.trim() || !name.trim() || !Number.isFinite(parsedIso) || parsedIso <= 0 || !formats.length) { setError(t('invalidFilm')); return; }
-    busy.current = true; setError(null);
+    if (!canSubmit) return;
+    busy.current = true; setSubmitting(true); setError(null);
     let submitted = false;
     let copied: Awaited<ReturnType<typeof FilmCoverStorage.copy>> | undefined;
     try {
@@ -57,15 +60,15 @@ export function FilmForm({ mode, initialValues, visible, onClose, onSubmit }: {
       }
       setError(t('filmSaveError'));
     }
-    finally { busy.current = false; }
+    finally { busy.current = false; setSubmitting(false); }
   }
-  return <CatalogItemModal title={t(mode === 'edit' ? 'editFilm' : 'addCustomFilm')} actionLabel={t(mode === 'edit' ? 'saveChanges' : 'addFilm')} visible={visible} onClose={close} onSubmit={() => void submit()} error={error}>
-    <CatalogField label={t('brand')} value={brand} onChangeText={setBrand} placeholder="Kodak" />
-    <CatalogField label={t('filmName')} value={name} onChangeText={setName} placeholder="Portra 160" />
-    <CatalogField label={t('requiredIso')} value={iso} onChangeText={setIso} placeholder="160" keyboardType="number-pad" />
-    <CatalogChoices label={t('requiredFormat')}>{(['35mm', '120', '110', 'other'] as const).map(value => <SelectionChip key={value} label={value === 'other' ? t('other') : value} selected={formats.includes(value)} onPress={() => setFormats(previous => previous.includes(value) ? previous.filter(item => item !== value) : [...previous, value])} />)}</CatalogChoices>
-    <CatalogChoices label={t('filmType')}>{(['color', 'black-and-white', 'slide', 'cinema'] as const).map(value => <SelectionChip key={value} label={t(value)} selected={type === value} onPress={() => setType(value)} />)}</CatalogChoices>
-    <CatalogField label={t('filmProcess')} value={process} onChangeText={setProcess} placeholder="C-41" />
+  return <CatalogItemModal title={t(mode === 'edit' ? 'editFilm' : 'addCustomFilm')} actionLabel={t(mode === 'edit' ? 'saveChanges' : 'addFilm')} visible={visible} onClose={close} onSubmit={() => void submit()} error={error} submitDisabled={!canSubmit || submitting}>
+    <CatalogField label={fieldLabel(t('brand'))} value={brand} onChangeText={setBrand} placeholder="" />
+    <CatalogField label={fieldLabel(t('filmName'))} value={name} onChangeText={setName} placeholder="" />
+    <CatalogField label={fieldLabel(t('requiredIso'))} value={iso} onChangeText={setIso} placeholder="" keyboardType="number-pad" />
+    <CatalogChoices label={fieldLabel(t('requiredFormat'))}>{(['35mm', '120', '110', 'other'] as const).map(value => <SelectionChip key={value} label={value === 'other' ? t('other') : value} selected={formats.includes(value)} onPress={() => setFormats(previous => previous.includes(value) ? previous.filter(item => item !== value) : [...previous, value])} />)}</CatalogChoices>
+    <CatalogChoices label={fieldLabel(t('filmType'))}>{(['color', 'black-and-white', 'slide', 'cinema'] as const).map(value => <SelectionChip key={value} label={t(value)} selected={type === value} onPress={() => setType(value)} />)}</CatalogChoices>
+    <CatalogField label={t('filmProcess')} value={process} onChangeText={setProcess} placeholder="" />
     <CatalogImageField label={t('filmImage')} imageUri={imageUri} previewSource={imageKey ? FILM_ASSETS[imageKey] : undefined}
       onChange={uri => { setImageUri(uri); setImageKey(null); }} onRemove={() => { setImageUri(undefined); setImageKey(null); }} />
     <FilmCoverPrompt brand={brand} name={name} iso={iso} formats={formats} type={type} process={process} />

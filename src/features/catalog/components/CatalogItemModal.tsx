@@ -13,6 +13,7 @@ import { ImageCropModal } from './ImageCropModal';
 type CatalogItemModalProps = {
   title: string;
   actionLabel: string;
+  submitDisabled?: boolean;
   visible: boolean;
   onClose: () => void;
   onSubmit: () => void;
@@ -20,7 +21,7 @@ type CatalogItemModalProps = {
   children: ReactNode;
 };
 
-export function CatalogItemModal({ title, actionLabel, visible, onClose, onSubmit, error, children }: CatalogItemModalProps) {
+export function CatalogItemModal({ title, actionLabel, visible, onClose, onSubmit, error, children, submitDisabled = false }: CatalogItemModalProps) {
   const { t } = useTranslation();
   const styles = useThemedStyles(createCatalogItemModalStyles);
 
@@ -32,7 +33,7 @@ export function CatalogItemModal({ title, actionLabel, visible, onClose, onSubmi
         {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
         <View style={styles.actions}>
           <Pressable accessibilityRole="button" onPress={onClose} style={styles.cancel}><Text style={styles.cancelText}>{t('cancel')}</Text></Pressable>
-          <View style={styles.add}><PrimaryButton label={actionLabel} onPress={onSubmit} /></View>
+          <View style={styles.add}><PrimaryButton label={actionLabel} onPress={onSubmit} disabled={submitDisabled} /></View>
         </View>
       </ScrollView></View>
     </KeyboardAvoidingView>

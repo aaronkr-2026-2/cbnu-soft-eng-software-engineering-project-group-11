@@ -37,7 +37,6 @@ export function FilmCoverPrompt({ formats, ...fields }: Props) {
     <Pressable accessibilityRole="button" accessibilityState={{ disabled: !prompt || copying, busy: copying }} disabled={!prompt || copying} onPress={() => { void copy(); }} style={({ pressed }) => [styles.button, (pressed || !prompt || copying) && styles.dimmed]}>
       <Text style={styles.buttonText}>{t('filmPromptCopy')}</Text>
     </Pressable>
-    {!prompt && <Text style={styles.note}>{t('filmPromptRequired')}</Text>}
     {prompt && <>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded }} onPress={() => setExpanded(value => !value)} style={styles.previewButton}><Text style={styles.note}>{t(expanded ? 'filmPromptHide' : 'filmPromptPreview')}</Text></Pressable>
       {expanded && <Text selectable style={styles.prompt}>{prompt}</Text>}
