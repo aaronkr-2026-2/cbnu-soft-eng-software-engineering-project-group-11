@@ -1,0 +1,130 @@
+{
+  "yes-star-400": {
+    "source": "assets/films/generated-review/color-correction-01/yes-star-400.png",
+    "sourceSha256": "64942dd3c53f7353f1646f833f573133ecb14b9db18aad347f09c1827de14fbb",
+    "prompt": "assets/films/generated-review/color-correction-01/yes-star-400.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/yes-star-400.jpg",
+    "referenceSources": {
+      "pageUrl": "https://www.pandacamera.com/collections/vendors?q=yes!star",
+      "imageUrl": "https://www.pandacamera.com/cdn/shop/files/SquarePost_4.jpg?v=1729579541"
+    }
+  },
+  "reflx-lab-640t-ahu": {
+    "source": "assets/films/generated-review/color-correction-01/reflx-lab-640t-ahu.png",
+    "sourceSha256": "525238fbbaf802f072aa83dcfed97aa56814caecbdb4c067d25706141660144b",
+    "prompt": "assets/films/generated-review/color-correction-01/reflx-lab-640t-ahu.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/reflx-lab-640t-ahu.png",
+    "referenceSources": {
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0608/4594/9094/files/e385ac46e0ba23404f65ba738402bd74.png?v=1781156313",
+      "pageUrl": "https://reflxlab.com/products/1-roll-reflx-lab-320d-ahu-color-film-36exp"
+    }
+  },
+  "reflx-lab-800t": {
+    "source": "assets/films/generated-review/color-correction-01/reflx-lab-800t.png",
+    "sourceSha256": "1c5b5353d6565744ae39f784df9d4d057eb4dba73f2ef9905b39821f889d7a62",
+    "prompt": "assets/films/generated-review/color-correction-01/reflx-lab-800t.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/reflx-lab-800t.jpg",
+    "referenceSources": {
+      "pageUrl": "https://fp-archive.com/film_packaging/by_brand.html#reflx-lab-800t-ref-6b6b",
+      "imageUrl": "https://fp-archive.com/film_packaging/archive/00468_000.jpg"
+    }
+  },
+  "reflx-lab-100r": {
+    "source": "assets/films/generated-review/color-correction-01/reflx-lab-100r-v2.png",
+    "sourceSha256": "c61473a938373dbd9b702f7e50e10f7b88dcea6bfd31f45062e013c6a813e9b9",
+    "prompt": "assets/films/generated-review/color-correction-01/reflx-lab-100r.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/reflx-lab-100r.jpg",
+    "referenceSources": {
+      "pageUrl": "https://shop.8storeytree.com/products/reflx-lab-100r-colour-35mm-film"
+    }
+  },
+  "reflx-lab-diablo-100": {
+    "source": "assets/films/generated-review/color-correction-01/reflx-lab-diablo-100.png",
+    "sourceSha256": "fb6b57201e927a24d480e329a7fdaf00d49a0eef7c8079a0b666b275690a3365",
+    "prompt": "assets/films/generated-review/color-correction-01/reflx-lab-diablo-100.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/reflx-lab-diablo-100.jpg",
+    "referenceSources": {
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0608/4594/9094/files/d923b5e909c91209db878a07c3832862.jpg?v=1781159809",
+      "pageUrl": "https://reflxlab.com/products/reflx-lab-diablo-100-red-scale-film"
+    }
+  },
+  "reflx-lab-double-x": {
+    "source": "assets/films/generated-review/color-correction-01/reflx-lab-double-x.png",
+    "sourceSha256": "be966a03c5ddf5613ddbdbd4dc169a650c826d0ef07e2e8aa08b80c017ccc437",
+    "prompt": "assets/films/generated-review/color-correction-01/reflx-lab-double-x.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/reflx-lab-double-x.png",
+    "referenceSources": {
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0608/4594/9094/files/e6fd8023c8fbb337c16dd2ebcc088549.png?v=1783483220",
+      "pageUrl": "https://reflxlab.com/products/reflx-lab-double-x-35mm-black-and-white-film"
+    }
+  },
+  "reflx-lab-pro-100": {
+    "source": "assets/films/generated-review/color-correction-01/reflx-lab-pro-100.png",
+    "sourceSha256": "66905a83d0f0395bcfac3b550a9b01295571f3c6b61db03a9522007ca869a446",
+    "prompt": "assets/films/generated-review/color-correction-01/reflx-lab-pro-100.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/reflx-lab-pro-100.png",
+    "referenceSources": {
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0608/4594/9094/files/pro100-120.png?v=1776403917",
+      "pageUrl": "https://reflxlab.com/products/reflx-lab-pro-100-color-negative-film-120"
+    }
+  },
+  "reflx-lab-pan-200": {
+    "source": "assets/films/generated-review/color-correction-01/reflx-lab-pan-200.png",
+    "sourceSha256": "bb3953fd40bfaceb63dca6419d0b8446827577ccd18f3a734864e736072429d7",
+    "prompt": "assets/films/generated-review/color-correction-01/reflx-lab-pan-200.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/reflx-lab-pan-200.png",
+    "referenceSources": {
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0608/4594/9094/files/pan200-120.png?v=1776403800",
+      "pageUrl": "https://reflxlab.com/products/3pack-3-rolls-reflx-lab-pan200-infrared-black-and-white-film-120-220"
+    }
+  },
+  "yes-star-200": {
+    "source": "assets/films/generated-review/color-correction-01/yes-star-200.png",
+    "sourceSha256": "587d916917842d0841d8fbeddcff8f73a6551a99dd0bf3f7b261762f108734cc",
+    "prompt": "assets/films/generated-review/color-correction-01/yes-star-200.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/yes-star-200.jpg",
+    "referenceSources": {
+      "pageUrl": "https://www.pandacamera.com/collections/vendors?q=yes!star",
+      "imageUrl": "https://www.pandacamera.com/cdn/shop/files/Square_Post_3.jpg?v=1729575158"
+    }
+  },
+  "reflx-lab-100d": {
+    "source": "assets/films/generated-review/color-correction-01/reflx-lab-100d-v3.png",
+    "sourceSha256": "2da1da9fc737dedda3846b9a34df375b021c467fd6fe32bab9fa71f10836bc1e",
+    "prompt": "assets/films/generated-review/color-correction-01/reflx-lab-100d.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/reflx-lab-100d.jpg",
+    "referenceSources": {
+      "pageUrl": "https://shop.tahusa.co/products/reflx-lab-100d-daylight-35mm-colour-negative-film-c-41"
+    }
+  },
+  "reflx-lab-200t": {
+    "source": "assets/films/generated-review/color-correction-01/reflx-lab-200t.png",
+    "sourceSha256": "f488717e33db6a3785a04fc57ed1811a419d2575bfbb724ca78664cb390bb789",
+    "prompt": "assets/films/generated-review/color-correction-01/reflx-lab-200t.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/reflx-lab-200t.jpg",
+    "referenceSources": {
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0608/4594/9094/files/IMG_0229.jpg?v=1787206377",
+      "pageUrl": "https://reflxlab.com/products/reflx-lab-500t-color-negative-film-120"
+    }
+  },
+  "reflx-lab-400d": {
+    "source": "assets/films/generated-review/color-correction-01/reflx-lab-400d.png",
+    "sourceSha256": "ae5449cce7fda3a2d0ef21766401acbbde296ffa33522d114f6cfa82bbad5643",
+    "prompt": "assets/films/generated-review/color-correction-01/reflx-lab-400d.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/reflx-lab-400d.jpg",
+    "referenceSources": {
+      "pageUrl": "https://fp-archive.com/film_packaging/by_brand.html#reflx-lab-400d-ref-5801",
+      "imageUrl": "https://fp-archive.com/film_packaging/archive/00467_000.jpg"
+    }
+  },
+  "reflx-lab-500t": {
+    "source": "assets/films/generated-review/color-correction-01/reflx-lab-500t.png",
+    "sourceSha256": "e7d9af8428756deb68e6d01fc15bba50b8e9ad048613fa20c61de98453e3f6a8",
+    "prompt": "assets/films/generated-review/color-correction-01/reflx-lab-500t.prompt.txt",
+    "referenceFile": "assets/films/generated-review/color-correction-01/references/reflx-lab-500t.png",
+    "referenceSources": {
+      "imageUrl": "https://cdn.shopify.com/s/files/1/0608/4594/9094/files/500t-120.png?v=1776404165",
+      "pageUrl": "https://reflxlab.com/products/reflx-lab-500t-color-negative-film-120"
+    }
+  }
+}

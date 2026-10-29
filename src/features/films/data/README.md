@@ -103,3 +103,12 @@ Regeneration uses the corrected manifest; original source image hashes are uncha
 All 259 bundled PNG covers are normalized to 492 × 400 (1.23:1) using full-card resampling, without cropping or padding. Both crop generators apply this step automatically. To normalize existing generated covers only: `node scripts/normalize-film-covers.mjs`. Source sheets and custom user covers are untouched. This intentionally adjusts artwork proportions to fit the thumbnail opening.
 
 Yes!Star follow-up: the preserved `source/yesstar/print-sheet.png` adds Yes!Star 200 and 400 with full-frame covers under `assets/films/yes-star/`. The Quickfun concept label is retained in the source only; no ISO is invented. Current totals: 261 films, 26 source sheets, 215 manifest covers.
+
+## Generated catalog covers applied
+
+All 261 runtime covers now use normalized 492 × 400 copies of the imagegen outputs in
+`assets/films/generated-review/batch-01` through `batch-27`. Existing asset keys, paths, film
+metadata and roll references stay intact. Original sheets and full-resolution generated PNGs
+remain available. See `scripts/film-cover-review/applied-assets.json` for the source/runtime
+checksums and `apply-generated.mjs` to reapply; the older sheet importer recreates the older art.
+Packaging fidelity is still approximate; OCR review flags are available in the review gallery.

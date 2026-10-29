@@ -1,0 +1,22 @@
+{
+  "expectedCatalogEntries": 261,
+  "savedCovers": 261,
+  "newCoversThisRun": 251,
+  "promptsPresent": 261,
+  "duplicateImageFiles": [],
+  "ratioDeviationsOverOnePercent": [],
+  "pending": [],
+  "approvedForApp": true,
+  "ocrRecognizedImages": 261,
+  "ocrHeuristicFlags": 39,
+  "ocrFlagsAreConfirmedErrors": false,
+  "appliedToApp": true,
+  "runtimeCoverSize": [
+    492,
+    400
+  ],
+  "runtimeBytes": 68144887,
+  "packagingFidelityVerified": false,
+  "referenceCorrectedCovers": 13,
+  "unchangedOtherCovers": 248
+}
