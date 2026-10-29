@@ -10,7 +10,7 @@ Copy-ready text for FiLog 1.0.0 (build 1). Character limits are App Store Connec
 | SKU | `filog-ios-1` |
 | Primary category | Photo & Video |
 | Secondary category | Lifestyle |
-| Price | Free (optional tips are in-app purchases) |
+| Price | Free (1.0.0 has no in-app purchases; optional tips are planned for 1.0.1) |
 | Devices | iPhone only |
 | Privacy Policy URL | https://duongbean.github.io/filog-legal/privacy.html |
 | Support URL | https://duongbean.github.io/filog-legal/support.html |
@@ -58,7 +58,7 @@ If the name "FiLog" is already taken, use **FiLog – Film Roll Logbook** (25 ch
 > • No account, no ads, no tracking
 > • Your data stays on your iPhone and in your own iCloud
 >
-> Available in English, Tiếng Việt and 한국어, with light and dark appearance. FiLog is free; optional tips support its development and unlock nothing.
+> Available in English, Tiếng Việt and 한국어, with light, dark or system appearance. FiLog is free, with no ads and no subscription.
 
 ### Vietnamese
 
@@ -97,7 +97,7 @@ If the name "FiLog" is already taken, use **FiLog – Film Roll Logbook** (25 ch
 > • Không tài khoản, không quảng cáo, không theo dõi
 > • Dữ liệu nằm trên iPhone và trong iCloud của chính bạn
 >
-> Hỗ trợ English, Tiếng Việt và 한국어, giao diện sáng và tối. FiLog miễn phí; tip tự nguyện giúp ủng hộ phát triển và không mở khoá gì.
+> Hỗ trợ English, Tiếng Việt và 한국어, giao diện sáng, tối hoặc theo hệ thống. FiLog miễn phí, không quảng cáo, không gói đăng ký.
 
 ### Korean
 
@@ -136,13 +136,13 @@ If the name "FiLog" is already taken, use **FiLog – Film Roll Logbook** (25 ch
 > • 계정, 광고, 추적 없음
 > • 데이터는 iPhone과 내 iCloud에만 저장
 >
-> English, Tiếng Việt, 한국어 지원, 라이트·다크 모드 지원. FiLog는 무료이며, 선택적 후원은 개발을 응원할 뿐 아무것도 잠금 해제하지 않습니다.
+> English, Tiếng Việt, 한국어 지원, 라이트·다크·시스템 설정 모드 지원. FiLog는 광고와 구독 없이 무료입니다.
 
 ## App Privacy (questionnaire)
 
 Answer **"No, we do not collect data from this app."** → label **Data Not Collected**.
 
-Why this is accurate: FiLog has no developer server, account, analytics or ads. Roll data stays on the device and in the user's own private iCloud database, which the developer cannot access. Location and Photos are processed on the device. Tip purchases are processed by Apple. Revisit this answer if any analytics, crash reporting or server is ever added.
+Why this is accurate: FiLog has no developer server, account, analytics or ads. Roll data stays on the device and in the user's own private iCloud database, which the developer cannot access. Location and Photos are processed on the device. (When tips arrive in 1.0.1, purchases are processed by Apple and this answer stays the same.) Revisit this answer if any analytics, crash reporting or server is ever added.
 
 ## Age rating
 
@@ -152,9 +152,9 @@ Answer **None / No** to every content question → **4+**. No user-generated con
 
 `ITSAppUsesNonExemptEncryption = NO` is set in Info.plist, so App Store Connect will not ask on each upload. FiLog only uses Apple's system networking (CloudKit/HTTPS).
 
-## In-app purchases (consumable)
+## In-app purchases (consumable) — planned for 1.0.1
 
-Create in **Monetization › In-App Purchases** after signing the **Paid Applications Agreement** (Business › Agreements, plus bank and tax forms). Submit them together with version 1.0.0.
+**Not part of 1.0.0.** The tip screen is switched off with `tipsEnabled` in `src/constants/features.ts`, so do not attach these products to the 1.0.0 submission. Once the **Paid Applications Agreement** is Active (Business › Agreements, bank and tax forms), set `tipsEnabled = true`, upload a new build, and submit the products together with version 1.0.1.
 
 | Product ID | Reference name | Price | Display name (EN) | Description (EN) |
 | --- | --- | --- | --- | --- |
@@ -175,9 +175,9 @@ Each needs a review screenshot of Settings › Support Development (one screensh
 >
 > To try it: tap "+ New Roll", choose a film and camera, save, then open the roll and tap "+ Add Photos" to link images from the Photos library. Rolls can be browsed by date, film, camera and location from the home screen; statistics open from the summary line under the title.
 >
-> iCloud Sync is optional and uses the user's private CloudKit database; the developer has no server and collects no data.
+> iCloud Sync is optional (off by default) and uses the user's private CloudKit database; the developer has no server and collects no data.
 >
-> Settings › Support Development offers four consumable tips. They are voluntary and unlock no features or content; the app is fully functional for free.
+> This version has no in-app purchases; every feature is free.
 
 ## Screenshots
 
@@ -192,3 +192,7 @@ Required: **6.9" iPhone** (1320 × 2868 portrait), 3–10 images. Take them on t
 7. Settings with iCloud Sync on
 
 Use only photos you own; avoid showing third-party brand logos prominently beyond the film names themselves.
+
+### Notes for the reviewer — 1.0.1 (when tips are enabled)
+
+> Settings › Support Development offers four consumable tips. They are voluntary and unlock no features or content; the app is fully functional for free.

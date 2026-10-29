@@ -17,7 +17,7 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
   <img src="docs/images/app-store/08-film-library.png" width="200" alt="Film stock library">
 </p>
 
-**Current beta: version 1.0.0 (build 3)** — see [What's new](#whats-new-in-build-3).
+**Current beta: version 1.0.0 (build 4)** — see [What's new](#whats-new-in-build-4).
 
 ## Features
 
@@ -46,9 +46,13 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 
 **Built for everyone**
 - English, Tiếng Việt and 한국어 · Light, Dark or **System** appearance with a warm, high-contrast palette (WCAG AA) · VoiceOver labels
-- Free. Optional tips in Settings support development and unlock nothing.
+- Free, with no ads or subscriptions. Optional tips to support development are planned for a later update.
 
-## What's new in build 3
+## What's new in build 4
+
+- Tips are switched off for the first App Store release; they return in 1.0.1.
+
+### Build 3
 
 - **Film info pages** — tap a film cover in the film picker or on a roll to read about that stock.
 - **Film expiry** — record the date on the box; rolls show an In date or Outdate badge automatically.
@@ -72,7 +76,6 @@ FiLog is in beta on Apple TestFlight. You need an **iPhone running iOS 16.4 or l
 - Each beta build expires after 90 days. TestFlight notifies you when a new build is ready — tap **Update**.
 - Updating from TestFlight, or later moving to the App Store release, keeps your rolls.
 - To try iCloud restore: turn on **Settings → iCloud Sync**, wait for it to finish, delete the app, then reinstall from TestFlight — your rolls come back automatically. Photos linked from Apple Photos are never deleted by FiLog.
-- Tips in the beta are test purchases and are never charged.
 
 **Send feedback:** take a screenshot while using FiLog and tap **Share Beta Feedback**, or open TestFlight → FiLog → **Send Beta Feedback**. You can also email bean272003@gmail.com.
 

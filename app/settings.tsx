@@ -9,6 +9,7 @@ import { SettingsSelectModal } from '../src/features/settings/components/Setting
 import { SettingsGroup as Group, SettingsPage, SettingsRow as Row, SettingsNote as Note } from '../src/features/settings/components/SettingsPage';
 import { setCloudEnabled, syncNow, useCloudStore } from '../src/features/cloud/services/cloudSync';
 import { cloudLabels, cloudErrorLabels, cloudUnavailableLabels } from '../src/features/cloud/services/cloudLabels';
+import { tipsEnabled } from '../src/constants/features';
 import { supportUrl } from '../src/constants/links';
 
 export default function Settings() {
@@ -59,7 +60,7 @@ export default function Settings() {
         <Row icon="?" symbol="lightbulb.fill" iconColor="#FFB800" label={t('tourReplay')} onPress={replayTips} />
       </Group>
       <Group title={t('privacySupport')}>
-        <Row icon="♥" symbol="heart.fill" iconColor="#FF3B30" label={t('tipTitle')} onPress={() => open('support-development')} />
+        {tipsEnabled ? <Row icon="♥" symbol="heart.fill" iconColor="#FF3B30" label={t('tipTitle')} onPress={() => open('support-development')} /> : null}
         {supportUrl ? <Row icon="?" symbol="questionmark.bubble.fill" iconColor="#32ADE6" label={t('contactSupport')} onPress={() => openLink(supportUrl, t('contactSupport'))} /> : null}
         <Row icon="◇" symbol="hand.raised.fill" iconColor="#007AFF" label={t('privacyData')} onPress={() => router.push('/privacy')} />
       </Group>
