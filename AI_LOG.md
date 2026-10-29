@@ -351,3 +351,126 @@ AI cannot verify the current repository's implementation or actual team assignme
 
 **One decision I can explain without AI:**  
 The sprint prioritizes durable roll creation and photo import because they form FILMER's core user workflow; extra catalog polish can wait until that workflow is reliable.
+
+
+## FiLog iCloud Sync, Onboarding and Release Hardening — 2026-10-27
+
+**Tool(s) used:**  
+Claude Code, Xcode, iOS Simulator, physical iPhone, CloudKit Console
+
+**What I asked for:**  
+After setting up my Apple Developer account, I asked how deleting and reinstalling the app would restore data through iCloud, and asked the AI to fix the Sync control, which could not be tapped on my device. I also asked for a first-run guide for importing photos, a short tour of New Roll, Browse, Statistics and Settings, clear messages when sync is turned on, a less plain Settings icon, and shorter Storage information.
+
+**What I kept as-is:**  
+The local-first design: rolls are stored on the device and iCloud sync is optional, using the user's private CloudKit database with no developer server. I kept the reference import mode, so photos stay in Apple Photos instead of being copied.
+
+**What I changed or rejected, and why:**  
+I asked for the Storage screen to use short labels like the reference screenshot I provided, instead of long explanations. I made the app iPhone-only for the first release and removed the unused camera and microphone permissions so the review questionnaire stays simple.
+
+**Something the AI got wrong that I had to catch:**  
+Sync stayed disabled on my iPhone even after I had configured iCloud. The availability check did not follow the entitlements that were actually signed into the build, and the Debug configuration was signed without CloudKit. I reported that the button still could not be pressed, and the fix read the CloudKit environment from the signed entitlements and signed both configurations with them. I confirmed it worked on my device.
+
+**One decision I can explain without AI:**  
+Development builds and TestFlight/App Store builds use different CloudKit environments (Development and Production). Data synced from an Xcode build does not appear in the TestFlight build, so the CloudKit schema must be deployed to Production before testing restore with TestFlight.
+
+**Verification / remaining work:**  
+Sync and restore were tested on my iPhone with a development build. Restore must be re-tested with the TestFlight build after deploying the schema to Production.
+
+
+## FiLog Tips, Settings Polish, Legal Pages and Cover Cropping — 2026-10-27
+
+**Tool(s) used:**  
+Claude Code, Xcode (StoreKit configuration), GitHub Pages, iOS Simulator
+
+**What I asked for:**  
+I did not want to charge for the app, so I asked for a "Support development" tips screen similar to another film app I showed as reference. I asked for privacy policy and support pages hosted on my own GitHub Pages (not the class repository), first plain, then a more colorful and professional site with a header, feature sections and a contact section. I also asked to merge the Privacy and Support rows in Settings with better icons, to give film and camera covers a fixed crop ratio where users can move the crop area, to fix the stuck buttons in Add Camera, and to center the search icon in the film search bar.
+
+**What I kept as-is:**  
+The app stays free with every feature unlocked. Tips are four consumable In-App Purchases (StoreKit 2), with prices loaded from the App Store, so they can change without a new build.
+
+**What I changed or rejected, and why:**  
+I rejected the first legal pages because they looked too basic, and the dark background looked unprofessional. I chose to publish them from a personal repository so the class repository stays clean, and chose my public contact email and developer name myself.
+
+**Something the AI got wrong that I had to catch:**  
+I had to point out several visual details the AI missed: the misaligned search icon, the camera form buttons that touched each other, and Settings icons that looked out of place.
+
+**One decision I can explain without AI:**  
+A tip inside an iOS app must use In-App Purchase. Apple keeps 15% under the Small Business Program (otherwise 30%), and the Paid Applications Agreement with bank and tax information must be active. External donation links are not allowed inside the app, and a tip is not a charitable donation.
+
+**Verification / remaining work:**  
+A local StoreKit configuration file (`ios/FiLog/FiLog.storekit`) is included for testing purchases in Xcode. Real prices appear only after the Paid Applications Agreement becomes active; a real purchase flow still needs testing in TestFlight.
+
+
+## FiLog App Store Submission and TestFlight — 2026-10-27
+
+**Tool(s) used:**  
+Claude Code, XCUITest, iOS Simulator (iPhone 18 Pro Max), Python (Pillow), App Store Connect, Xcode, TestFlight
+
+**What I asked for:**  
+I asked for a complete submission package that I could copy and paste: App Store screenshots, name, subtitle, keywords, descriptions in English, Vietnamese and Korean, privacy answers, review notes and step-by-step instructions. I asked how the in-app tips work if they are paid like an app purchase but meant as a donation. While filling in App Store Connect, I asked what to put in each field, how to create the tip products, and how to take the review screenshot. Finally I asked the AI to archive the app and upload it to TestFlight.
+
+**What I kept as-is:**  
+Self-made illustrative photos (generated landscapes) for the sample rolls, so no real or copyrighted photos appear in the screenshots. The data-collection answer "Data Not Collected" and the age rating 4+.
+
+**What I changed or rejected, and why:**  
+I rejected the first screenshot frame because it looked like an Android phone, and asked for the iPhone 18 Pro Max look with Dynamic Island. I decided to upload builds to TestFlight while waiting for the paid-apps agreement instead of delaying, because prices come from the App Store and need no code change.
+
+**Something the AI got wrong that I had to catch:**  
+- App Store Connect rejected all screenshots with "File dimensions are invalid": the AI produced the 6.9-inch size (1320 × 2868), but the required slot is now "iPhone with Dynamic Island (medium display)" (1206 × 2622).
+- The AI first told me to keep the version as 1.0, but the build is 1.0.0. The AI corrected this before submission.
+- Apple's processing email rejected build 1 (ITMS-90683, missing NSMotionUsageDescription). The location library links CoreMotion even though FiLog never uses motion data. Build 2 added the purpose string and passed.
+- The tip review screenshot could not show prices, because the StoreKit test session did not apply outside Xcode and the App Store returned no products before the agreement was active.
+
+**One decision I can explain without AI:**  
+A public TestFlight link only works after Apple's Beta App Review approves an external testing group, while internal testers can install immediately. That is why new users could not join my public link yet.
+
+**Verification / remaining work:**  
+Build 1.0.0 (2) is "Complete" in TestFlight. Remaining: activate the Paid Applications Agreement (bank processing and the W-8BEN tax form), deploy the CloudKit schema to Production, retake the tip screenshot with real prices, then submit for App Review. (External beta review was later approved and the public TestFlight link is live.)
+
+
+## FiLog Photo Flicker Fix and Contact Sheet Appearance — 2026-10-28
+
+**Tool(s) used:**  
+Claude Code, iOS Simulator, XCUITest, Node test runner
+
+**What I asked for:**  
+I asked for more frame and background choices for contact sheets, including borders that look like real film, and asked the AI to fix all photos occasionally flashing at once.
+
+**What I kept as-is:**  
+The rule that every frame style keeps the same sheet size and photo area, so the preview and the exported image always match. Contact sheet preferences are saved separately from roll data.
+
+**What I changed or rejected, and why:**  
+Another AI session was already editing the same contact sheet and photo files. When asked, I chose to stop that session and let this one take over its unfinished work, to avoid both sessions overwriting each other.
+
+**Something the AI got wrong that I had to catch:**  
+The earlier code reloaded every visible image whenever the Photos library reported any change, such as iCloud Photos syncing or a new photo being taken, which explained the random flashing. Now only edited or deleted photos reload. During the simulator check, two new styles also needed fixes: instant-print borders touched each other and looked like one strip, and the light film strip disappeared on the cream background.
+
+**One decision I can explain without AI:**  
+A library change event should be targeted: only references whose asset was edited or deleted lose their pixels; everything else revalidates in place, so the user never sees a blank grid.
+
+**Verification / remaining work:**  
+TypeScript, ESLint and 251 tests passed; all 10 frame styles and the new backgrounds were checked in the app on the simulator. The flicker fix still needs confirmation on a physical iPhone with iCloud Photos syncing.
+
+
+## FiLog Film Picker Index and README — 2026-10-29
+
+**Tool(s) used:**  
+Claude Code, iOS Simulator, XCUITest, GitHub
+
+**What I asked for:**  
+I asked for an A–Z strip on the film picker so users can drag to a letter and jump to a film brand. I also asked for a README that introduces the app with screenshots and explains how to install it with TestFlight.
+
+**What I kept as-is:**  
+The README uses the exact seven screenshots I uploaded to the App Store.
+
+**What I changed or rejected, and why:**  
+After trying the A–Z strip, I removed it because it looked cluttered beside the list; it was reverted with a separate commit. I asked to replace the first README images (resized copies and a composite of contact sheet styles) with the original App Store screenshots.
+
+**Something the AI got wrong that I had to catch:**  
+In the simulator, jumping to letters far down the list (such as S and U) first stopped at the wrong brand, because the list had not rendered those rows yet. The AI found this while testing and fixed it before I removed the feature.
+
+**One decision I can explain without AI:**  
+The README is written in English like the rest of the repository, and the public TestFlight link was added only after Apple approved external testing, so the README never pointed to a link that did not work.
+
+**Verification / remaining work:**  
+External testing was approved and the public TestFlight link (https://testflight.apple.com/join/nVkaZtC4) was added to the README.

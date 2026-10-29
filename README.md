@@ -48,8 +48,7 @@ FiLog is in beta on Apple TestFlight. You need an **iPhone running iOS 16.4 or l
 
 1. Install **[TestFlight](https://apps.apple.com/app/testflight/id899247664)** from the App Store and sign in with your Apple ID.
 2. Join the beta:
-   - **Public link:** open the link below on your iPhone and tap **Accept** → **Install**.
-     > TestFlight link: _pending Apple's Beta App Review — it will be added here once approved._
+   - **Public link:** open **[testflight.apple.com/join/nVkaZtC4](https://testflight.apple.com/join/nVkaZtC4)** on your iPhone, then tap **Accept** → **Install**.
    - **Team members (internal testers):** accept the email invitation from TestFlight, or ask the maintainer to add your Apple ID under *Internal Testing*.
 3. Open **FiLog** from your Home Screen. The first launch shows a short guide through New Roll, Browse, Statistics and Settings.
 
