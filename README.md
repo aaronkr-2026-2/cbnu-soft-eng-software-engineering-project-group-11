@@ -7,20 +7,26 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 <p align="center">
   <img src="docs/images/app-store/01-home.png" width="200" alt="Home: every roll at a glance">
   <img src="docs/images/app-store/02-browse-location.png" width="200" alt="Browse rolls by location">
-  <img src="docs/images/app-store/03-roll-detail.png" width="200" alt="Roll details and frames">
-  <img src="docs/images/app-store/04-viewer.png" width="200" alt="Full-screen photo viewer">
+  <img src="docs/images/app-store/03-roll-detail.png" width="200" alt="Roll spec card with film expiry badge">
+  <img src="docs/images/app-store/04-film-info.png" width="200" alt="Film introduction page">
 </p>
 <p align="center">
-  <img src="docs/images/app-store/05-contact-sheet.png" width="200" alt="Contact sheet export">
-  <img src="docs/images/app-store/06-statistics.png" width="200" alt="Shooting statistics">
-  <img src="docs/images/app-store/07-film-library.png" width="200" alt="Film stock library">
+  <img src="docs/images/app-store/05-viewer.png" width="200" alt="Full-screen photo viewer">
+  <img src="docs/images/app-store/06-contact-sheet.png" width="200" alt="Contact sheet in a color negative style">
+  <img src="docs/images/app-store/07-statistics.png" width="200" alt="Shooting statistics">
+  <img src="docs/images/app-store/08-film-library.png" width="200" alt="Film stock library">
 </p>
+
+**Current beta: version 1.0.0 (build 3)** — see [What's new](#whats-new-in-build-3).
 
 ## Features
 
 **Log every roll**
 - Film stock, camera, format (35mm / 120 / 110), frame count, shooting month, lab and notes
-- A built-in library of 261 film stocks with package covers, plus your own films and cameras
+- Film expiry month with an automatic **In date** / **Outdate** badge, plus the date each roll was created
+- A spec card on every roll, and a compact header that stays pinned while you browse its photos
+- A built-in library of 269 film stocks with package covers, plus your own films and cameras
+- Tap any film cover for its introduction page: type, format, ISO, process, production status and a short description, tinted to the cover's colors
 - Custom covers are cropped to a fixed ratio; an optional "copy prompt" helps you create one with ChatGPT (nothing is sent automatically)
 
 **Your scans, linked — not copied**
@@ -33,14 +39,24 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 
 **Relive and share**
 - Statistics: your most-shot films, cameras and places, and activity over time
-- Export a classic contact sheet with 10 frame styles and 8 backgrounds (including any custom color)
+- Export a classic contact sheet with 11 frame styles (film strips, color and B&W negatives, 120 edges, instant prints…) and 8 backgrounds, including any custom color
 
 **iCloud sync and restore**
-- Rolls sync through your private iCloud (CloudKit) and are restored automatically after reinstalling or on a new iPhone
+- Turn on **Settings → iCloud Sync** (off by default) and your rolls sync through your private iCloud (CloudKit); they are restored automatically after reinstalling or on a new iPhone
 
 **Built for everyone**
-- English, Tiếng Việt and 한국어 · light and dark appearance · VoiceOver labels
+- English, Tiếng Việt and 한국어 · Light, Dark or **System** appearance with a warm, high-contrast palette (WCAG AA) · VoiceOver labels
 - Free. Optional tips in Settings support development and unlock nothing.
+
+## What's new in build 3
+
+- **Film info pages** — tap a film cover in the film picker or on a roll to read about that stock.
+- **Film expiry** — record the date on the box; rolls show an In date or Outdate badge automatically.
+- **Roll details redesigned** — spec card, icon list for place, lab and notes, creation date, and a header pinned while scrolling photos.
+- **Contact sheets** — new frame styles and backgrounds.
+- **Appearance** — new System option (now the default), refreshed light and dark palettes, clearer form fields.
+- **iCloud Sync** is off on a fresh install; turn it on in Settings to back up and restore.
+- Fixes: photos no longer flash all at once when the Photos library changes; tidier back and options buttons.
 
 ## Install the beta with TestFlight
 
