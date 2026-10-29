@@ -4,6 +4,14 @@ import { ADDITIONAL_FILM_ASSETS } from './additionalFilmAssets';
 // Static references let Metro bundle only individual covers.
 export const FILM_ASSETS: Readonly<Record<string, ImageSourcePropType>> = {
   ...ADDITIONAL_FILM_ASSETS,
+  'kodak-kodacolor-100-current': require('../../../../assets/films/kodak/current/kodacolor-100-current.png'),
+  'kodak-kodacolor-200-current': require('../../../../assets/films/kodak/current/kodacolor-200-current.png'),
+  'kodak-ektacolor-pro-160-current': require('../../../../assets/films/kodak/current/ektacolor-pro-160-current.png'),
+  'kodak-ektacolor-pro-400-current': require('../../../../assets/films/kodak/current/ektacolor-pro-400-current.png'),
+  'kodak-ektacolor-pro-800-current': require('../../../../assets/films/kodak/current/ektacolor-pro-800-current.png'),
+  'kodak-ektapan-100-current': require('../../../../assets/films/kodak/current/ektapan-100-current.png'),
+  'kodak-ektapan-400-current': require('../../../../assets/films/kodak/current/ektapan-400-current.png'),
+  'kodak-ektapan-p3200-current': require('../../../../assets/films/kodak/current/ektapan-p3200-current.png'),
   'kodak-portra-160': require('../../../../assets/films/kodak/portra-160.png'),
   'kodak-portra-400': require('../../../../assets/films/kodak/portra-400.png'),
   'kodak-portra-800': require('../../../../assets/films/kodak/portra-800.png'),

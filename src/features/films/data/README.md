@@ -1,5 +1,7 @@
 # FiLog built-in film catalog
 
+Current total: **269 entries** — 261 preserved legacy entries plus 8 independent current Kodak editions.
+
 `builtInCatalog.ts` contains FiLog definitions. `films.ts` supplies the existing Zustand store
 and resolves historical ID aliases. No external API, external cover URL, or imported dataset is
 used. Custom films remain separate in the existing store. Unknown archived stocks still use
@@ -112,3 +114,18 @@ metadata and roll references stay intact. Original sheets and full-resolution ge
 remain available. See `scripts/film-cover-review/applied-assets.json` for the source/runtime
 checksums and `apply-generated.mjs` to reapply; the older sheet importer recreates the older art.
 Packaging fidelity is still approximate; OCR review flags are available in the review gallery.
+
+
+## Separate Kodak current editions
+
+`currentKodakCatalog.ts` appends Kodacolor 100/200, Ektacolor Pro 160/400/800 and Ektapan
+100/400/P3200 with new `-current` IDs and plain product display names. Current images live under
+`assets/films/kodak/current/`. Legacy entries and their 261 artwork files remain byte-identical
+to the previous catalog; the earlier in-place Kodacolor update was reverted. Historical roll
+IDs continue resolving to the same original records, with no alias redirect to current editions.
+
+Official roll formats/catalog numbers, reference photos, prompts, imagegen originals and the
+comparison/check report are in `assets/films/generated-review/kodak-current-editions-01`.
+`catalog-additions.json` registers the eight extra sources separately from the original batches;
+`apply-generated.mjs --only-new-editions` normalizes only those new assets. The importer for
+older source sheets leaves these separately maintained additions intact.

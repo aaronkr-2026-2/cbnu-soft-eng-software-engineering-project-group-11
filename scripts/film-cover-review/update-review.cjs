@@ -5,6 +5,8 @@ const root = path.resolve(__dirname, '../../assets/films/generated-review');
 const project = path.resolve(__dirname, '../..');
 const overrideFile = path.join(root, 'active-overrides.json');
 const overrides = fs.existsSync(overrideFile) ? JSON.parse(fs.readFileSync(overrideFile, 'utf8')) : {};
+const additionsFile = path.join(root, 'catalog-additions.json');
+const additions = fs.existsSync(additionsFile) ? JSON.parse(fs.readFileSync(additionsFile, 'utf8')) : [];
 const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;');
 const batches = fs.readdirSync(root).filter(name => /^batch-\d+$/.test(name)).sort();
 let total = 0;
@@ -33,6 +35,10 @@ for (const batch of batches) {
     return `<article><img loading="lazy" src="${escape(image)}"><h2>${escape(item.brand)} ${escape(item.name)}</h2><p>${active ? 'Màu đã tạo lại theo ảnh tham chiếu' : item.width + ' × ' + item.height + ' · Cần duyệt bao bì'}</p><a href="${escape(prompt)}">Prompt</a></article>`;
   }).join('');
   fs.writeFileSync(path.join(dir, 'index.html'), page(batch, `<p><a href="../index.html">Tất cả đợt</a></p><main>${cards}</main>`));
+}
+if (additions.length) {
+  total += additions.length;
+  links.push(`<li><a href="kodak-current-editions-01/index.html">Kodak — phiên bản mới, giữ riêng bản cũ</a> — ${additions.length} ảnh</li>`);
 }
 const appliedManifest = path.join(__dirname, 'applied-assets.json');
 const appliedCount = fs.existsSync(appliedManifest) ? JSON.parse(fs.readFileSync(appliedManifest, 'utf8')).length : 0;

@@ -2,6 +2,10 @@ import type { Film } from '../../../types/models';
 
 type Copy = [en: string, vi: string, ko: string];
 const notes: Record<string, Copy> = {
+  currentKodacolor: ['Current-edition daylight-balanced color negative film with fine grain, saturated color and wide exposure latitude. Uses C-41 processing.', 'Phiên bản mới của film âm bản màu cân bằng ánh sáng ban ngày, hạt mịn, màu bão hòa và dải phơi sáng rộng. Tráng C-41.', '미세한 입자, 풍부한 색감과 넓은 노출 관용도를 갖춘 현행 주광 컬러 네거티브 필름입니다. C-41 현상을 사용합니다.'],
+  currentEktacolor: ['Current-edition daylight-balanced color negative film for natural skin tones, fine grain and wide exposure latitude. Uses C-41 processing.', 'Phiên bản mới của film âm bản màu cân bằng ánh sáng ban ngày, tái hiện màu da tự nhiên, hạt mịn và dải phơi sáng rộng. Tráng C-41.', '자연스러운 피부색, 미세한 입자와 넓은 노출 관용도를 갖춘 현행 주광 컬러 네거티브 필름입니다. C-41 현상을 사용합니다.'],
+  currentEktapan: ['Current-edition panchromatic black-and-white film with T-Grain emulsion for fine grain and high sharpness. Uses black-and-white processing.', 'Phiên bản mới của film đen trắng toàn sắc dùng nhũ tương T-Grain, hạt mịn và độ nét cao. Dùng quy trình tráng đen trắng.', 'T-Grain 유제를 사용해 미세한 입자와 높은 선예도를 구현하는 현행 전정색 흑백 필름입니다. 흑백 현상을 사용합니다.'],
+  currentP3200: ['Current-edition multi-speed black-and-white film intended for EI 3200 or higher with suitable push development. Confirm development with your lab.', 'Phiên bản mới của film đen trắng đa độ nhạy, dành cho EI 3200 trở lên với quy trình tráng đẩy phù hợp. Trao đổi với lab về cách tráng.', '적절한 증감 현상으로 EI 3200 이상에서 사용하도록 설계된 현행 다감도 흑백 필름입니다. 현상 조건을 현상소와 확인하세요.'],
   c200: ['A daylight-balanced color negative stock for everyday photography. Good daylight or flash helps make the most of its ISO 200 speed.', 'Film âm bản màu cân bằng ánh sáng ban ngày cho chụp đời thường. Ánh sáng tốt hoặc flash giúp tận dụng độ nhạy ISO 200.', '일상 촬영을 위한 주광용 컬러 네거티브 필름입니다. 밝은 낮이나 플래시에서 ISO 200 감도를 활용하기 좋습니다.'],
   portra: ['A useful choice for portraits with natural skin tones. Choose the speed to match available light.', 'Phù hợp chụp chân dung với màu da tự nhiên. Chọn độ nhạy phù hợp với ánh sáng.', '자연스러운 피부색을 담는 인물 사진에 적합합니다. 사용 가능한 빛에 맞춰 감도를 선택하세요.'],
   everyday: ['Suitable for travel and everyday scenes. Good daylight helps keep shutter speeds practical.', 'Phù hợp chụp du lịch và đời thường. Ánh sáng ban ngày giúp dễ chọn tốc độ màn trập.', '여행과 일상 장면에 적합합니다. 밝은 낮에는 실용적인 셔터 속도를 확보하기 쉽습니다.'],
@@ -21,7 +25,11 @@ const notes: Record<string, Copy> = {
 /** Localized editorial descriptions attach to the existing Film, without another catalog. */
 export function getBuiltInFilmDescription(film: Film): NonNullable<Film['shortDescription']> {
   let note = film.status === 'discontinued' ? notes.historical : film.status === 'specialty' ? notes.specialty : notes.everyday;
-  if (film.id === 'fujifilm-c200' || film.id === 'fujifilm-200') note = notes.c200;
+  if (/^kodak-kodacolor-\d+-current$/.test(film.id)) note = notes.currentKodacolor;
+  else if (/^kodak-ektacolor-pro-\d+-current$/.test(film.id)) note = notes.currentEktacolor;
+  else if (film.id === 'kodak-ektapan-p3200-current') note = notes.currentP3200;
+  else if (/^kodak-ektapan-\d+-current$/.test(film.id)) note = notes.currentEktapan;
+  else if (film.id === 'fujifilm-c200' || film.id === 'fujifilm-200') note = notes.c200;
   else if (/^kodak-portra-(160|400|800)$/.test(film.id)) note = notes.portra;
   else if (film.id === 'kodak-ektar-100') note = notes.ektar;
   else if (film.id === 'fujifilm-pro-400h') note = notes.pro400h;

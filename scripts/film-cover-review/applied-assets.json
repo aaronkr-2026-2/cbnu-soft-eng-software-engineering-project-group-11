@@ -2608,5 +2608,85 @@
     "bytes": 310216,
     "width": 492,
     "height": 400
+  },
+  {
+    "id": "kodak-kodacolor-100-current",
+    "source": "assets/films/generated-review/kodak-current-editions-01/kodak-kodacolor-100-current.png",
+    "target": "assets/films/kodak/current/kodacolor-100-current.png",
+    "sourceSha256": "517e2790296fab26b62afcf5614eac47c132607ba5c35d16bfc5db6a054b09a6",
+    "assetSha256": "9fb7a0072f8d81e34b25026057eb80af5820dc09de1469416aef4737626425c8",
+    "bytes": 199916,
+    "width": 492,
+    "height": 400
+  },
+  {
+    "id": "kodak-kodacolor-200-current",
+    "source": "assets/films/generated-review/kodak-current-editions-01/kodak-kodacolor-200-current.png",
+    "target": "assets/films/kodak/current/kodacolor-200-current.png",
+    "sourceSha256": "f960852713c9750d5410ecf4fa48f3addf89dd9bb092168c71c6302654265122",
+    "assetSha256": "9eda91a011fc0cc18b37ecb9522d14e2050cb09dafee0e00fac72082f6f0a64a",
+    "bytes": 200807,
+    "width": 492,
+    "height": 400
+  },
+  {
+    "id": "kodak-ektacolor-pro-160-current",
+    "source": "assets/films/generated-review/kodak-current-editions-01/kodak-ektacolor-pro-160-current.png",
+    "target": "assets/films/kodak/current/ektacolor-pro-160-current.png",
+    "sourceSha256": "426689b2f18eabfedd89f62ba723d16cdd1a11bfe87819e679b8602d78964329",
+    "assetSha256": "ece3e51edcde0b9bfdff872bf74df6cfc47335765b12d7d64a78b2d61609efe2",
+    "bytes": 211528,
+    "width": 492,
+    "height": 400
+  },
+  {
+    "id": "kodak-ektacolor-pro-400-current",
+    "source": "assets/films/generated-review/kodak-current-editions-01/kodak-ektacolor-pro-400-current.png",
+    "target": "assets/films/kodak/current/ektacolor-pro-400-current.png",
+    "sourceSha256": "ab03526857b528beab1f9c9b6aa83bbeda7d4f07df6d9136b535f575beb59a58",
+    "assetSha256": "ddf5940ba83e8fb0d9c44ccf23dab8b6650638229f26ab8eee284109b3a019b2",
+    "bytes": 211660,
+    "width": 492,
+    "height": 400
+  },
+  {
+    "id": "kodak-ektacolor-pro-800-current",
+    "source": "assets/films/generated-review/kodak-current-editions-01/kodak-ektacolor-pro-800-current.png",
+    "target": "assets/films/kodak/current/ektacolor-pro-800-current.png",
+    "sourceSha256": "7fddf9669ba07c72346c4410f789056e5ed8b1017a847911f684c119ef742506",
+    "assetSha256": "36fce1bb3c7942b512debe379d03e0cd84c52803376a0dbbee14cb1f8bbca6a5",
+    "bytes": 213356,
+    "width": 492,
+    "height": 400
+  },
+  {
+    "id": "kodak-ektapan-100-current",
+    "source": "assets/films/generated-review/kodak-current-editions-01/kodak-ektapan-100-current.png",
+    "target": "assets/films/kodak/current/ektapan-100-current.png",
+    "sourceSha256": "7900622eb38f195709f8af3ab3b6de7f4c7d2de4b674916140087787798c0d2f",
+    "assetSha256": "92158806f3173a83ea9c0151fbed09b7e76a9a079e0b1972d0153150ccc7b3d6",
+    "bytes": 202449,
+    "width": 492,
+    "height": 400
+  },
+  {
+    "id": "kodak-ektapan-400-current",
+    "source": "assets/films/generated-review/kodak-current-editions-01/kodak-ektapan-400-current.png",
+    "target": "assets/films/kodak/current/ektapan-400-current.png",
+    "sourceSha256": "64f863554a83abae80289d3a0750d7df7329188cd723e4f436be47b7ee4dfb08",
+    "assetSha256": "9b723d546c113f2f370209ba626e6e8f6f021319ab99511a6ff40493093fdcec",
+    "bytes": 204864,
+    "width": 492,
+    "height": 400
+  },
+  {
+    "id": "kodak-ektapan-p3200-current",
+    "source": "assets/films/generated-review/kodak-current-editions-01/kodak-ektapan-p3200-current.png",
+    "target": "assets/films/kodak/current/ektapan-p3200-current.png",
+    "sourceSha256": "ca5d032cca8bb0353aa15e3f783b4859ed274f4cd5066b7afd72ff90c3e515f5",
+    "assetSha256": "68fe0a334b37ad2bb18a83aba4b50aafdbe8831f281f883ad265e3d665ac36fa",
+    "bytes": 205534,
+    "width": 492,
+    "height": 400
   }
 ]

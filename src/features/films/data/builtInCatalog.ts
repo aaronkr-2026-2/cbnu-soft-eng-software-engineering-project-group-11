@@ -1,5 +1,6 @@
 import type { Film } from '../../../types/models';
 import { additionalFilms } from './additionalCatalog';
+import { currentKodakFilms } from './currentKodakCatalog';
 
 type Definition = [id: string, name: string, iso: number, type: Film['type'], process: string,
   status: NonNullable<Film['status']>, formats: NonNullable<Film['formats']>, aliases?: string[]];
@@ -63,4 +64,5 @@ export const builtInCatalog: Film[] = [
   { id: 'ilford-hp5-plus', brand: 'Ilford', name: 'HP5 Plus', iso: 400, type: 'black-and-white',
     format: '35mm', formats: ['35mm', '120'], process: 'B&W', status: 'current', source: 'builtin', imageKey: 'ilford-hp5-plus', isCustom: false },
   ...additionalFilms,
+  ...currentKodakFilms,
 ];
