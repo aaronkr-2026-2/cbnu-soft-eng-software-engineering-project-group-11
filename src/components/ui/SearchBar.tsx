@@ -22,7 +22,7 @@ export function SearchBar({ onChangeText, placeholder, value }: SearchBarProps) 
         accessibilityLabel={placeholder}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.secondaryText}
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         value={value}
       />

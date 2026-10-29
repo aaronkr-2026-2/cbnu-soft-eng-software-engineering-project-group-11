@@ -12,7 +12,7 @@ export const createContactSheetStyles = (colors: ThemeColors) => StyleSheet.crea
   swatch: { width: 18, height: 18, borderRadius: 9, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   optionSelected: { borderColor: colors.accent, borderWidth: 2 },
   optionText: { color: colors.text, fontSize: 13 },
-  hexInput: { borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingHorizontal: 12, minHeight: 44, color: colors.text, fontSize: 14 },
+  hexInput: { borderWidth: 1, borderColor: colors.fieldBorder, backgroundColor: colors.field, borderRadius: 8, paddingHorizontal: 12, minHeight: 44, color: colors.text, fontSize: 14 },
   hexError: { color: colors.destructive, fontSize: 12 },
   root: { flex: 1, backgroundColor: colors.background },
   toolbar: { paddingHorizontal: 20, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 12 },

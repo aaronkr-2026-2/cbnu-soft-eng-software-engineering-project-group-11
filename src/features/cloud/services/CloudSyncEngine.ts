@@ -27,7 +27,8 @@ export class CloudSyncEngine {
   private state: CloudState;
   constructor(private io: CloudIO, private transport: CloudTransport, private publish: (state: CloudState) => void = () => {}) {
     const saved = io.read();
-    this.journal = saved ?? { schema: 1, enabled: true, n: 0, documents: {}, baseline: {}, server: {} };
+    // A fresh install starts with sync off; the user turns it on in Settings (existing journals keep their choice).
+    this.journal = saved ?? { schema: 1, enabled: false, n: 0, documents: {}, baseline: {}, server: {} };
     if (this.journal.schema !== 1 || (!Number.isSafeInteger(this.journal.n) || this.journal.n < 0) || !this.journal.documents || !this.journal.baseline || !this.journal.server || typeof this.journal.enabled !== 'boolean') throw new Error('Cloud journal needs recovery; local archives are unchanged');
     for (const [key, doc] of Object.entries(this.journal.documents)) {
       validateDocument(doc); if (key !== cloudKey(doc)) throw new Error('Invalid cloud journal identity');

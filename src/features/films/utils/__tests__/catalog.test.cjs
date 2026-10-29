@@ -12,8 +12,8 @@ function load(filename) {
 const { builtInFilms, getFilmById } = load(path.resolve(__dirname, '../../data/films.ts'));
 const { filterFilms } = load(path.resolve(__dirname, '../filterFilms.ts'));
 test('Built-in catalog retains IDs, distinguishes specialty/history, and contains no external images', () => {
- assert.equal(builtInFilms.length, 261);
- assert.equal(new Set(builtInFilms.map(f => f.id)).size, 261);
+ assert.equal(builtInFilms.length, 269);
+ assert.equal(new Set(builtInFilms.map(f => f.id)).size, 269);
  for (const f of builtInFilms) {
   assert.ok(f.iso > 0 && f.formats.length); assert.equal(f.source, 'builtin');
   assert.equal(f.imageUrl, undefined); assert.equal(f.isCustom, false);
@@ -57,7 +57,9 @@ test('Film Selection whole row selects and clears the previous override in both 
   const exports={};const code=ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
   new Function('exports','require',code)(exports,name=>mocks[name]??{});
   const row=exports.FilmSelectionScreen().props.children[0].props.children[0].props.renderItem({item:getFilmById('fujifilm-c200')});
-  assert.equal(row.type,'Pressable');row.props.onPress();
+  // The cover opens film info; the text button beside it selects the film.
+  const buttons=[].concat(row.props.children).filter(child=>child&&child.type==='Pressable');
+  assert.equal(buttons.length,2);buttons[1].props.onPress();
   assert.deepEqual(updates,[[edit?'edit':'create',{filmId:'fujifilm-c200',filmOverride:undefined}]]);
   assert.deepEqual(navigation,[edit?'back':'/new-roll/details']);
  }
@@ -198,4 +200,29 @@ test('Film form rollback cannot delete a cover after catalog commit or a complet
   form.props.onSubmit();await new Promise(resolve=>setImmediate(resolve));
   assert.equal(deleted,failure==='save',failure);
  }
+});
+
+
+test('New Kodak editions append distinct IDs while legacy records retain their identity, formats and artwork keys', () => {
+ const { currentKodakFilms } = load(path.resolve(__dirname, '../../data/currentKodakCatalog.ts'));
+ assert.equal(currentKodakFilms.length, 8);
+ assert.equal(builtInFilms.length, 261 + currentKodakFilms.length);
+ for (const film of currentKodakFilms) {
+  assert.ok(film.id.endsWith('-current')); assert.ok(!film.name.includes('(New)'));
+  assert.equal(film.imageKey, film.id); assert.equal(film.status, 'current');
+  assert.equal(getFilmById(film.id).id, film.id);
+  assert.equal(filterFilms(builtInFilms, film.aliases.find(a => /^\d{7}$/.test(a)))[0].id, film.id);
+  for (const language of ['en', 'vi', 'ko']) assert.ok(getFilmById(film.id).shortDescription[language].length > 70);
+ }
+ for (const suffix of ['kodacolor-100', 'kodacolor-200', 'ektacolor-pro-160', 'ektacolor-pro-400', 'ektacolor-pro-800']) {
+  const id = 'kodak-' + suffix, legacy = getFilmById(id), current = getFilmById(id + '-current');
+  assert.ok(legacy && current); assert.equal(legacy.id, id); assert.equal(legacy.imageKey, id);
+  assert.equal(legacy.status, 'discontinued'); assert.deepEqual(legacy.formats, ['35mm']);
+  assert.equal(current.status, 'current'); assert.notEqual(current.imageKey, legacy.imageKey);
+ }
+ for (const iso of [160, 400, 800]) assert.deepEqual(getFilmById('kodak-ektacolor-pro-' + iso + '-current').formats, ['35mm', '120']);
+ for (const iso of [100, 400]) assert.deepEqual(getFilmById('kodak-ektapan-' + iso + '-current').formats, ['35mm', '120']);
+ assert.deepEqual(getFilmById('kodak-ektapan-p3200-current').formats, ['35mm']);
+ assert.equal(getFilmById('kodak-ektapan-p3200-current').iso, 3200);
+ assert.match(getFilmById('kodak-ektapan-p3200-current').shortDescription.en, /EI 3200/);
 });

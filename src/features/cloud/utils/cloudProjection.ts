@@ -9,7 +9,7 @@ import { cloudKey, materialize, type CloudDocument, type WireItem } from './clou
 export type CloudProjection = { rolls: Roll[]; films: Film[]; cameras: Camera[] };
 const remaining = (value: object, keys: string[]) => Object.fromEntries(Object.entries(value).filter(([key]) => !keys.includes(key)));
 const pick = (value: object, keys: string[]) => Object.fromEntries(Object.entries(value).filter(([key, value]) => keys.includes(key) && value !== undefined));
-const rollFields = ['createdAt', 'filmId', 'filmName', 'cameraId', 'cameraName', 'date', 'format', 'frameCount', 'notes', 'lab', 'location', 'filmOverride'];
+const rollFields = ['createdAt', 'filmId', 'filmName', 'cameraId', 'cameraName', 'date', 'filmExpiry', 'format', 'frameCount', 'notes', 'lab', 'location', 'filmOverride'];
 const photoFields = ['provider', 'sortOrder', 'takenAt', 'location', 'note', 'cloudIdentifier'];
 const filmFields = ['brand', 'name', 'iso', 'format', 'type', 'formats', 'process', 'status', 'imageKey', 'shortDescription', 'aliases', 'legacyIds', 'source', 'isCustom'];
 const cameraFields = ['brand', 'model', 'format', 'isCustom'];

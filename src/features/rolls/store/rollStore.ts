@@ -13,6 +13,7 @@ export type CreateRollInput = {
   cameraName: string;
   cameraId: string;
   date: string;
+  filmExpiry?: string;
   frameCount?: number;
   filmId: string;
   filmOverride?: FilmOverride;
@@ -137,7 +138,7 @@ export const useRollStore = create<RollState>((set, get) => {
           filmId: input.filmId, filmName: input.filmName,
           filmOverride: input.filmOverride,
           cameraId: input.cameraId, cameraName: input.cameraName,
-          format: input.format, date: input.date,
+          format: input.format, date: input.date, filmExpiry: input.filmExpiry,
           frameCount: input.frameCount,
           lab: input.lab?.trim() || undefined, notes: input.notes?.trim() || undefined,
           location: input.location ? { ...input.location } : undefined,

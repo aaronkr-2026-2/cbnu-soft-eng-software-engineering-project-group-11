@@ -11,7 +11,7 @@ const backgroundLabels: Record<ContactSheetBackground, TranslationKey> = {
 };
 const frameLabels: Record<ContactSheetFrameStyle, TranslationKey> = {
   none: 'csNone', 'white-border': 'csWhiteBorder', 'black-border': 'csBlackBorder', 'film-strip': 'csFilmStrip', 'film-strip-dark': 'csFilmStripDark', instant: 'csInstant', 'warm-print': 'csWarmPrint',
-  'color-negative': 'csColorNegative', 'bw-negative': 'csBwNegative', 'medium-format': 'csMediumFormat',
+  'color-negative': 'csColorNegative', 'bw-negative': 'csBwNegative', 'medium-format': 'csMediumFormat', 'classic-sprocket': 'csClassicSprocket',
 };
 export function ContactSheetAppearanceControls({ appearance, disabled, hexValue, onHexChange, onChange }: {
   appearance: ContactSheetAppearance; disabled: boolean; hexValue: string;

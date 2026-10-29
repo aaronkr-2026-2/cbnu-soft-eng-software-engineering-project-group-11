@@ -1,5 +1,5 @@
 export const contactSheetBackgrounds = ['black', 'white', 'cream', 'gray', 'kraft', 'slate', 'darkroom', 'custom'] as const;
-export const contactSheetFrameStyles = ['none', 'white-border', 'black-border', 'warm-print', 'instant', 'film-strip', 'film-strip-dark', 'color-negative', 'bw-negative', 'medium-format'] as const;
+export const contactSheetFrameStyles = ['none', 'white-border', 'black-border', 'warm-print', 'instant', 'film-strip', 'film-strip-dark', 'color-negative', 'bw-negative', 'medium-format', 'classic-sprocket'] as const;
 export type ContactSheetBackground = typeof contactSheetBackgrounds[number];
 export type ContactSheetFrameStyle = typeof contactSheetFrameStyles[number];
 export type ContactSheetAppearance = { background: ContactSheetBackground; customColor: string; frameStyle: ContactSheetFrameStyle };
@@ -10,6 +10,7 @@ export const contactSheetStripStyles: readonly ContactSheetFrameStyle[] = ['film
 // Generic rebate colors only; no manufacturer edge printing is reproduced.
 const rebates: Partial<Record<ContactSheetFrameStyle, { strip: string; number: string }>> = {
   'film-strip': { strip: '#EFECE5', number: '#171717' },
+  'classic-sprocket': { strip: '#090909', number: '#D6BC83' },
   'film-strip-dark': { strip: '#141414', number: '#D58B45' },
   'color-negative': { strip: '#B4632F', number: '#F6C453' },
   'bw-negative': { strip: '#1E1D1B', number: '#E7E2D6' },

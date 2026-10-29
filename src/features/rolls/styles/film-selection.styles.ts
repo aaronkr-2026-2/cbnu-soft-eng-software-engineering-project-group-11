@@ -8,6 +8,8 @@ export const createFilmSelectionStyles = (colors: ThemeColors) => StyleSheet.cre
   title: { color: colors.text, fontSize: typography.size.screenTitle, fontWeight: '600', marginVertical: 20 },
   brand: { color: colors.secondaryText, fontSize: 13, fontWeight: '600', marginTop: 24, marginBottom: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
+  // The cover is a button; its frame sets the size and the image fills it.
+  imageFill: { width: '100%', height: '100%' },
   image: { width: 76, aspectRatio: 1.23, borderRadius: radii.sm, overflow: 'hidden', backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   text: { color: colors.text, fontSize: 17, fontWeight: '600' },
   secondary: { color: colors.secondaryText, fontSize: 13, marginTop: 5 },

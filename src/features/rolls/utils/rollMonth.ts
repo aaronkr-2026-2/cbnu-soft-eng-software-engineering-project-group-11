@@ -22,3 +22,9 @@ export function parseRollMonth(value: string): { month: number; year: number } {
 export function toRollMonth(year: number, month: number): string {
   return year + '-' + String(month).padStart(2, '0');
 }
+
+export type FilmExpiryStatus = 'in-date' | 'expired';
+/** Film counts as in date through the end of its expiry month. */
+export function filmExpiryStatus(expiry: string, today = new Date()): FilmExpiryStatus {
+  return expiry < toRollMonth(today.getFullYear(), today.getMonth() + 1) ? 'expired' : 'in-date';
+}

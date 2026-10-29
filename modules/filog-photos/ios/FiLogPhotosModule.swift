@@ -1,3 +1,4 @@
+import CoreImage
 import ExpoModulesCore
 import Photos
 import PhotosUI
@@ -227,6 +228,22 @@ public class FiLogPhotosModule: Module {
       let file = directory.appendingPathComponent(UUID().uuidString + ".jpg")
       try data.write(to: file, options: .atomic)
       return file.absoluteString
+    }
+    // Average color of the bottom band of an image (0...1 fraction of its height); used to tint film info pages.
+    AsyncFunction("averageColor") { (uri: String, band: Double) throws -> String in
+      guard let url = URL(string: uri), url.isFileURL, let image = CIImage(contentsOf: url), band > 0, band <= 1 else {
+        throw NSError(domain: "FiLogPhotos", code: 12, userInfo: [NSLocalizedDescriptionKey: "Image color unavailable"])
+      }
+      // Core Image's origin is bottom-left, so the bottom band starts at minY.
+      let extent = image.extent
+      let region = CGRect(x: extent.minX, y: extent.minY, width: extent.width, height: extent.height * band)
+      guard let filter = CIFilter(name: "CIAreaAverage", parameters: [kCIInputImageKey: image, kCIInputExtentKey: CIVector(cgRect: region)]),
+            let output = filter.outputImage else {
+        throw NSError(domain: "FiLogPhotos", code: 13, userInfo: [NSLocalizedDescriptionKey: "Image color unavailable"])
+      }
+      var pixel = [UInt8](repeating: 0, count: 4)
+      CIContext(options: [.workingColorSpace: NSNull()]).render(output, toBitmap: &pixel, rowBytes: 4, bounds: CGRect(x: 0, y: 0, width: 1, height: 1), format: .RGBA8, colorSpace: nil)
+      return String(format: "#%02X%02X%02X", pixel[0], pixel[1], pixel[2])
     }
     AsyncFunction("clearRenders") { () -> Int in
       let directory = FileManager.default.temporaryDirectory.appendingPathComponent("filog-photo-renders", isDirectory: true)

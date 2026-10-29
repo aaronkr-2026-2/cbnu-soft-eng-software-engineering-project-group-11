@@ -3,7 +3,8 @@ import { translations } from '../../../i18n/translations';
 import { File } from 'expo-file-system';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import * as MediaLibrary from 'expo-media-library';
-import { AppState } from 'react-native';
+import { Appearance, AppState } from 'react-native';
+import { resolveColorMode } from '../../../constants/colorMode';
 import type { ApplePhotoReference, PhotoReference } from '../types';
 import { useRollStore } from '../../rolls/store/rollStore';
 import { referenceIdentifier, usableAssetId, usableCloudIdentifier } from '../utils/referenceIdentifier';
@@ -35,7 +36,7 @@ export async function pickPhotoReferences(single: boolean) {
     hint: text.photoPickerDragHint, countOne: text.photoSelected, countMany: text.photosSelected,
     loading: text.openingPhotos, empty: text.noPhotos, denied: text.photosAccessRequired, limited: text.photoAccessLimited,
     access: text.managePhotosAccess, retry: text.photoRetry, photo: text.rollPhoto, imageError: text.photoTemporaryError,
-  }, settings.appearance === 'dark');
+  }, resolveColorMode(settings.appearance, Appearance?.getColorScheme?.()) === 'dark');
 }
 export { usableAssetId, usableCloudIdentifier } from '../utils/referenceIdentifier';
 // Session-only derived renders. A cache hit always verifies current library access first.

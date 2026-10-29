@@ -91,8 +91,9 @@ function FilmFrame({ frame, layout, column, scale, palette, extendStrip, unavail
   const presentation = dimensions ? getContactSheetPhotoTransform(dimensions.width, dimensions.height,
     openingWidth, openingHeight) : null;
   const left = (layout.stripPadding + column * (layout.frameWidth + layout.frameGap)) * scale;
+  const classic = layout.frameStyle === 'classic-sprocket';
   return <>
-    {layout.vertical ? <VerticalRail left={left - 8 * scale} width={layout.frameWidth + 16}
+    {layout.vertical ? <VerticalRail classic={classic} left={left - (classic ? 40 : 8) * scale} width={layout.frameWidth + (classic ? 80 : 16)}
       height={layout.stripHeight + (extendStrip ? layout.stripGap : 0)} scale={scale} palette={palette} /> : null}
     {layout.frameStyle !== 'none' ? <Text allowFontScaling={false} style={{ position: 'absolute', left, top: (layout.photoTop - 30) * scale,
       color: palette.number, fontFamily: filmFont, fontSize: 20 * scale, lineHeight: 24 * scale }}>{frameLabel(frame.number, layout.frameStyle)}</Text> : null}
@@ -113,20 +114,23 @@ function FilmFrame({ frame, layout, column, scale, palette, extendStrip, unavail
 function frameLabel(number: number, style: ContactSheetLayout['frameStyle']) {
   if (style === 'color-negative') return `${number} ▸ ${number}A`;
   if (style === 'medium-format') return `◂ ${number} ▸`;
-  return style === 'film-strip-dark' ? `${number} ▸` : String(number);
+  return style === 'film-strip-dark' || style === 'classic-sprocket' ? `${number} ▸` : String(number);
 }
 
 /** Generic vertical film edges; only frame numbers are printed, never branded edge text. */
-function VerticalRail({ left, width, height, scale, palette }: {
+function VerticalRail({ left, width, height, scale, palette, classic = false }: {
+  classic?: boolean;
   left: number; width: number; height: number; scale: number; palette: ReturnType<typeof contactSheetPalette>;
 }) {
   const holes = Math.max(0, Math.floor((height - 12) / 38));
   return <View pointerEvents="none" style={{ position: 'absolute', left, top: 0, width: width * scale, height: height * scale,
     backgroundColor: palette.strip, borderLeftWidth: scale, borderRightWidth: scale, borderColor: palette.edge }}>
-    {[2, width - 6].map(side => <View key={side} style={{ position: 'absolute', left: side * scale, top: 6 * scale }}>
+    {[classic ? 8 : 2, width - (classic ? 32 : 6)].map(side => <View key={side} style={{ position: 'absolute', left: side * scale, top: 6 * scale }}>
       {Array.from({ length: holes }, (_, i) => <View key={i} style={{ position: 'absolute', top: i * 38 * scale,
-        width: 4 * scale, height: 22 * scale, borderRadius: 3 * scale, backgroundColor: palette.hole }} />)}
+        width: (classic ? 24 : 4) * scale, height: (classic ? 25 : 22) * scale, borderRadius: (classic ? 4 : 3) * scale, backgroundColor: classic ? '#E7E2D6' : palette.hole }} />)}
     </View>)}
     <View style={{ position: 'absolute', right: 2 * scale, top: 8 * scale, width: 2 * scale, height: 14 * scale, backgroundColor: palette.marking }} />
+    {classic ? Array.from({ length: Math.floor(height / 76) }, (_, i) => <Text key={`edge-${i}`} allowFontScaling={false} style={{ position: 'absolute', right: scale, top: (34 + i * 76) * scale,
+      color: palette.number, fontFamily: filmFont, fontSize: 10 * scale, lineHeight: 12 * scale }}>{i % 2 ? 'XX' : '●●'}</Text>) : null}
   </View>;
 }

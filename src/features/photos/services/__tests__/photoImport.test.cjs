@@ -9,9 +9,12 @@ const src = path.resolve(__dirname, '../../../..');
 const seedRoll = { id: 'r1', filmId: 'f1', filmName: 'Film', cameraId: 'c1', cameraName: 'Camera', date: '2026-10', format: '35mm', photos: [] };
 
 // Exercise the real provider, services, resolver, repository and stores. Only native IO is mocked.
+const optedInJournal = () => ({ schema: 1, enabled: true, n: 0, documents: {}, baseline: {}, server: {} });
 function runtime(previous, missingNative = false) {
   const state = previous ?? {
     kv: new Map([['filmer.rolls.v1', JSON.stringify([seedRoll])]]), files: new Map(),
+    // Sync is off on a fresh install; most cloud tests model a user who turned it on in Settings.
+    cloudOptIn: true,
     failUris: new Set(), shortUris: new Set(), documentRoot: 'file:///app/Documents',
     permission: true, selection: { canceled: true }, copyCalls: [], deleted: [], pickerOptions: [],
     yieldCount: 0, failSave: false, writes: [],
@@ -103,7 +106,11 @@ function runtime(previous, missingNative = false) {
       get cache() { return new Directory('file:///app/Cache'); } } },
     'expo-sqlite': { defaultDatabaseDirectory: 'file:///app/Documents/SQLite' },
     'expo-sqlite/kv-store': {
-      getItemSync: key => { if (state.failRead) throw new Error('SQLite unavailable'); return state.kv.get(key) ?? null; },
+      getItemSync: key => {
+        if (state.failRead) throw new Error('SQLite unavailable');
+        if (!state.kv.has(key) && state.cloudOptIn && key.startsWith('filmer.cloud.v1.')) return JSON.stringify(optedInJournal());
+        return state.kv.get(key) ?? null;
+      },
       setItemSync: (key, value) => { if (state.failSave) throw new Error('Disk full'); state.writes.push(key); state.kv.set(key, value); },
     },
     'expo-image-picker': {
@@ -1492,7 +1499,7 @@ function cloudDevice(server, name, previous) {
   const { CloudSyncEngine } = r.load('features/cloud/services/CloudSyncEngine.ts');
   const local = () => ({ rolls: r.store.getState().rolls, films: r.load('features/films/store/filmStore.ts').useFilmStore.getState().films.filter(f => f.isCustom), cameras: r.load('features/cameras/store/cameraStore.ts').useCameraStore.getState().cameras.filter(c => c.isCustom) });
   const io = {
-    read: () => { const raw = r.state.kv.get('cloud-test'); return raw ? JSON.parse(raw) : undefined; },
+    read: () => { const raw = r.state.kv.get('cloud-test'); return raw ? JSON.parse(raw) : r.state.cloudOptIn ? optedInJournal() : undefined; },
     write: value => { if (r.state.failJournal) throw new Error('journal disk full'); r.state.kv.set('cloud-test', JSON.stringify(value)); },
     local,
     apply: value => {
@@ -1530,6 +1537,17 @@ test('Two devices converge on independent field edits without replacing entire l
     assert.equal(device.local().rolls[0].lab, 'From B');
     assert.equal(device.local().rolls.length, 1);
   }
+});
+
+test('Film expiry syncs between devices and clearing it stays cleared', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'a'); const b = cloudDevice(server, 'b');
+  await a.engine.run(); await b.engine.run(); await a.engine.run();
+  a.edit({ filmExpiry: '2027-03' }); a.engine.capture();
+  await a.engine.run(); await b.engine.run();
+  assert.equal(b.local().rolls[0].filmExpiry, '2027-03');
+  b.edit({ filmExpiry: undefined }); b.engine.capture();
+  await b.engine.run(); await a.engine.run();
+  for (const device of [a, b]) assert.equal(device.local().rolls[0].filmExpiry, undefined);
 });
 
 test('Offline edits survive process restart and synchronize when online', async () => {
@@ -1915,6 +1933,20 @@ test('Native account-change notifications recheck account binding and subscripti
     assert.equal(driver.useCloudStore.getState().sync.status, 'metadata-synced');
   } finally { stop(); }
   assert.equal(removed, true);
+});
+
+test('A fresh install keeps iCloud sync off and sends nothing until the user turns it on', async () => {
+  const r = runtime(); r.state.cloudOptIn = false; const server = fakeCloud();
+  r.state.cloudBridge = { ...server.transport('fresh-install'), namespace: 'fresh-install' };
+  const driver = r.load('features/cloud/services/cloudSync.ts');
+  await driver.syncNow();
+  assert.equal(driver.useCloudStore.getState().sync.enabled, false);
+  assert.equal(driver.useCloudStore.getState().sync.status, 'off');
+  assert.equal(server.writes, 0, 'no record leaves the device before opting in');
+  await driver.setCloudEnabled(true);
+  assert.equal(driver.useCloudStore.getState().sync.enabled, true);
+  assert.equal(driver.useCloudStore.getState().sync.status, 'metadata-synced');
+  assert.ok(server.writes > 0, 'turning sync on uploads the local library');
 });
 
 test('An older native CloudKit bridge without events can still sync and stop safely', async () => {

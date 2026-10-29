@@ -11,7 +11,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { rootLayoutStyles } from '../src/components/ui/styles/root-layout.styles';
-import { useTheme } from '../src/constants/theme';
+import { useColorMode, useTheme } from '../src/constants/theme';
 import { useAppStore } from '../src/store/app-store';
 // Anchor direct links to Home while allowing the requested screen to open.
 export const unstable_settings = { initialRouteName: 'index' };
@@ -26,8 +26,10 @@ export default function RootLayout() {
   const catalogArchive = filmArchive.status === 'recovery' ? filmArchive : cameraArchive.status === 'recovery' ? cameraArchive : undefined;
   const colors = useTheme();
   const appearance = useAppStore((state) => state.appearance);
-  useEffect(() => { Appearance.setColorScheme(appearance); }, [appearance]);
-  return <GestureHandlerRootView style={rootLayoutStyles.root}><StatusBar style={appearance === 'dark' ? 'light' : 'dark'} />{archive.status === 'recovery' ? <ArchiveRecoveryScreen /> : catalogArchive ? <ArchiveRecoveryScreen catalog archiveOverride={catalogArchive} onRetry={() => { useFilmStore.getState().retryLoad(); useCameraStore.getState().retryLoad(); }} /> : !ready ? <StartupScreen onReady={finishStartup} /> : <Stack initialRouteName="index" screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+  // Native alerts, sheets and pickers follow the same choice; 'unspecified' hands control back to iOS.
+  useEffect(() => { Appearance.setColorScheme(appearance === 'system' ? 'unspecified' : appearance); }, [appearance]);
+  const mode = useColorMode();
+  return <GestureHandlerRootView style={rootLayoutStyles.root}><StatusBar style={mode === 'dark' ? 'light' : 'dark'} />{archive.status === 'recovery' ? <ArchiveRecoveryScreen /> : catalogArchive ? <ArchiveRecoveryScreen catalog archiveOverride={catalogArchive} onRetry={() => { useFilmStore.getState().retryLoad(); useCameraStore.getState().retryLoad(); }} /> : !ready ? <StartupScreen onReady={finishStartup} /> : <Stack initialRouteName="index" screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
     <Stack.Screen name="index" />
     <Stack.Screen name="settings" />
   </Stack>}{ready && archive.status === 'ready' && !catalogArchive && <CloudRestoreNotice />}</GestureHandlerRootView>;

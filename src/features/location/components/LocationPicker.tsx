@@ -4,8 +4,7 @@ import MapView, { Marker, type Region } from 'react-native-maps';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { IconButton } from '../../../components/ui/IconButton';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
-import { useThemedStyles } from '../../../constants/theme';
-import { useAppStore } from '../../../store/app-store';
+import { useColorMode, useThemedStyles } from '../../../constants/theme';
 import { useTranslation } from '../../../i18n/useTranslation';
 import type { RollLocation } from '../../rolls/types';
 import { isValidLocation, locationLabel, locationService } from '../services/locationService';
@@ -22,7 +21,7 @@ const regionAt = (location: RollLocation): Region => ({ ...location, latitudeDel
 export function LocationPicker(props: Props) {
   const styles = useThemedStyles(createLocationPickerStyles);
   const { t } = useTranslation();
-  const appearance = useAppStore((state) => state.appearance);
+  const mode = useColorMode();
   const initial = isValidLocation(props.location) ? props.location : undefined;
   const [candidate, setCandidate] = useState<RollLocation | undefined>(initial);
   const [resolving, setResolving] = useState(false);
@@ -75,7 +74,7 @@ export function LocationPicker(props: Props) {
       <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.header}><IconButton icon="×" circular accessibilityLabel={t('closeLocation')} onPress={props.onClose} /><Text style={styles.title}>{t(props.mode === 'select' ? 'selectLocation' : 'location')}</Text></View>
         <View style={styles.mapArea}>
-          <MapView ref={map} style={styles.map} initialRegion={initial ? regionAt(initial) : defaultRegion} userInterfaceStyle={appearance} showsUserLocation={false} showsMyLocationButton={false} toolbarEnabled={false}
+          <MapView ref={map} style={styles.map} initialRegion={initial ? regionAt(initial) : defaultRegion} userInterfaceStyle={mode} showsUserLocation={false} showsMyLocationButton={false} toolbarEnabled={false}
             onPanDrag={() => { userMovedMap.current = true; }}
             onTouchStart={() => { userMovedMap.current = true; }}
             onRegionChange={() => setMoving(true)}

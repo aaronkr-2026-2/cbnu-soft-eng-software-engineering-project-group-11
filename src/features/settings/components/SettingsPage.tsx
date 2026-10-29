@@ -5,13 +5,12 @@ import { StatusBar } from 'expo-status-bar';
 import { SymbolView, type SFSymbol } from 'expo-symbols';
 import { useRouter, usePathname, useFocusEffect } from 'expo-router';
 import { BackButton } from '../../../components/ui/BackButton';
-import { useThemedStyles } from '../../../constants/theme';
-import { useAppStore } from '../../../store/app-store';
+import { useColorMode, useThemedStyles } from '../../../constants/theme';
 import { createSettingsStyles } from '../styles/settings.styles';
 
 export function SettingsPage({ title, children }: { title: string; children: ReactNode }) {
   const settingsStyles = useThemedStyles(createSettingsStyles);
-  const appearance = useAppStore(state => state.appearance);
+  const mode = useColorMode();
   const router = useRouter();
   const pathname = usePathname();
   const scroll = useRef<ScrollView>(null);
@@ -20,7 +19,7 @@ export function SettingsPage({ title, children }: { title: string; children: Rea
     return () => cancelAnimationFrame(frame);
   }, []));
   return <SafeAreaView style={settingsStyles.screen}>
-    <StatusBar style={appearance === 'dark' ? 'light' : 'dark'} />
+    <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
     <ScrollView ref={scroll} contentOffset={topOffset} contentInsetAdjustmentBehavior="never" automaticallyAdjustContentInsets={false}>
       <View style={settingsStyles.content}>
       <View style={settingsStyles.header}>

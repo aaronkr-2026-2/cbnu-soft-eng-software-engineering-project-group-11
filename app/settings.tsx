@@ -42,7 +42,7 @@ export default function Settings() {
       <Group title={t('cloudHeading')}>
         <Row icon="☁" symbol="icloud.fill" iconColor="#3478F6" label={t('prefsCloudSync')} value={sync.configured ? undefined : t(cloudLabels[sync.status])}
           trailing={sync.configured ? <Switch accessibilityLabel={t('prefsCloudSync')} accessibilityHint={t('cloudSyncInfo')} value={sync.enabled}
-            trackColor={{ false: colors.border, true: colors.accent }} thumbColor={sync.enabled ? colors.background : colors.text} ios_backgroundColor={colors.border}
+            trackColor={{ false: colors.border, true: colors.success }} thumbColor="#FFFFFF" ios_backgroundColor={colors.border}
             onValueChange={confirmCloud} /> : undefined} />
         <Row icon="▧" symbol="photo.on.rectangle.angled" iconColor="#FF9500" label={t('prefsSyncPhotos')} onPress={() => open('sync-photos')} />
       </Group>
@@ -65,6 +65,6 @@ export default function Settings() {
       </Group>
     </SettingsPage>
     {selector === 'language' ? <SettingsSelectModal title={t('language')} value={settings.language} options={(['vi', 'en', 'ko'] as const).map(value => ({ value, label: languageLabels[value] }))} onSelect={value => select(() => settings.setLanguage(value))} onClose={() => setSelector(null)} /> : null}
-    {selector === 'appearance' ? <SettingsSelectModal title={t('appearance')} value={settings.appearance} options={(['light', 'dark'] as const).map(value => ({ value, label: t(value) }))} onSelect={value => select(() => settings.setAppearance(value))} onClose={() => setSelector(null)} /> : null}
+    {selector === 'appearance' ? <SettingsSelectModal title={t('appearance')} value={settings.appearance} options={(['system', 'light', 'dark'] as const).map(value => ({ value, label: t(value) }))} onSelect={value => select(() => settings.setAppearance(value))} onClose={() => setSelector(null)} /> : null}
   </>;
 }

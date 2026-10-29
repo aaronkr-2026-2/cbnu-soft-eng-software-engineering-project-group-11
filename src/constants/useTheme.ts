@@ -1,9 +1,15 @@
 import { useMemo } from 'react';
+import { useColorScheme } from 'react-native';
 import { useAppStore } from '../store/app-store';
+import { resolveColorMode, type ColorMode } from './colorMode';
 import { colors, darkColors, type ThemeColors } from './colors';
 
+export function useColorMode(): ColorMode {
+  return resolveColorMode(useAppStore((state) => state.appearance), useColorScheme());
+}
+
 export function useTheme(): ThemeColors {
-  return useAppStore((state) => state.appearance) === 'dark' ? darkColors : colors;
+  return useColorMode() === 'dark' ? darkColors : colors;
 }
 
 export function useThemedStyles<T>(factory: (colors: ThemeColors) => T): T {

@@ -26,7 +26,7 @@ export function LocationSearch({ onSelect }: { onSelect: (location: RollLocation
     } catch { if (id === request.current) setStatus('error'); }
   }
   return <View><View style={styles.searchRow}>
-    <TextInput accessibilityLabel={t('searchLocation')} placeholder={t('searchLocation')} placeholderTextColor={colors.secondaryText} value={query} onChangeText={(value) => { request.current++; setQuery(value); setResults([]); setStatus('idle'); }} onSubmitEditing={search} returnKeyType="search" style={styles.input} />
+    <TextInput accessibilityLabel={t('searchLocation')} placeholder={t('searchLocation')} placeholderTextColor={colors.placeholder} value={query} onChangeText={(value) => { request.current++; setQuery(value); setResults([]); setStatus('idle'); }} onSubmitEditing={search} returnKeyType="search" style={styles.input} />
     <Pressable accessibilityRole="button" disabled={status === 'loading' || !query.trim()} style={styles.searchButton} onPress={search}><Text style={styles.text}>{t('searchAction')}</Text></Pressable>
   </View>
     {status !== 'idle' ? <Text accessibilityLiveRegion="polite" style={styles.secondary}>{t(status === 'loading' ? 'locationSearching' : status === 'empty' ? 'noLocations' : 'locationSearchUnavailable')}</Text> : null}

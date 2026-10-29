@@ -20,7 +20,10 @@ export type Roll = {
   cameraId: string;
   cameraName: string;
   format: RollFormat;
+  /** Shooting month (YYYY-MM); older archives may hold a full day. */
   date: string;
+  /** Optional film expiry month (YYYY-MM) printed on the box. */
+  filmExpiry?: string;
   frameCount?: number;
   location?: RollLocation;
   lab?: string;

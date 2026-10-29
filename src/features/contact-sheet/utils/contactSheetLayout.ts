@@ -10,14 +10,15 @@ export function getContactSheetLayout(format: RollFormat, photoCount: number, fr
   const headerHeight = 104;
   const bottomPadding = 80;
   const stripGap = 36;
-  const vertical = frameStyle === 'film-strip-dark';
+  const classicSprocket = frameStyle === 'classic-sprocket';
+  const vertical = frameStyle === 'film-strip-dark' || classicSprocket;
   // Borders stay inside half the frame gap; instant prints keep a visible gap and use the space below for their chin.
   const borderWidth = frameStyle === 'instant' ? 4 : ['white-border', 'black-border', 'warm-print'].includes(frameStyle) ? 6 : 0;
   const chin = frameStyle === 'instant' ? 30 : 0;
   const strip = contactSheetStripStyles.includes(frameStyle);
-  const frameGap = 16;
-  const stripPadding = 18;
-  const frameWidth = Math.floor((contactSheetWidth - padding * 2 - stripPadding * 2 - frameGap * (columns - 1)) / columns);
+  const frameGap = classicSprocket ? 88 : 16;
+  const stripPadding = classicSprocket ? 44 : 18;
+  const frameWidth = Math.floor((contactSheetWidth - padding * 2 - 18 * 2 - 16 * (columns - 1)) / columns);
   const frameHeight = Math.round(frameWidth * 2 / 3);
   // 120 rebates have no sprocket holes.
   const perforated = vertical || (strip && frameStyle !== 'medium-format' && format === '35mm');
@@ -25,7 +26,8 @@ export function getContactSheetLayout(format: RollFormat, photoCount: number, fr
   const stripHeight = photoTop + frameHeight + (format === '35mm' ? 46 : 18);
   const rows = Math.ceil(Math.max(0, photoCount) / columns);
   const height = padding + headerHeight + rows * stripHeight + Math.max(0, rows - 1) * stripGap + bottomPadding;
-  return { width: contactSheetWidth, height, columns, padding, headerHeight, bottomPadding,
+  const width = contactSheetWidth + (classicSprocket ? (44 - 18) * 2 + (88 - 16) * (columns - 1) : 0);
+  return { width, height, columns, padding, headerHeight, bottomPadding,
     stripGap, frameGap, stripPadding, frameWidth, frameHeight, stripHeight, photoTop, perforated, rows, frameStyle, borderWidth, chin, strip, vertical };
 }
 

@@ -55,7 +55,7 @@ export function CatalogChoices({ label, children }: { label: string; children: R
 
 export function CatalogFormatField({ value, onChange }: { value: NonNullable<Camera['format']>; onChange: (value: NonNullable<Camera['format']>) => void }) {
   const { t } = useTranslation();
-  return <CatalogChoices label={t('requiredFormat')}>{(['35mm', '120', '110'] as const).map((item) => <SelectionChip key={item} label={item} onPress={() => onChange(item)} selected={value === item} />)}</CatalogChoices>;
+  return <CatalogChoices label={t('requiredFormat')}>{(['35mm', '120', '110'] as const).map((item) => <SelectionChip key={item} label={item === '35mm' ? item : `${item}mm`} onPress={() => onChange(item)} selected={value === item} />)}</CatalogChoices>;
 }
 
 export function CatalogImageField({ label, imageUri, onChange, previewSource, onRemove }: { label: string; imageUri?: string; onChange: (uri: string | undefined) => void; previewSource?: ImageSourcePropType; onRemove?: () => void }) {

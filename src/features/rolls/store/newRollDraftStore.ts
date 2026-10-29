@@ -11,6 +11,7 @@ export type NewRollDraft = {
   cameraId?: string;
   format: RollFormat;
   date: string;
+  filmExpiry?: string;
   frameCount?: number;
   location?: RollLocation;
   lab: string;
@@ -46,7 +47,7 @@ export const useNewRollDraftStore = create<{
   editDraft: null,
   beginEdit: (roll) => set({ editingId: roll.id, editOriginalCover: roll.filmOverride?.imageDocumentPath, editDraft: {
     filmId: roll.filmId, filmOverride: roll.filmOverride ? { ...roll.filmOverride, formats: roll.filmOverride.formats ? [...roll.filmOverride.formats] : undefined } : undefined, cameraId: roll.cameraId, format: roll.format,
-    date: roll.date, frameCount: roll.frameCount, lab: roll.lab ?? '', notes: roll.notes ?? '',
+    date: roll.date, filmExpiry: roll.filmExpiry, frameCount: roll.frameCount, lab: roll.lab ?? '', notes: roll.notes ?? '',
     location: roll.location ? { ...roll.location } : undefined,
   } }),
   updateEdit: (patch) => {

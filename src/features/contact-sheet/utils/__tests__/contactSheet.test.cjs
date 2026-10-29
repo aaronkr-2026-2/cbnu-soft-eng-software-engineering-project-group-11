@@ -246,7 +246,7 @@ test('Preset and custom backgrounds normalize hex and choose contrasting header 
 test('Every frame style has bounded positive geometry and preserve actual photo ordering/counts', () => {
   for (const style of contactSheetFrameStyles) for (const count of [0, 1, 7, 36, 72]) {
     const layout = getContactSheetLayout('35mm', count, style);
-    assert.equal(layout.frameStyle, style); assert.equal(layout.vertical, style === 'film-strip-dark');
+    assert.equal(layout.frameStyle, style); assert.equal(layout.vertical, ['film-strip-dark', 'classic-sprocket'].includes(style));
     assert.ok(layout.frameHeight - layout.borderWidth * 2 > 0);
     const photos = Array.from({ length: count }, (_, i) => ({ id: i, sortOrder: count - i }));
     const ordered = orderedContactPhotos({ photos });
@@ -259,7 +259,7 @@ test('Every frame style has bounded positive geometry and preserve actual photo 
     assert.ok(layout.borderWidth * 2 <= layout.frameGap);
     if (style === 'instant') assert.ok(layout.frameGap - layout.borderWidth * 2 >= 8, 'instant prints stay visibly separate');
     assert.ok(layout.borderWidth + layout.chin <= layout.stripHeight - layout.photoTop - layout.frameHeight + layout.stripGap);
-    assert.equal(layout.perforated, ['film-strip', 'film-strip-dark', 'color-negative', 'bw-negative'].includes(style));
+    assert.equal(layout.perforated, ['film-strip', 'film-strip-dark', 'classic-sprocket', 'color-negative', 'bw-negative'].includes(style));
     assert.equal(layout.strip, ['film-strip', 'color-negative', 'bw-negative', 'medium-format'].includes(style));
   }
 });
@@ -410,12 +410,13 @@ test('Preview changes invalidate cached exports and capture the same appearance 
 });
 
 
-test('All frame styles preserve sheet dimensions and the photo aperture for every format', () => {
+test('Frame styles preserve photo pixels; broad sprocket rails reserve extra sheet width', () => {
   for (const format of ['35mm', '120', '110', 'other']) for (const count of [1, 7, 36, 72]) {
     const baseline = getContactSheetLayout(format, count);
     for (const style of contactSheetFrameStyles) {
       const layout = getContactSheetLayout(format, count, style);
       for (const key of ['width', 'height', 'frameWidth', 'frameHeight', 'photoTop', 'stripHeight', 'frameGap', 'stripPadding']) {
+        if (style === 'classic-sprocket' && ['width', 'frameGap', 'stripPadding'].includes(key)) continue;
         assert.equal(layout[key], baseline[key], key + ' changed for ' + style);
       }
     }
@@ -423,7 +424,7 @@ test('All frame styles preserve sheet dimensions and the photo aperture for ever
   const aperture = style => appearanceCanvas({ ...defaultContactSheetAppearance, frameStyle: style }, 600).nodes
     .filter(node => node.type === 'View' && node.props.style?.overflow === 'hidden')
     .map(node => [node.props.style.width, node.props.style.height]);
-  for (const style of contactSheetFrameStyles) assert.deepEqual(aperture(style), aperture('none'));
+  for (const style of contactSheetFrameStyles.filter(style => style !== 'classic-sprocket')) assert.deepEqual(aperture(style), aperture('none'));
 });
 
 test('RGB slider clamps touches and preserves the other two color channels', () => {
@@ -516,4 +517,19 @@ test('Film rebate styles print their own strip colors and real-film edge numberi
   }
   assert.equal(getContactSheetLayout('35mm', 6, 'medium-format').perforated, false, '120 rebates have no sprocket holes');
   assert.equal(getContactSheetLayout('120', 6, 'color-negative').perforated, false, 'only 35mm film is perforated');
+});
+
+ test('Classic sprocket retains photo aperture and reserves room for broad vertical rails', () => {
+  const plain = getContactSheetLayout('35mm', 7, 'none');
+  const classic = getContactSheetLayout('35mm', 7, 'classic-sprocket');
+  assert.equal(classic.frameWidth, plain.frameWidth);
+  assert.equal(classic.frameHeight, plain.frameHeight);
+  assert.equal(classic.height, plain.height);
+  assert.ok(classic.frameGap >= 80);
+  assert.ok(classic.width > plain.width);
+  assert.equal(classic.vertical, true);
+  assert.equal(appearanceAPI.validateContactSheetAppearance({ frameStyle: 'classic-sprocket' }).frameStyle, 'classic-sprocket');
+  const canvas = appearanceCanvas({ ...defaultContactSheetAppearance, frameStyle: 'classic-sprocket' }, 600);
+  assert.ok(canvas.nodes.some(node => node.props.style?.backgroundColor === '#090909'));
+  assert.ok(canvas.nodes.some(node => node.props.style?.backgroundColor === '#E7E2D6'));
 });

@@ -10,7 +10,7 @@ export const createLocationPickerStyles = (colors: ThemeColors) => StyleSheet.cr
   icon: { color: colors.text, fontSize: 26 },
   panel: { padding: spacing.md, backgroundColor: colors.background, gap: 10, borderTopLeftRadius: radii.lg, borderTopRightRadius: radii.lg },
   searchRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  input: { flex: 1, minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: colors.border, padding: 12, color: colors.text },
+  input: { flex: 1, minHeight: 48, borderRadius: radii.md, borderWidth: 1, borderColor: colors.fieldBorder, backgroundColor: colors.field, padding: 12, color: colors.text },
   searchButton: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 8 },
   text: { color: colors.text, fontSize: 15 }, secondary: { color: colors.secondaryText, fontSize: 13 },
   result: { paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },

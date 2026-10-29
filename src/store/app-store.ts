@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import Storage from 'expo-sqlite/kv-store';
 
 export type AppLanguage = 'vi' | 'en' | 'ko';
-export type AppearanceMode = 'light' | 'dark';
+/** 'system' follows the iPhone's Light/Dark setting. */
+export type AppearanceMode = 'system' | 'light' | 'dark';
 export type PhotoQuality = 'optimized' | 'high';
 export type PhotoImportMode = 'reference' | 'copy';
 export type HomeTourStep = 'newRoll' | 'browse' | 'stats' | 'settings';
@@ -19,7 +20,7 @@ type AppState = AppSettings & {
   resetGuides: () => void;
 };
 const storageKey = 'filmer.settings.v1';
-const defaults: AppSettings = { photoQuality: 'optimized', language: 'en', appearance: 'light', importMode: 'reference', photoGuideSeen: false, homeTourSeen: [] };
+const defaults: AppSettings = { photoQuality: 'optimized', language: 'en', appearance: 'system', importMode: 'reference', photoGuideSeen: false, homeTourSeen: [] };
 
 function readSettings(): AppSettings {
   try {
@@ -30,7 +31,8 @@ function readSettings(): AppSettings {
     return {
       photoQuality: 'photoQuality' in saved && saved.photoQuality === 'high' ? 'high' : 'optimized',
       language: 'language' in saved && (saved.language === 'vi' || saved.language === 'ko') ? saved.language : 'en',
-      appearance: 'appearance' in saved && saved.appearance === 'dark' ? 'dark' : 'light',
+      // Saved light/dark choices are kept; anything else follows the system.
+      appearance: 'appearance' in saved && (saved.appearance === 'dark' || saved.appearance === 'light') ? saved.appearance : 'system',
       importMode: 'importMode' in saved && saved.importMode === 'copy' ? 'copy' : 'reference',
       photoGuideSeen: 'photoGuideSeen' in saved && saved.photoGuideSeen === true,
       homeTourSeen: 'homeTourSeen' in saved && Array.isArray(saved.homeTourSeen) ? homeTourSteps.filter(step => (saved.homeTourSeen as unknown[]).includes(step)) : [],

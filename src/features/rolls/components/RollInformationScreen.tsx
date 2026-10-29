@@ -12,7 +12,8 @@ import { Screen } from '../../../components/ui/Screen';
 import { BackButton } from '../../../components/ui/BackButton';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 import { MonthYearPicker } from '../../../components/ui/MonthYearPicker';
-import { useThemedStyles } from '../../../constants/theme';
+import { SymbolView } from 'expo-symbols';
+import { useTheme, useThemedStyles } from '../../../constants/theme';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { useFilmStore } from '../../films/store/filmStore';
 import { useCameraStore } from '../../cameras/store/cameraStore';
@@ -21,7 +22,7 @@ import { useRollStore } from '../store/rollStore';
 import { createRollFormStyles } from '../styles/roll-form.styles';
 import { SettingsSelectModal } from '../../settings/components/SettingsSelectModal';
 import { RollTextEditor } from './RollTextEditor';
-import { formatRollMonth } from '../utils/rollMonth';
+import { filmExpiryStatus, formatRollMonth, toRollMonth } from '../utils/rollMonth';
 
 export function RollInformationScreen({ editingId }: { editingId?: string }) {
   const styles = useThemedStyles(createRollFormStyles);
@@ -36,7 +37,7 @@ export function RollInformationScreen({ editingId }: { editingId?: string }) {
   const film = useFilmStore((state) => resolveRollFilm(state.films, draft));
   const camera = useCameraStore((state) => state.cameras.find((item) => item.id === draft.cameraId) ?? (editingId ? undefined : state.cameras[0]));
   const createRoll = useRollStore((state) => state.createRoll);
-  const [editor, setEditor] = useState<'film' | 'frameCount' | 'format' | 'date' | 'lab' | 'location' | 'notes' | null>(null);
+  const [editor, setEditor] = useState<'film' | 'frameCount' | 'format' | 'date' | 'filmExpiry' | 'lab' | 'location' | 'notes' | null>(null);
   const [error, setError] = useState(false);
   const [creating, setCreating] = useState(false);
   const [leaving, setLeaving] = useState<'save' | 'cancel' | null>(null);
@@ -66,7 +67,8 @@ export function RollInformationScreen({ editingId }: { editingId?: string }) {
     if (!draft.filmId || !(camera?.id ?? original?.cameraId) || !filmName || !cameraName || !isValidRollDraft(draft)) { setError(true); return; }
     setCreating(true); setSaveFailed(false);
     try {
-    const input = { ...draft, filmId: draft.filmId, filmName, cameraId: camera?.id ?? original!.cameraId, cameraName, lab: draft.lab.trim() || undefined, notes: draft.notes.trim() || undefined };
+    const now = new Date();
+    const input = { ...draft, date: editingId ? draft.date : toRollMonth(now.getFullYear(), now.getMonth() + 1), filmId: draft.filmId, filmName, cameraId: camera?.id ?? original!.cameraId, cameraName, lab: draft.lab.trim() || undefined, notes: draft.notes.trim() || undefined };
     if (editingId) {
       updateRoll(editingId, input);
       setLeaving('save');
@@ -90,29 +92,40 @@ export function RollInformationScreen({ editingId }: { editingId?: string }) {
     </View>
     <Text style={styles.heading}>{t('basicInfo')}</Text><View style={styles.group}>
       <Row label={t('camera')} value={cameraName ?? '—'} onPress={() => router.push({ pathname: '/cameras', params: editingId ? { edit: editingId } : { select: '1' } })} />
-      <Row label={t('format')} value={draft.format} onPress={() => setEditor('format')} />
+      <Row label={t('format')} value={draft.format === '120' || draft.format === '110' ? `${draft.format}mm` : draft.format} onPress={() => setEditor('format')} />
       <Row label={t('frameCount')} value={draft.frameCount === undefined ? '—' : String(draft.frameCount)} onPress={() => setEditor('frameCount')} />
     </View>
     <Text style={styles.heading}>{t('rollSection')}</Text><View style={styles.group}>
-      <Row label={t('date')} value={formatRollMonth(draft.date, language)} onPress={() => setEditor('date')} />
+      {editingId ? <Row label={t('shotIn')} value={formatRollMonth(draft.date, language)} onPress={() => setEditor('date')} /> : null}
+      <Row label={t('filmExpiry')} value={draft.filmExpiry ? `${formatRollMonth(draft.filmExpiry, language)} · ${t(filmExpiryStatus(draft.filmExpiry) === 'expired' ? 'outDate' : 'inDate')}` : '—'} onPress={() => setEditor('filmExpiry')}
+        onClear={draft.filmExpiry ? () => update({ filmExpiry: undefined }) : undefined} clearLabel={t('removeExpiry')} />
       <Row label={t('lab')} value={draft.lab || '—'} onPress={() => setEditor('lab')} />
-      <Row label={t('location')} value={draft.location ? locationLabel(draft.location) : '—'} onPress={() => setEditor('location')} />
+      <Row label={t('location')} value={draft.location ? locationLabel(draft.location) : '—'} onPress={() => setEditor('location')}
+        onClear={draft.location ? () => update({ location: undefined }) : undefined} clearLabel={t('removeLocation')} />
       <Row label={t('notes')} value={draft.notes || '—'} onPress={() => setEditor('notes')} />
     </View>
-    {draft.location ? <Pressable accessibilityRole="button" style={styles.cancel} onPress={() => update({ location: undefined })}><Text style={styles.secondary}>{t('removeLocation')}</Text></Pressable> : null}
     {saveFailed ? <Text accessibilityRole="alert" style={styles.error}>{t('rollSaveError')}</Text> : null}
     {error ? <Text style={styles.error}>{t('invalidRoll')}</Text> : null}
     <View style={styles.action}><PrimaryButton disabled={creating || (!!editingId && !dirty)} label={t(editingId ? 'saveChanges' : 'createRoll')} onPress={submit} /></View>
   </ScrollView>
     {editor === 'film' && film ? <FilmForm mode="edit" initialValues={film} visible onClose={() => setEditor(null)} onSubmit={filmOverride => update({ filmOverride })} /> : null}
-    {editor === 'frameCount' ? <RollTextEditor title={t('frameCount')} numeric value={draft.frameCount === undefined ? '' : String(draft.frameCount)} onClose={() => setEditor(null)} onSave={value => update({ frameCount: value ? Number(value) : undefined })} /> : null}
-    {editor === 'format' ? <SettingsSelectModal title={t('format')} options={(['35mm', '120', '110'] as const).map((value) => ({ value, label: value }))} value={draft.format} onClose={() => setEditor(null)} onSelect={(format) => { update({ format }); setEditor(null); }} /> : null}
+    {editor === 'frameCount' ? <SettingsSelectModal title={t('frameCount')} options={['12', '24', '36'].map(value => ({ value, label: `${value} exp` }))} value={String(draft.frameCount ?? '')} onClose={() => setEditor(null)} onSelect={value => { update({ frameCount: Number(value) }); setEditor(null); }} /> : null}
+    {editor === 'format' ? <SettingsSelectModal title={t('format')} options={(['35mm', '120', '110'] as const).map((value) => ({ value, label: value === '35mm' ? value : `${value}mm` }))} value={draft.format} onClose={() => setEditor(null)} onSelect={(format) => { update({ format }); setEditor(null); }} /> : null}
     {editor === 'lab' || editor === 'notes' ? <RollTextEditor key={editor} title={t(editor)} value={draft[editor]} multiline={editor === 'notes'} onClose={() => setEditor(null)} onSave={(value) => update({ [editor]: value })} /> : null}
     {editor === 'location' ? <LocationPicker mode="select" location={draft.location} onClose={() => setEditor(null)} onConfirm={(location) => { update({ location }); setEditor(null); }} /> : null}
     <MonthYearPicker visible={editor === 'date'} value={draft.date} onCancel={() => setEditor(null)} onConfirm={(date) => { update({ date }); setEditor(null); }} />
+    {/* Expiry starts from the shooting month when empty; most boxes are dated a year or two ahead. */}
+    <MonthYearPicker visible={editor === 'filmExpiry'} value={draft.filmExpiry ?? draft.date.slice(0, 7)} onCancel={() => setEditor(null)} onConfirm={(filmExpiry) => { update({ filmExpiry }); setEditor(null); }} />
   </Screen>;
 }
-function Row({ label, value, onPress }: { label: string; value: string; onPress: () => void }) {
+/** A settings-style row; optional values show an inline clear button in place of the chevron. */
+function Row({ label, value, onPress, onClear, clearLabel }: { label: string; value: string; onPress: () => void; onClear?: () => void; clearLabel?: string }) {
   const styles = useThemedStyles(createRollFormStyles);
-  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityValue={{ text: value }} onPress={onPress} style={styles.row}><Text style={styles.label}>{label}</Text><Text numberOfLines={1} style={styles.value}>{value}</Text><Text style={styles.secondary}>›</Text></Pressable>;
+  const colors = useTheme();
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityValue={{ text: value }} onPress={onPress} style={styles.row}>
+    <Text style={styles.label}>{label}</Text><Text numberOfLines={1} style={styles.value}>{value}</Text>
+    {onClear ? <Pressable accessibilityRole="button" accessibilityLabel={clearLabel} hitSlop={10} onPress={onClear} style={styles.clear}>
+      <SymbolView name="xmark.circle.fill" size={18} tintColor={colors.secondaryText} fallback={<Text style={styles.secondary}>✕</Text>} />
+    </Pressable> : <Text style={styles.secondary}>›</Text>}
+  </Pressable>;
 }

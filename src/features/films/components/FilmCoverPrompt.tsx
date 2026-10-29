@@ -32,7 +32,7 @@ export function FilmCoverPrompt({ formats, ...fields }: Props) {
     <Text style={styles.note}>{t('filmPromptHelp')}</Text>
     {formats.length > 1 && <>
       <Text style={styles.note}>{t('filmPromptFormat')}</Text>
-      <View style={styles.choices}>{formats.map(value => <SelectionChip key={value} label={value === 'other' ? t('other') : value} selected={format === value} onPress={() => setChosenFormat(value)} />)}</View>
+      <View style={styles.choices}>{formats.map(value => <SelectionChip key={value} label={value === 'other' ? t('other') : value === '35mm' ? value : `${value}mm`} selected={format === value} onPress={() => setChosenFormat(value)} />)}</View>
     </>}
     <Pressable accessibilityRole="button" accessibilityState={{ disabled: !prompt || copying, busy: copying }} disabled={!prompt || copying} onPress={() => { void copy(); }} style={({ pressed }) => [styles.button, (pressed || !prompt || copying) && styles.dimmed]}>
       <Text style={styles.buttonText}>{t('filmPromptCopy')}</Text>

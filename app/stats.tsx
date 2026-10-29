@@ -10,13 +10,12 @@ import { useRollStore } from '../src/features/rolls/store/rollStore';
 import { createRollBrowseContext } from '../src/features/rolls/utils/rollBrowse';
 import { activityYears, computeRollStats, rollShare, type StatCount } from '../src/features/rolls/utils/rollStats';
 import { createRollStatsStyles } from '../src/features/rolls/styles/roll-stats.styles';
-import { useThemedStyles } from '../src/constants/theme';
-import { useAppStore } from '../src/store/app-store';
+import { useColorMode, useThemedStyles } from '../src/constants/theme';
 import { useTranslation } from '../src/i18n/useTranslation';
 
 export default function Stats() {
   const styles = useThemedStyles(createRollStatsStyles);
-  const appearance = useAppStore(state => state.appearance);
+  const mode = useColorMode();
   const router = useRouter();
   const { t, language } = useTranslation();
   const rolls = useRollStore((state) => state.rolls);
@@ -42,7 +41,7 @@ export default function Stats() {
   }
 
   return <SafeAreaView style={styles.screen}>
-    <StatusBar style={appearance === 'dark' ? 'light' : 'dark'} />
+    <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <BackButton onPress={handleClose} />

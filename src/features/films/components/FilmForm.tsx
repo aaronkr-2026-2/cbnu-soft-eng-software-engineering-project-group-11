@@ -66,9 +66,9 @@ export function FilmForm({ mode, initialValues, visible, onClose, onSubmit }: {
     <CatalogField label={fieldLabel(t('brand'))} value={brand} onChangeText={setBrand} placeholder="" />
     <CatalogField label={fieldLabel(t('filmName'))} value={name} onChangeText={setName} placeholder="" />
     <CatalogField label={fieldLabel(t('requiredIso'))} value={iso} onChangeText={setIso} placeholder="" keyboardType="number-pad" />
-    <CatalogChoices label={fieldLabel(t('requiredFormat'))}>{(['35mm', '120', '110', 'other'] as const).map(value => <SelectionChip key={value} label={value === 'other' ? t('other') : value} selected={formats.includes(value)} onPress={() => setFormats(previous => previous.includes(value) ? previous.filter(item => item !== value) : [...previous, value])} />)}</CatalogChoices>
+    <CatalogChoices label={fieldLabel(t('requiredFormat'))}>{(['35mm', '120', '110', 'other'] as const).map(value => <SelectionChip key={value} label={value === 'other' ? t('other') : value === '35mm' ? value : `${value}mm`} selected={formats.includes(value)} onPress={() => setFormats(previous => previous.includes(value) ? previous.filter(item => item !== value) : [...previous, value])} />)}</CatalogChoices>
     <CatalogChoices label={fieldLabel(t('filmType'))}>{(['color', 'black-and-white', 'slide', 'cinema'] as const).map(value => <SelectionChip key={value} label={t(value)} selected={type === value} onPress={() => setType(value)} />)}</CatalogChoices>
-    <CatalogField label={t('filmProcess')} value={process} onChangeText={setProcess} placeholder="" />
+    {mode === 'edit' ? <CatalogField label={t('filmProcess')} value={process} onChangeText={setProcess} placeholder="" /> : null}
     <CatalogImageField label={t('filmImage')} imageUri={imageUri} previewSource={imageKey ? FILM_ASSETS[imageKey] : undefined}
       onChange={uri => { setImageUri(uri); setImageKey(null); }} onRemove={() => { setImageUri(undefined); setImageKey(null); }} />
     <FilmCoverPrompt brand={brand} name={name} iso={iso} formats={formats} type={type} process={process} />
