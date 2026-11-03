@@ -1,0 +1,23 @@
+[
+  {
+    "id": "yes-star-400",
+    "brand": "Yes!Star",
+    "name": "400",
+    "iso": 400,
+    "format": "35mm",
+    "batch": "batch-27",
+    "promptFile": "yes-star-400.prompt.txt",
+    "status": "generated-needs-review",
+    "approvedForApp": true,
+    "imageFile": "yes-star-400.png",
+    "width": 1391,
+    "height": 1131,
+    "bytes": 2302208,
+    "aspectRatio": 1.2298850574712643,
+    "exactTargetSize": false,
+    "tool": "built-in imagegen",
+    "sha256": "748cf699216e8411d7840ffd1fb5e493fcf51b414522f443fa86b669ce6b4859",
+    "appliedToApp": true,
+    "packagingFidelityVerified": false
+  }
+]

@@ -1,0 +1,324 @@
+{
+  "method": "Local Apple Vision OCR; heuristic token checks only, not packaging verification",
+  "recognizedImages": 261,
+  "flaggedImages": 39,
+  "note": "Stylized typography can cause false positives. Flags require visual review and are not confirmed image errors.",
+  "items": [
+    {
+      "id": "fujifilm-sensia-200",
+      "missingTokens": [
+        "sensia",
+        "200"
+      ],
+      "isoFound": false,
+      "text": "pi FUJIFILM | senska | COLOR REVERSAL FILM | FOR PROFESSIONALS"
+    },
+    {
+      "id": "ilford-delta-400",
+      "missingTokens": [
+        "delta"
+      ],
+      "isoFound": true,
+      "text": "ILFORD | TEL | 400 | PROFESSIONAL | BLACK & WHITE FILM"
+    },
+    {
+      "id": "ilford-delta-3200",
+      "missingTokens": [
+        "delta"
+      ],
+      "isoFound": true,
+      "text": "ILFORD | 3200 | PROFESSIONAL | BLACK & WHITE FILM | 35mm"
+    },
+    {
+      "id": "kodak-ultramax-400",
+      "missingTokens": [
+        "ultramax"
+      ],
+      "isoFound": true,
+      "text": "Kodak | UltraMaх | COLOR NEGATIVE FILM | 400 | 35mm | C-41"
+    },
+    {
+      "id": "kodak-t-max-400",
+      "missingTokens": [
+        "max"
+      ],
+      "isoFound": true,
+      "text": "kodak | TMAХ400 | BLACK & WHITE NEGATIVE FILM | 400 тмAx | 35mm"
+    },
+    {
+      "id": "fujifilm-eterna-400t",
+      "missingTokens": [
+        "eterna"
+      ],
+      "isoFound": true,
+      "text": "FUJIFILM | MOTION PICTURE FILM | EERNA | 400T2593 | 8583 | COLOR NEGATIVE FILM | 35mm | | CINEMA FILM | ECN-2"
+    },
+    {
+      "id": "lomography-color-negative-800",
+      "missingTokens": [
+        "negative"
+      ],
+      "isoFound": true,
+      "text": "lomogrophy | COLOR | 800 | 35mm C-41"
+    },
+    {
+      "id": "fujifilm-super-g-plus-800",
+      "missingTokens": [
+        "plus"
+      ],
+      "isoFound": true,
+      "text": "FUJIFILM | SUPER G | HuWS | 800 | 35mm | COLOR | PRINT FILM"
+    },
+    {
+      "id": "kodak-kodacolor-200",
+      "missingTokens": [
+        "kodacolor"
+      ],
+      "isoFound": true,
+      "text": "Kodak | Kodaco or | COLOR NEGATIVE FILM | 200 | 35 mm"
+    },
+    {
+      "id": "kodak-t-max-p3200",
+      "missingTokens": [
+        "max"
+      ],
+      "isoFound": true,
+      "text": "Kodak | T-MAХ | P3200 | BLACK & WHITE NEGATIVE FILM | 35 mm | FILM | 3200"
+    },
+    {
+      "id": "lomography-orca-100",
+      "missingTokens": [
+        "orca"
+      ],
+      "isoFound": true,
+      "text": "lamography | DRCA100 | BLACK & WHITE | FILM | 110"
+    },
+    {
+      "id": "lomography-tiger-200",
+      "missingTokens": [
+        "200"
+      ],
+      "isoFound": false,
+      "text": "lomogrophy | COLOR | TIGER | 110 | NEGATI | NEGATIVE | FILM | C-41"
+    },
+    {
+      "id": "reflx-lab-diablo-100",
+      "missingTokens": [
+        "diablo"
+      ],
+      "isoFound": true,
+      "text": "Reflx Lab | 100 | 35mm I | COLOR NEGATIVE FILM | 1 C-41"
+    },
+    {
+      "id": "reflx-lab-pan-200",
+      "missingTokens": [
+        "pan"
+      ],
+      "isoFound": true,
+      "text": "Reflx Lab® | 200 | BLACK & WHITE FILM | 120 | B&W PROCESS"
+    },
+    {
+      "id": "konica-gx-100",
+      "missingTokens": [
+        "100"
+      ],
+      "isoFound": false,
+      "text": "Konica | G | COLOR PRINT FILM | 35mm | C-41"
+    },
+    {
+      "id": "agfa-apx-100",
+      "missingTokens": [
+        "apx"
+      ],
+      "isoFound": true,
+      "text": "AGFA | Agfa | 100 | PROFESSIONAL | 35mm"
+    },
+    {
+      "id": "agfa-apx-400",
+      "missingTokens": [
+        "apx"
+      ],
+      "isoFound": true,
+      "text": "AGFA | Agfa | АРХ | 400 | PROFESSIONAL | BLACK & WHITE FILM | 35mm"
+    },
+    {
+      "id": "rollei-retro-80s",
+      "missingTokens": [
+        "retro"
+      ],
+      "isoFound": true,
+      "text": "Rollei | PETRO80S | 80 | BLACK & WHITE | NEGATIVE FILM | 35mm"
+    },
+    {
+      "id": "kodak-ektacolor-pro-400",
+      "missingTokens": [
+        "ektacolor"
+      ],
+      "isoFound": true,
+      "text": "Kodak | Extacolor Pro® | 400 | 35mm | COLOR | NEGATIVE FILM"
+    },
+    {
+      "id": "kodak-gold-100",
+      "missingTokens": [
+        "gold"
+      ],
+      "isoFound": true,
+      "text": "Коdаk | Gola | COLOR NEGATIVE FILM | 35mm | 100"
+    },
+    {
+      "id": "kodak-gold-400",
+      "missingTokens": [
+        "gold"
+      ],
+      "isoFound": true,
+      "text": "Kodak | 35mm | 400 | Gola | COLOR NEGATIVE FILM C-41"
+    },
+    {
+      "id": "rollei-rpx-100",
+      "missingTokens": [
+        "rpx"
+      ],
+      "isoFound": true,
+      "text": "Rollei | PPX100 | BLACK & WHITE NEGATIVE FILM | 35 mm"
+    },
+    {
+      "id": "rollei-rpx-400",
+      "missingTokens": [
+        "rpx"
+      ],
+      "isoFound": true,
+      "text": "Rollei | RPY 400 | BLACK & WHITE | NEGATIVE FILM | 35 mm"
+    },
+    {
+      "id": "kodak-gold-200",
+      "missingTokens": [
+        "gold"
+      ],
+      "isoFound": true,
+      "text": "kodak | GolO 200 | COLOR NEGATIVE FILM | 35mm | FILM | 200"
+    },
+    {
+      "id": "ilford-fp4-plus",
+      "missingTokens": [
+        "plus"
+      ],
+      "isoFound": true,
+      "text": "FP4 | 125 | BLACK & WHITE FILM"
+    },
+    {
+      "id": "ilford-pan-f-plus",
+      "missingTokens": [
+        "plus"
+      ],
+      "isoFound": true,
+      "text": "LFORD | PAN F | EOLST | 50 | BLACK & WHITE FILM | 35mm"
+    },
+    {
+      "id": "ilford-sfx-200",
+      "missingTokens": [
+        "sfx",
+        "200"
+      ],
+      "isoFound": false,
+      "text": "AFORL | SEX | •{0>0 | BLACK & WHITE FILM"
+    },
+    {
+      "id": "ilford-xp2-super",
+      "missingTokens": [
+        "super"
+      ],
+      "isoFound": true,
+      "text": "ILFORD® | →saDcF | 400 | BLACK & WHITE FILM | C-41"
+    },
+    {
+      "id": "ilford-pan-100",
+      "missingTokens": [
+        "pan"
+      ],
+      "isoFound": true,
+      "text": "ILFORD | 100 | BLACK & WHITE FILM | 35mm"
+    },
+    {
+      "id": "ilford-pan-400",
+      "missingTokens": [
+        "pan"
+      ],
+      "isoFound": true,
+      "text": "LFORI | 400 | BLACK & WHITE FILM"
+    },
+    {
+      "id": "foma-fomapan-400",
+      "missingTokens": [
+        "action"
+      ],
+      "isoFound": true,
+      "text": "Poma | B&W | FOMAPAN | 400 Actian | 35 mm | BLACK AND WHITE NEGATIVE FILM"
+    },
+    {
+      "id": "fujifilm-velvia-100f",
+      "missingTokens": [
+        "velvia"
+      ],
+      "isoFound": true,
+      "text": "FUJ.FILM | Professional | vevtn | 100 - | COLOR REVERSAL FILM"
+    },
+    {
+      "id": "fujifilm-velvia-100",
+      "missingTokens": [
+        "velvia"
+      ],
+      "isoFound": true,
+      "text": "tg FUJIFILM | Professional | VOVEN | 100 | COLOR REVERSAL FILM | 35mm"
+    },
+    {
+      "id": "kodak-exr-500t-5296",
+      "missingTokens": [
+        "exr"
+      ],
+      "isoFound": true,
+      "text": "Kodak | PXR 500T | COLOR NEGATIVE FILM | 5296 | MOTION PICTURE FILM | ECN-2 | 500 | ISO"
+    },
+    {
+      "id": "agfa-optima-100",
+      "missingTokens": [
+        "optima",
+        "100"
+      ],
+      "isoFound": false,
+      "text": "AGFA | Agfa | OРIIMIA | COLOR NEGATIVE FILM | 35 mm | C-41"
+    },
+    {
+      "id": "agfa-portrait-xps-160",
+      "missingTokens": [
+        "portrait"
+      ],
+      "isoFound": true,
+      "text": "AGFA | Agfa | PORTRAT | XPS 160 | COLOR NEGATIVE FILM | 35mm"
+    },
+    {
+      "id": "arista-edu-ultra-100",
+      "missingTokens": [
+        "100"
+      ],
+      "isoFound": false,
+      "text": "ARISTA | EDU | ULTRA | 0 0 | BLACK & WHITE FILM | 35mm | ®"
+    },
+    {
+      "id": "ultrafine-extreme-100",
+      "missingTokens": [
+        "extreme"
+      ],
+      "isoFound": true,
+      "text": "dltrafine | BLACK & WHITE FILM | TrenE | 100 | 35mm"
+    },
+    {
+      "id": "ultrafine-extreme-400",
+      "missingTokens": [
+        "extreme",
+        "400"
+      ],
+      "isoFound": false,
+      "text": "Ultrafine | • trane | BLACK & WHITE | FILM | 35mm"
+    }
+  ]
+}

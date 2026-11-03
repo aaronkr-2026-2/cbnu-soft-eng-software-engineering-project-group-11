@@ -1,0 +1,17 @@
+{
+  "correctedCovers": 13,
+  "reflxLab": 11,
+  "yesStar": 2,
+  "otherRuntimeCoversUnchanged": 248,
+  "runtimeDimensions": [
+    492,
+    400
+  ],
+  "runtimeHashMatches": 261,
+  "exportedHashMatches": 261,
+  "testsPassed": 251,
+  "typecheck": "passed",
+  "lint": "passed",
+  "iosExport": "passed",
+  "referenceVisualInspection": "13 final images inspected; packaging fidelity remains approximate"
+}
