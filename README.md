@@ -17,7 +17,7 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
   <img src="docs/images/app-store/08-film-library.png" width="200" alt="Film stock library">
 </p>
 
-**Current beta: version 1.0.0 (build 4)** — see [What's new](#whats-new-in-build-4).
+**Current beta: version 1.0.0 (build 5)** — see [What's new](#whats-new-in-build-5).
 
 ## Features
 
@@ -25,7 +25,7 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 - Film stock, camera, format (35mm / 120 / 110), frame count, shooting month, lab and notes
 - Film expiry month with an automatic **In date** / **Outdate** badge, plus the date each roll was created
 - A spec card on every roll, and a compact header that stays pinned while you browse its photos
-- A built-in library of 269 film stocks with package covers, plus your own films and cameras
+- A built-in library of 269 film stocks with simple generated covers, plus your own films and cameras
 - Tap any film cover for its introduction page: type, format, ISO, process, production status and a short description, tinted to the cover's colors
 - Custom covers are cropped to a fixed ratio; an optional "copy prompt" helps you create one with ChatGPT (nothing is sent automatically)
 
@@ -48,7 +48,12 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 - English, Tiếng Việt and 한국어 · Light, Dark or **System** appearance with a warm, high-contrast palette (WCAG AA) · VoiceOver labels
 - Free, with no ads or subscriptions. Optional tips to support development are planned for a later update.
 
-## What's new in build 4
+## What's new in build 5
+
+- **Film covers** — the built-in library now uses simple covers showing each film's name, ISO and process, colored by film type.
+- **iCloud Sync** — frames upload before their roll, and a restore no longer stops at "Some frames have not reached iCloud yet"; it restores what is in iCloud and adds later frames when they arrive.
+
+### Build 4
 
 - Tips are switched off for the first App Store release; they return in 1.0.1.
 
