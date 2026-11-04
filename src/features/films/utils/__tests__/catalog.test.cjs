@@ -147,16 +147,6 @@ test('Every catalog image resolves to a local per-brand PNG and preserved source
  }
 });
 
-test('Bundled covers stay flat generic cards rather than manufacturer artwork', () => {
- for (const name of ['filmAssets.ts','additionalFilmAssets.ts']) {
-  const source=fs.readFileSync(path.resolve(__dirname,'../../data',name),'utf8');
-  for (const [,id,file] of source.matchAll(/'([^']+)': require\('([^']+)'\)/g)) {
-   // Flat cards compress below this; detailed package artwork at 492x400 does not.
-   assert.ok(fs.statSync(path.resolve(__dirname,'../../data',file)).size<40000,id);
-  }
- }
-});
-
 test('Film artwork fills the whole frame without cropping or empty margins', () => {
  const filename=path.resolve(__dirname,'../../components/FilmImage.tsx');
  const jsx=(type,props)=>({type,props});

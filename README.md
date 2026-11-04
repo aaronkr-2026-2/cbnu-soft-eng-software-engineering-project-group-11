@@ -25,7 +25,7 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 - Film stock, camera, format (35mm / 120 / 110), frame count, shooting month, lab and notes
 - Film expiry month with an automatic **In date** / **Outdate** badge, plus the date each roll was created
 - A spec card on every roll, and a compact header that stays pinned while you browse its photos
-- A built-in library of 269 film stocks with simple generated covers, plus your own films and cameras
+- A built-in library of 269 film stocks with package covers, plus your own films and cameras
 - Tap any film cover for its introduction page: type, format, ISO, process, production status and a short description, tinted to the cover's colors
 - Custom covers are cropped to a fixed ratio; an optional "copy prompt" helps you create one with ChatGPT (nothing is sent automatically)
 
@@ -50,7 +50,6 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 
 ## What's new in build 5
 
-- **Film covers** — the built-in library now uses simple covers showing each film's name, ISO and process, colored by film type.
 - **iCloud Sync** — frames upload before their roll, and a restore no longer stops at "Some frames have not reached iCloud yet"; it restores what is in iCloud and adds later frames when they arrive.
 
 ### Build 4
