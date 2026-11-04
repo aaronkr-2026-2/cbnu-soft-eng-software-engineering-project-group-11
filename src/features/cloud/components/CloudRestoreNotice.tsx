@@ -1,3 +1,4 @@
+import { usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +13,7 @@ import { ReferenceRepairService } from '../../settings/services/ReferenceRepairS
  * Afterwards, offers the Photos permission that restored frames need on a fresh install. */
 export function CloudRestoreNotice() {
   const { t } = useTranslation();
+  const pathname = usePathname();
   const sync = useCloudStore(state => state.sync);
   const photosUnresolved = useCloudStore(state => state.photosUnresolved);
   const [askPhotos, setAskPhotos] = useState(false);
@@ -31,6 +33,8 @@ export function CloudRestoreNotice() {
       recordReferenceCheck(await ReferenceRepairService.run());
     } catch { /* Settings > Sync Photos still offers access and repair. */ }
   }
+  // The floating card only has room on Home; Settings shows the same status and Retry inline.
+  if (pathname !== '/') return null;
   if (askPhotos && synced) return <SafeAreaView pointerEvents="box-none" edges={['bottom']} style={styles.position}>
     <View style={styles.card}>
       <View style={styles.copy}>
