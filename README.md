@@ -17,7 +17,7 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
   <img src="docs/images/app-store/08-film-library.png" width="200" alt="Film stock library">
 </p>
 
-**Current beta: version 1.0.0 (build 5)** — see [What's new](#whats-new-in-build-5).
+**Current beta: version 1.0.0 (build 6)** — see [What's new](#whats-new-in-build-6).
 
 ## Features
 
@@ -48,7 +48,11 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 - English, Tiếng Việt and 한국어 · Light, Dark or **System** appearance with a warm, high-contrast palette (WCAG AA) · VoiceOver labels
 - Free, with no ads or subscriptions. Optional tips to support development are planned for a later update.
 
-## What's new in build 5
+## What's new in build 6
+
+- **iCloud Sync** — turning sync on after a reinstall works again when FiLog's data was deleted in iOS Settings.
+
+### Build 5
 
 - **iCloud Sync** — frames upload before their roll, and a restore no longer stops at "Some frames have not reached iCloud yet"; it restores what is in iCloud and adds later frames when they arrive.
 

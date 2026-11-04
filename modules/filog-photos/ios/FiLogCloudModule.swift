@@ -93,7 +93,8 @@ public class FiLogCloudModule: Module {
         }
         let db = try self.database()
         do { _ = try await db.recordZone(for: self.zoneID) }
-        catch let error as CKError where error.code == .zoneNotFound {
+        catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
+          // Deleting FiLog's data in iOS Settings reports userDeletedZone; a first sync may start the zone again.
           // Never silently recreate a lost zone after a previously successful session.
           guard token == nil else { throw error }
           _ = try await db.save(CKRecordZone(zoneID: self.zoneID))
