@@ -40,7 +40,8 @@ export class CloudSyncEngine {
     this.state = { configured: false, enabled: this.journal.enabled, status: 'unavailable', pending: this.pending.size, lastSync: this.journal.lastSync };
   }
   get snapshot() { return this.state; }
-  private pendingKeys() { return [...this.pending]; }
+  // Frames are saved before their Roll so an interrupted upload never leaves a Roll listing frames iCloud lacks.
+  private pendingKeys() { return [...this.pending].sort((a, b) => Number(JSON.parse(a)[0] === 'roll') - Number(JSON.parse(b)[0] === 'roll')); }
   private checkPending(key: string) {
     if (canonical(this.journal.documents[key]) !== this.journal.server[key]?.document) this.pending.add(key);
     else this.pending.delete(key);

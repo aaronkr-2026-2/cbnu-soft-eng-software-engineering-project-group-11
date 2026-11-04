@@ -1694,17 +1694,17 @@ test('Restored legacy Copy frames keep identities and show unavailable without c
   assert.ok(a.r.state.files.has(a.r.storage.resolveUri(original)));
 });
 
-test('Invalid cloud data and orphan frames pause restore before replacing a local archive', async () => {
+test('Invalid cloud data pauses restore and orphan frames wait, both without changing a local archive', async () => {
   for (const kind of ['invalid-roll', 'orphan']) {
     const server = fakeCloud(); const a = cloudDevice(server, 'a');
-    const before = JSON.stringify(a.local());
+    const before = a.local();
     const doc = kind === 'orphan'
       ? { schema: 1, kind: 'photo', id: 'p', rollId: 'missing', fields: { provider: { stamp: { n: 1, device: 'z' }, value: 'apple-photos' }, sortOrder: { stamp: { n: 1, device: 'z' }, value: 0 } } }
       : { schema: 1, kind: 'roll', id: 'broken', fields: { date: { stamp: { n: 1, device: 'z' }, value: 'not-a-date' } } };
     server.inject(JSON.stringify([doc.kind, doc.rollId ?? '', doc.id]), JSON.stringify(doc));
-    await assert.rejects(a.engine.run());
-    assert.equal(JSON.stringify(a.local()), before);
-    assert.equal(a.engine.snapshot.lastSync, undefined);
+    if (kind === 'orphan') await a.engine.run();
+    else { await assert.rejects(a.engine.run()); assert.equal(a.engine.snapshot.lastSync, undefined); }
+    assert.deepEqual(a.local(), before);
   }
 });
 
@@ -1846,20 +1846,38 @@ test('Interrupted download pauses restore without committing partial records or 
   assert.equal(resumed.engine.snapshot.status, 'metadata-synced');
 });
 
-test('Roll membership prevents a truncated restore when an upload stops before saving all frames', async () => {
+test('A Roll missing frames in iCloud restores what exists and attaches late frames without blocking', async () => {
   const server = fakeCloud(); const a = cloudDevice(server, 'source');
   a.r.state.legacyCopyFixture = false; a.r.select(2); await a.r.service.addToRoll('r1'); await a.engine.run();
   const key = [...server.records.keys()].find(key => JSON.parse(key)[0] === 'photo');
   const delayed = server.records.get(key); server.records.delete(key);
   const b = cloudDevice(server, 'fresh'); b.r.store.getState().deleteRoll('r1');
-  await assert.rejects(b.engine.run(), /restore incomplete/);
-  assert.equal(b.engine.snapshot.errorKind, 'incomplete');
-  assert.equal(b.engine.snapshot.lastSync, undefined);
-  assert.equal(b.local().rolls.length, 0);
+  await b.engine.run();
+  assert.equal(b.engine.snapshot.status, 'metadata-synced');
+  assert.equal(b.local().rolls[0].photos.length, 1);
   server.inject(key, delayed.document);
   await b.engine.run();
   assert.equal(b.local().rolls[0].photos.length, 2);
   assert.equal(b.engine.snapshot.status, 'metadata-synced');
+});
+
+test('Uploads save frames before their Roll, and a Roll-less frame waits instead of failing restore', async () => {
+  const server = fakeCloud(); const a = cloudDevice(server, 'source');
+  a.r.state.legacyCopyFixture = false; a.r.select(2); await a.r.service.addToRoll('r1');
+  const order = [];
+  const { CloudSyncEngine } = a.r.load('features/cloud/services/CloudSyncEngine.ts');
+  const transport = server.transport('source');
+  const engine = new CloudSyncEngine(a.io, { ...transport, async save(key, ...rest) { order.push(JSON.parse(key)[0]); return transport.save(key, ...rest); } });
+  await engine.run();
+  assert.ok(order.includes('roll') && order.lastIndexOf('photo') < order.indexOf('roll'), order.join(','));
+  const rollKey = [...server.records.keys()].find(key => JSON.parse(key)[0] === 'roll' && JSON.parse(key)[2] === 'r1');
+  const roll = server.records.get(rollKey); server.records.delete(rollKey);
+  const b = cloudDevice(server, 'fresh'); b.r.store.getState().deleteRoll('r1');
+  await b.engine.run();
+  assert.equal(b.local().rolls.some(item => item.id === 'r1'), false);
+  server.inject(rollKey, roll.document);
+  await b.engine.run();
+  assert.equal(b.local().rolls.find(item => item.id === 'r1').photos.length, 2);
 });
 
 test('Empty cloud and unavailable accounts never publish a restored-data claim', async () => {

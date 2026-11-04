@@ -41,13 +41,9 @@ export function projectCloud(documents: Record<string, CloudDocument>, local: Cl
     if (document.deleted) continue;
     const data = materialize(document);
     if (document.kind === 'roll') {
-      // A Roll can arrive before its independently saved frames. Do not publish a truncated restore.
-      if (data.frameIDs !== undefined) {
-        if (!Array.isArray(data.frameIDs) || data.frameIDs.some(id => typeof id !== 'string' || !id.trim()) || new Set(data.frameIDs).size !== data.frameIDs.length) throw new Error('Invalid cloud frame membership');
-        for (const id of data.frameIDs as string[]) {
-          if (!documents[cloudKey({ kind: 'photo', rollId: document.id, id })]) throw Object.assign(new Error('Cloud frames are still pending; restore incomplete'), { kind: 'incomplete' });
-        }
-      }
+      // Frames listed in frameIDs but missing from iCloud (an interrupted upload) attach whenever they arrive;
+      // blocking on them would stall restore forever once the uploading device lost its journal.
+      if (data.frameIDs !== undefined && (!Array.isArray(data.frameIDs) || data.frameIDs.some(id => typeof id !== 'string' || !id.trim()) || new Set(data.frameIDs).size !== data.frameIDs.length)) throw new Error('Invalid cloud frame membership');
       const old = localRolls.get(document.id);
       const roll = { ...remaining(old ?? {}, rollFields), ...pick(data, rollFields), id: document.id, photos: [] } as unknown as Roll;
       // An older cloud record without creation metadata must not erase a known local time.
@@ -67,11 +63,8 @@ export function projectCloud(documents: Record<string, CloudDocument>, local: Cl
   for (const document of Object.values(documents)) {
     if (document.deleted || document.kind !== 'photo') continue;
     const roll = rolls.get(document.rollId!);
-    if (!roll) {
-      const parent = documents[cloudKey({ kind: 'roll', id: document.rollId! })];
-      if (parent?.deleted) continue;
-      throw new Error('Cloud frame has no parent Roll; restore incomplete');
-    }
+    // Frames upload before their Roll; one whose Roll has not arrived (or was deleted) waits for a later pass.
+    if (!roll) continue;
     const source = materialize(document);
     const data = pick(source, photoFields);
     const old = localRolls.get(roll.id)?.photos.find(photo => photo.id === document.id);
