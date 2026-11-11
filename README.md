@@ -19,7 +19,7 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
   <img src="docs/images/app-store/08-film-library.png" width="200" alt="Film stock library">
 </p>
 
-**On the App Store: version 1.0.0.** Next beta: **1.0.1 (build 9)** on TestFlight — see [What's new](#whats-new-in-101-build-9).
+**On the App Store: version 1.0.0.** Next: **1.0.1 (build 10)** — see [What's new](#whats-new-in-101-build-10).
 
 ## Features
 
@@ -48,15 +48,15 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 
 **Built for everyone**
 - English, Tiếng Việt and 한국어 · Light, Dark or **System** appearance with a warm, high-contrast palette (WCAG AA) · VoiceOver labels
-- Free, with no ads or subscriptions. From 1.0.1 an optional one-time **Buy me a coffee** tip ($2.99) supports development; it unlocks nothing.
+- Free, with no ads or subscriptions. An optional **Buy me a coffee** tip ($2.99) is ready but switched off until the Paid Apps Agreement is active; it unlocks nothing.
 
-## What's new in 1.0.1 (build 9)
+## What's new in 1.0.1 (build 10)
 
-- **Support FiLog** — Settings › Support Development offers one optional coffee tip ($2.99).
 - **Frame card contact sheet** — bold edge numbers, rounded frames and a full-bleed background photo you can pick per roll (or none).
 - **Photo size** for contact sheets — 6, 5 (new default) or 4 photos per row.
 - **Cameras** — no preset cameras; add yours, with the ChatGPT prompt now above the image picker and an **Open ChatGPT** button (also for film covers).
 - Saving a contact sheet no longer shifts the preview or buttons.
+- Build 10 switches the coffee tip off again: build 9 was rejected (2.1(b)) because the tip page could not load its product while the Paid Apps Agreement is pending.
 
 ## What's new in build 7
 
