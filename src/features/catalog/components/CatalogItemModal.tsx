@@ -40,7 +40,7 @@ export function CatalogItemModal({ title, actionLabel, visible, onClose, onSubmi
   </Modal>;
 }
 
-export function CatalogField({ label, ...inputProps }: { label: string; value: string; onChangeText: (value: string) => void; placeholder: string; keyboardType?: 'default' | 'number-pad' }) {
+export function CatalogField({ label, ...inputProps }: { label: string; value: string; onChangeText: (value: string) => void; placeholder?: string; keyboardType?: 'default' | 'number-pad' }) {
   const styles = useThemedStyles(createCatalogItemModalStyles);
   const colors = useTheme();
 

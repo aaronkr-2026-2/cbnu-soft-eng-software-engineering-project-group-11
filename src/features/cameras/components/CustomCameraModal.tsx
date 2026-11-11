@@ -33,10 +33,11 @@ export function CustomCameraModal({ onAdded, onClose, visible }: CustomCameraMod
   }
 
   return <CatalogItemModal title={t('addCustomCamera')} actionLabel={t('addCamera')} visible={visible} onClose={close} onSubmit={() => void addCamera()} error={error}>
-    <CatalogField label={t('brand')} value={brand} onChangeText={setBrand} placeholder="Contax" />
-    <CatalogField label={t('model')} value={model} onChangeText={setModel} placeholder="T2" />
+    <CatalogField label={t('brand')} value={brand} onChangeText={setBrand} />
+    <CatalogField label={t('model')} value={model} onChangeText={setModel} />
     <CatalogFormatField value={format} onChange={setFormat} />
-    <CatalogImageField label={t('cameraImage')} imageUri={imageUri} onChange={setImageUri} />
+    {/* Prompt first: copy it, make the image in ChatGPT, then choose it just below. */}
     <CameraCoverPrompt brand={brand} model={model} format={format} />
+    <CatalogImageField label={t('cameraImage')} imageUri={imageUri} onChange={setImageUri} />
   </CatalogItemModal>;
 }

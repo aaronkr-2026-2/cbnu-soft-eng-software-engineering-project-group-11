@@ -1,5 +1,5 @@
 import { useContactSheetPreferences } from '../store/contactSheetPreferences';
-import { contactSheetPalette, normalizeContactSheetHex, type ContactSheetAppearance } from '../utils/contactSheetAppearance';
+import { contactSheetPalette, contactSheetPhotoColumns, normalizeContactSheetHex, type ContactSheetAppearance } from '../utils/contactSheetAppearance';
 import { ContactSheetAppearanceControls } from './ContactSheetAppearanceControls';
 import { resolvePhoto } from '../../photos/services/PhotoReferenceService';
 import { effectiveFilmName } from '../../films/utils/resolveRollFilm';
@@ -28,6 +28,8 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
   const styles = useThemedStyles(createContactSheetStyles);
   const appearance = useContactSheetPreferences(state => state.appearance);
   const updateAppearance = useContactSheetPreferences(state => state.updateAppearance);
+  const savedBackdrop = useContactSheetPreferences(state => state.backdrops[roll.id]);
+  const setBackdrop = useContactSheetPreferences(state => state.setBackdrop);
   const [showAppearance, setShowAppearance] = useState(false);
   const [hexValue, setHexValue] = useState(appearance.customColor);
   const [stage, setStage] = useState({ width: 0, height: 0 });
@@ -40,10 +42,15 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
   const mounted = useRef(true);
   const pending = useRef<PendingRender | null>(null);
   const photos = useMemo(() => orderedContactPhotos(roll), [roll]);
-  const layout = useMemo(() => getContactSheetLayout(roll.format, photos.length, appearance.frameStyle), [roll.format, photos.length, appearance.frameStyle]);
+  const layout = useMemo(() => getContactSheetLayout(roll.format, photos.length, appearance.frameStyle, contactSheetPhotoColumns[appearance.photoSize]),
+    [roll.format, photos.length, appearance.frameStyle, appearance.photoSize]);
+  const edgeLabel = effectiveFilmName(roll);
+  // A removed photo falls back to the first one; null keeps the plain background.
+  const backdropId = savedBackdrop === null ? null : photos.some(photo => photo.id === savedBackdrop) ? savedBackdrop! : photos[0]?.id ?? null;
   const resolved = useResolvedPhotos(photos);
   const rows = useMemo(() => contactSheetRows(photos.map((photo, index) => ({ id: photo.id, uri: resolved.items[index]?.uri, number: index + 1 })), layout.columns), [photos, layout.columns, resolved.items]);
   const [exportAppearance, setExportAppearance] = useState(appearance);
+  const [exportBackdrop, setExportBackdrop] = useState<string | null>(null);
   const [exportRows, setExportRows] = useState<ContactSheetFrame[][]>([]);
   const header = {
     left: isRollMonth(roll.date) ? formatRollMonth(roll.date, language) : '',
@@ -61,6 +68,7 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
         images.push({ id: photo.id, uri: result.uri, number: index + 1 });
       }
       setExportAppearance(appearance);
+      setExportBackdrop(backdropId);
       setExportRows(contactSheetRows(images, layout.columns));
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => { pending.current = null; reject(new Error('Contact sheet images timed out')); }, 30000);
@@ -72,7 +80,7 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
     } finally {
       if (mounted.current) setRenderExport(false);
     }
-  }, [layout, photos, appearance]);
+  }, [layout, photos, appearance, backdropId]);
 
   const ready = useCallback(() => {
     if (!pending.current) return;
@@ -125,6 +133,11 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
     try { updateAppearance(patch); setError(null); }
     catch { setError('csPreferenceError'); }
   }
+  function changeBackdrop(photoId: string | null) {
+    if (busyRef.current) return;
+    try { setBackdrop(roll.id, photoId); setError(null); }
+    catch { setError('csPreferenceError'); }
+  }
   function changeHex(value: string) {
     setHexValue(value);
     const color = normalizeContactSheetHex(value);
@@ -140,19 +153,26 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
         <Text accessibilityRole="header" numberOfLines={1} style={styles.title}>{t('contactSheet')}</Text>
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: showAppearance, disabled: busy }} disabled={busy} onPress={() => setShowAppearance(value => !value)} style={styles.customizeButton}><Text style={styles.optionText}>{t('csCustomize')}</Text></Pressable>
       </View>
+      {/* Status, errors and the saved toast float over the preview so the sheet and buttons never move. */}
+      <View style={styles.stageArea}>
       <View style={[styles.stage, { backgroundColor: contactSheetPalette(appearance).background }]} onLayout={event => {
         const { width, height } = event.nativeEvent.layout;
         setStage(previous => previous.width === width && previous.height === height ? previous : { width, height });
       }}>
-        {previewWidth > 0 ? <ContactSheetCanvas appearance={appearance} layout={layout} rows={rows} header={header} width={previewWidth} unavailableLabel={t('unavailable')} /> : null}
+        {previewWidth > 0 ? <ContactSheetCanvas appearance={appearance} edgeLabel={edgeLabel} backdropId={backdropId} layout={layout} rows={rows} header={header} width={previewWidth} unavailableLabel={t('unavailable')} /> : null}
+      </View>
+      <View pointerEvents="none" style={styles.overlay}>
+        {busy ? <View style={styles.status}><ActivityIndicator color={colors.secondaryText} /><Text accessibilityLiveRegion="polite" style={styles.statusText}>{t('generatingContactSheet')}</Text></View> : null}
+        {error ? <Text accessibilityRole="alert" style={[styles.status, styles.error]}>{t(error)}</Text> : null}
+      </View>
+      {saved > 0 ? <Toast key={saved} message={t('contactSheetSaved')} /> : null}
       </View>
       {showAppearance && <ScrollView style={styles.appearanceScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-        <ContactSheetAppearanceControls appearance={appearance} disabled={busy} hexValue={hexValue} onHexChange={changeHex} onChange={changeAppearance} />
+        <ContactSheetAppearanceControls appearance={appearance} disabled={busy} hexValue={hexValue} onHexChange={changeHex} onChange={changeAppearance}
+          backdrop={{ photos: photos.map((photo, index) => ({ id: photo.id, uri: resolved.items[index]?.uri })), selected: backdropId, onSelect: changeBackdrop }} />
       </ScrollView>}
-      {!showAppearance && invalidHex ? <Text accessibilityRole="alert" style={styles.error}>{t('csHexInvalid')}</Text> : null}
+      {!showAppearance && invalidHex ? <Text accessibilityRole="alert" style={[styles.error, styles.inlineError]}>{t('csHexInvalid')}</Text> : null}
       {photos.length === 0 ? <Text style={styles.statusText}>{t('noPhotos')}</Text> : null}
-      {busy ? <View style={styles.status}><ActivityIndicator color={colors.secondaryText} /><Text accessibilityLiveRegion="polite" style={styles.statusText}>{t('generatingContactSheet')}</Text></View> : null}
-      {error ? <Text accessibilityRole="alert" style={styles.error}>{t(error)}</Text> : null}
       <View style={styles.actions}>
         <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} style={[styles.button, disabled && styles.disabled]} onPress={() => void perform('save')}>
           <Text style={styles.buttonText}>{t('saveImage')}</Text>
@@ -161,9 +181,8 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
           <Text style={[styles.buttonText, styles.secondaryText]}>{t('share')}</Text>
         </Pressable>
       </View>
-      {saved > 0 ? <Toast key={saved} message={t('contactSheetSaved')} /> : null}
       {renderExport ? <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.exportLayer}>
-        <ContactSheetCanvas appearance={exportAppearance} canvasRef={exportView} layout={layout} rows={exportRows} header={header}
+        <ContactSheetCanvas appearance={exportAppearance} edgeLabel={edgeLabel} backdropId={exportBackdrop} canvasRef={exportView} layout={layout} rows={exportRows} header={header}
           width={layout.width / PixelRatio.get()} unavailableLabel={t('unavailable')} onReady={ready} onFailure={failed} />
       </View> : null}
     </KeyboardAvoidingView></SafeAreaView>

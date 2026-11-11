@@ -1,9 +1,13 @@
 export const contactSheetBackgrounds = ['black', 'white', 'cream', 'gray', 'kraft', 'slate', 'darkroom', 'custom'] as const;
-export const contactSheetFrameStyles = ['none', 'white-border', 'black-border', 'warm-print', 'instant', 'film-strip', 'film-strip-dark', 'color-negative', 'bw-negative', 'medium-format', 'classic-sprocket'] as const;
+export const contactSheetFrameStyles = ['none', 'white-border', 'black-border', 'warm-print', 'instant', 'film-strip', 'film-strip-dark', 'color-negative', 'bw-negative', 'medium-format', 'classic-sprocket', 'frame-card'] as const;
+/** Photos per row: larger photos mean fewer columns. */
+export const contactSheetPhotoSizes = ['small', 'medium', 'large'] as const;
+export type ContactSheetPhotoSize = typeof contactSheetPhotoSizes[number];
+export const contactSheetPhotoColumns: Record<ContactSheetPhotoSize, number> = { small: 6, medium: 5, large: 4 };
 export type ContactSheetBackground = typeof contactSheetBackgrounds[number];
 export type ContactSheetFrameStyle = typeof contactSheetFrameStyles[number];
-export type ContactSheetAppearance = { background: ContactSheetBackground; customColor: string; frameStyle: ContactSheetFrameStyle };
-export const defaultContactSheetAppearance: ContactSheetAppearance = { background: 'black', customColor: '#242424', frameStyle: 'film-strip' };
+export type ContactSheetAppearance = { background: ContactSheetBackground; customColor: string; frameStyle: ContactSheetFrameStyle; photoSize: ContactSheetPhotoSize };
+export const defaultContactSheetAppearance: ContactSheetAppearance = { background: 'black', customColor: '#242424', frameStyle: 'film-strip', photoSize: 'medium' };
 export const contactSheetPresetColors = { black: '#000000', white: '#FFFFFF', cream: '#F4EBDD', gray: '#242424', kraft: '#C4A27A', slate: '#2F3B45', darkroom: '#2A0D0D' };
 /** Styles printed as a horizontal film rebate behind each row. */
 export const contactSheetStripStyles: readonly ContactSheetFrameStyle[] = ['film-strip', 'color-negative', 'bw-negative', 'medium-format'];
@@ -26,6 +30,7 @@ export function validateContactSheetAppearance(value: unknown): ContactSheetAppe
     background: contactSheetBackgrounds.includes(item.background as ContactSheetBackground) ? item.background! : defaultContactSheetAppearance.background,
     customColor: typeof item.customColor === 'string' ? normalizeContactSheetHex(item.customColor) ?? defaultContactSheetAppearance.customColor : defaultContactSheetAppearance.customColor,
     frameStyle: contactSheetFrameStyles.includes(item.frameStyle as ContactSheetFrameStyle) ? item.frameStyle! : defaultContactSheetAppearance.frameStyle,
+    photoSize: contactSheetPhotoSizes.includes(item.photoSize as ContactSheetPhotoSize) ? item.photoSize! : defaultContactSheetAppearance.photoSize,
   };
 }
 export function contactSheetBackgroundColor(appearance: ContactSheetAppearance) {

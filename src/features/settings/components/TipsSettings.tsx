@@ -10,9 +10,6 @@ import { SettingsPage } from './SettingsPage';
 
 const tips: Record<TipKind, { symbol: SFSymbol; glyph: string; color: string; name: TranslationKey; detail: TranslationKey }> = {
   coffee: { symbol: 'cup.and.saucer.fill', glyph: '☕', color: '#C7782A', name: 'tipCoffee', detail: 'tipCoffeeBody' },
-  lunch: { symbol: 'takeoutbag.and.cup.and.straw.fill', glyph: '🍱', color: '#E2401F', name: 'tipLunch', detail: 'tipLunchBody' },
-  dinner: { symbol: 'fork.knife', glyph: '🍽', color: '#C4318F', name: 'tipDinner', detail: 'tipDinnerBody' },
-  sponsor: { symbol: 'crown.fill', glyph: '♛', color: '#D99A00', name: 'tipSponsor', detail: 'tipSponsorBody' },
 };
 
 /** Optional tips. Prices come from the App Store; a missing price means that tip cannot be bought right now. */

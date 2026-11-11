@@ -6,10 +6,7 @@ type NativeTips = { products(ids: string[]): Promise<TipProduct[]>; purchase(id:
 
 /** Consumable products configured in App Store Connect (and ios/FiLog/FiLog.storekit for local testing). */
 export const tipIds = {
-  coffee: 'com.manhduong2003.filog.tip.coffee',
-  lunch: 'com.manhduong2003.filog.tip.lunch',
-  dinner: 'com.manhduong2003.filog.tip.dinner',
-  sponsor: 'com.manhduong2003.filog.tip.sponsor',
+  coffee: 'com.manhduong2003.filog.support.coffee',
 } as const;
 export type TipKind = keyof typeof tipIds;
 export const tipKinds = Object.keys(tipIds) as TipKind[];

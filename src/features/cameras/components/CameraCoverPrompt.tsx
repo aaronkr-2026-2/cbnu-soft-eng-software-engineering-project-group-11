@@ -5,6 +5,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import type { Camera } from '../../../types/models';
 import { copyFilmPrompt as copyCoverPrompt } from '../../films/services/FilmPromptClipboard';
 import { buildCameraCoverPrompt } from '../utils/cameraCoverPrompt';
+import { openChatGPT } from '../../films/services/openChatGPT';
 
 type Props = { brand: string; model: string; format: NonNullable<Camera['format']> };
 
@@ -21,7 +22,11 @@ export function CameraCoverPrompt(props: Props) {
     try {
       const copied = await copyCoverPrompt(prompt);
       if (!copied) setExpanded(true);
-      Alert.alert(t(copied ? 'filmPromptCopied' : 'filmPromptManualTitle'), t(copied ? 'cameraPromptNext' : 'filmPromptManualBody'));
+      if (copied) Alert.alert(t('filmPromptCopied'), t('cameraPromptNext'), [
+        { text: t('later'), style: 'cancel' },
+        { text: t('openChatGPT'), onPress: () => { void openChatGPT(); } },
+      ]);
+      else Alert.alert(t('filmPromptManualTitle'), t('filmPromptManualBody'));
     } finally { setCopying(false); }
   }
   return <View style={styles.section}>
@@ -38,7 +43,7 @@ export function CameraCoverPrompt(props: Props) {
   </View>;
 }
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  section: { marginTop: 16, gap: 10 },
+  section: { marginTop: 16, marginBottom: 8, gap: 10 },
   heading: { color: colors.text, fontSize: 14, fontWeight: '600' },
   note: { color: colors.secondaryText, fontSize: 13, lineHeight: 19 },
   button: { minHeight: 46, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: 12, alignItems: 'center', justifyContent: 'center', padding: 12 },

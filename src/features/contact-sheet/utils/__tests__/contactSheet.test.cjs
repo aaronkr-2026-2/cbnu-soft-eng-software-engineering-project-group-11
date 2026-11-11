@@ -272,7 +272,7 @@ test('Contact-sheet preferences persist separately, validate old/corrupt setting
   const store = createStore();
   assert.deepEqual(store.getState().appearance, defaultContactSheetAppearance);
   store.getState().updateAppearance({ background: 'custom', customColor: 'ab89ef', frameStyle: 'film-strip-dark' });
-  assert.deepEqual(createStore().getState().appearance, { background: 'custom', customColor: '#AB89EF', frameStyle: 'film-strip-dark' });
+  assert.deepEqual(createStore().getState().appearance, { background: 'custom', customColor: '#AB89EF', frameStyle: 'film-strip-dark', photoSize: 'medium' });
   assert.equal(kv.get('filmer.rolls.v1'), 'REAL_ARCHIVE_UNTOUCHED');
   assert.equal(kv.get('filmer.settings.v1'), 'OTHER_SETTINGS_UNTOUCHED');
   assert.deepEqual(writes, ['filog.contactSheet.appearance.v1']);
@@ -309,7 +309,7 @@ function appearanceCanvas(appearance, width) {
 }
 
 test('Actual canvas styling and scaled geometry match between preview and exported views for every appearance', () => {
-  const geometry = new Set(['width', 'height', 'left', 'top', 'right', 'bottom', 'fontSize', 'lineHeight', 'paddingHorizontal', 'paddingTop', 'paddingBottom', 'marginBottom', 'gap', 'borderRadius', 'borderWidth', 'borderLeftWidth', 'borderRightWidth']);
+  const geometry = new Set(['width', 'height', 'left', 'top', 'right', 'bottom', 'fontSize', 'lineHeight', 'paddingHorizontal', 'paddingTop', 'paddingBottom', 'marginBottom', 'gap', 'borderRadius', 'borderWidth', 'borderLeftWidth', 'borderRightWidth', 'borderTopWidth', 'borderBottomWidth', 'letterSpacing', 'marginLeft', 'marginRight', 'paddingBottom']);
   for (const frameStyle of contactSheetFrameStyles) for (const background of contactSheetBackgrounds) {
     const appearance = { background, customColor: '#5070A0', frameStyle };
     const preview = appearanceCanvas(appearance, 300), exported = appearanceCanvas(appearance, 800);
@@ -319,8 +319,10 @@ test('Actual canvas styling and scaled geometry match between preview and export
       style: Object.fromEntries(Object.entries(node.props.style ?? {}).filter(([key]) => key !== 'transform').map(([key, value]) =>
         [key, typeof value === 'number' && geometry.has(key) ? Math.round(value / width * 2400 * 1e6) / 1e6 : value])) }));
     assert.deepEqual(normalize(preview.nodes, 300), normalize(exported.nodes, 800));
-    assert.deepEqual(preview.nodes.filter(node => node.type === 'Image').map(node => node.props.source.uri), Array.from({ length: 7 }, (_, i) => `file:///image-${i}.jpg`));
-    assert.equal(preview.nodes.filter(node => node.type === 'Image').length, 7, 'no fake frames in the partial row');
+    // Frame card adds the first photo as a full-bleed backdrop before the frames.
+    const frames = preview.nodes.filter(node => node.type === 'Image').slice(frameStyle === 'frame-card' ? 1 : 0);
+    assert.deepEqual(frames.map(node => node.props.source.uri), Array.from({ length: 7 }, (_, i) => `file:///image-${i}.jpg`));
+    assert.equal(frames.length, 7, 'no fake frames in the partial row');
     if (frameStyle === 'film-strip-dark') {
       assert.ok(preview.nodes.some(node => node.props.style?.backgroundColor === '#141414'));
       assert.ok(preview.nodes.some(node => node.type === 'Text' && node.props.style?.color === '#D58B45'));
@@ -368,7 +370,7 @@ test('Preview changes invalidate cached exports and capture the same appearance 
     '../../../components/ui/BackButton': { BackButton: 'Back' }, '../../../components/ui/Toast': { Toast: 'Toast' },
     '../../photos/hooks/useResolvedPhotos': { useResolvedPhotos: photos => ({ items: photos.map(photo => ({ status: 'ready', uri: photo.uri })) }) },
     '../../photos/services/PhotoReferenceService': { resolvePhoto: async photo => ({ status: 'ready', uri: photo.uri }) },
-    '../store/contactSheetPreferences': { useContactSheetPreferences: selector => selector({ appearance, updateAppearance: patch => { appearance = { ...appearance, ...patch }; } }) },
+    '../store/contactSheetPreferences': { useContactSheetPreferences: selector => selector({ appearance, updateAppearance: patch => { appearance = { ...appearance, ...patch }; }, backdrops: {}, setBackdrop: () => {} }) },
     '../services/ContactSheetExportService': r,
     './ContactSheetCanvas': { ContactSheetCanvas: 'Canvas' }, './ContactSheetAppearanceControls': { ContactSheetAppearanceControls: 'Controls' },
   });
@@ -417,6 +419,7 @@ test('Frame styles preserve photo pixels; broad sprocket rails reserve extra she
       const layout = getContactSheetLayout(format, count, style);
       for (const key of ['width', 'height', 'frameWidth', 'frameHeight', 'photoTop', 'stripHeight', 'frameGap', 'stripPadding']) {
         if (style === 'classic-sprocket' && ['width', 'frameGap', 'stripPadding'].includes(key)) continue;
+        if (style === 'frame-card') continue; // Own geometry, covered by its dedicated test.
         assert.equal(layout[key], baseline[key], key + ' changed for ' + style);
       }
     }
@@ -424,7 +427,7 @@ test('Frame styles preserve photo pixels; broad sprocket rails reserve extra she
   const aperture = style => appearanceCanvas({ ...defaultContactSheetAppearance, frameStyle: style }, 600).nodes
     .filter(node => node.type === 'View' && node.props.style?.overflow === 'hidden')
     .map(node => [node.props.style.width, node.props.style.height]);
-  for (const style of contactSheetFrameStyles.filter(style => style !== 'classic-sprocket')) assert.deepEqual(aperture(style), aperture('none'));
+  for (const style of contactSheetFrameStyles.filter(style => !['classic-sprocket', 'frame-card'].includes(style))) assert.deepEqual(aperture(style), aperture('none'));
 });
 
 test('RGB slider clamps touches and preserves the other two color channels', () => {
@@ -532,4 +535,92 @@ test('Film rebate styles print their own strip colors and real-film edge numberi
   const canvas = appearanceCanvas({ ...defaultContactSheetAppearance, frameStyle: 'classic-sprocket' }, 600);
   assert.ok(canvas.nodes.some(node => node.props.style?.backgroundColor === '#090909'));
   assert.ok(canvas.nodes.some(node => node.props.style?.backgroundColor === '#E7E2D6'));
+});
+
+test('Photo size sets columns; larger photos fill the same sheet width', () => {
+  const { contactSheetPhotoColumns, validateContactSheetAppearance } = appearanceAPI;
+  assert.deepEqual(contactSheetPhotoColumns, { small: 6, medium: 5, large: 4 });
+  assert.equal(validateContactSheetAppearance({}).photoSize, 'medium');
+  assert.equal(validateContactSheetAppearance({ photoSize: 'huge' }).photoSize, 'medium');
+  assert.equal(validateContactSheetAppearance({ photoSize: 'large' }).photoSize, 'large');
+  const widths = [6, 5, 4].map(columns => getContactSheetLayout('35mm', 12, 'film-strip', columns));
+  assert.ok(widths[0].frameWidth < widths[1].frameWidth && widths[1].frameWidth < widths[2].frameWidth);
+  for (const layout of widths) {
+    assert.equal(layout.width, 2400);
+    assert.equal(layout.rows, Math.ceil(12 / layout.columns));
+    assert.ok(layout.stripPadding * 2 + layout.frameWidth * layout.columns + layout.frameGap * (layout.columns - 1) <= layout.width - layout.padding * 2);
+  }
+  assert.throws(() => getContactSheetLayout('35mm', 1, 'film-strip', 0), /Invalid/);
+});
+
+test('Frame card prints the film name, rounded photos and a tinted full-bleed backdrop', () => {
+  for (const columns of [4, 5, 6]) {
+    const layout = getContactSheetLayout('35mm', 9, 'frame-card', columns);
+    assert.equal(layout.card, true); assert.equal(layout.width, 2400); assert.equal(layout.stripGap, 0);
+    assert.equal(layout.perforated, false); assert.equal(layout.strip, false);
+    assert.ok(layout.stripPadding * 2 + layout.frameWidth * columns + layout.frameGap * (columns - 1) <= layout.width - layout.padding * 2);
+  }
+  const jsx = (type, props) => ({ type, props });
+  const { ContactSheetCanvas } = load('components/ContactSheetCanvas.tsx', {
+    react: { useEffect: () => {}, useRef: value => ({ current: value }), useState: value => [value === null ? { width: 2000, height: 3000 } : value, () => {}] },
+    'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
+    'react-native': { Image: 'Image', Text: 'Text', View: 'View', Platform: { OS: 'ios' } },
+  });
+  const layout = getContactSheetLayout('35mm', 5, 'frame-card', 4);
+  const rows = contactSheetRows(Array.from({ length: 5 }, (_, i) => ({ id: String(i), uri: `file:///image-${i}.jpg`, number: i + 1 })), 4);
+  const tree = ContactSheetCanvas({ appearance: { ...defaultContactSheetAppearance, frameStyle: 'frame-card', background: 'darkroom' }, layout, rows,
+    header: { left: '', center: '', right: '' }, width: 600, edgeLabel: 'Kodak Gold 200', unavailableLabel: 'Unavailable' });
+  const nodes = [];
+  (function visit(node) {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node)) return node.forEach(visit);
+    if (typeof node.type === 'function') return visit(node.type(node.props));
+    nodes.push(node); visit(node.props?.children);
+  })(tree);
+  const texts = nodes.filter(node => node.type === 'Text').map(node => node.props.children);
+  assert.ok(texts.includes('KODAK GOLD 200 FRAME'));
+  const images = nodes.filter(node => node.type === 'Image');
+  assert.equal(images[0].props.source.uri, 'file:///image-0.jpg', 'first photo is the backdrop');
+  assert.ok(nodes.some(node => node.props.style?.backgroundColor === '#2A0D0D' && node.props.style?.opacity === 0.55), 'background tints the backdrop');
+  assert.ok(nodes.some(node => node.props.style?.backgroundColor === '#161616' && node.props.style?.borderRadius > 0), 'rounded dark panel');
+  assert.equal(nodes.filter(node => node.props.style?.overflow === 'hidden' && node.props.style?.borderRadius > 0 && node.props.style?.backgroundColor === '#000000').length, 5);
+});
+
+test('Frame card backdrop is chosen per roll, persists separately and can be turned off', () => {
+  const kv = new Map(); const storage = { getItemSync: key => kv.get(key) ?? null, setItemSync: (key, value) => kv.set(key, value) };
+  const createStore = () => load('store/contactSheetPreferences.ts', { 'expo-sqlite/kv-store': storage }).useContactSheetPreferences;
+  const store = createStore();
+  assert.deepEqual(store.getState().backdrops, {});
+  store.getState().setBackdrop('roll-a', 'photo-3'); store.getState().setBackdrop('roll-b', null);
+  assert.deepEqual(createStore().getState().backdrops, { 'roll-a': 'photo-3', 'roll-b': null });
+  assert.equal(kv.has('filog.contactSheet.appearance.v1'), false, 'appearance key untouched');
+  kv.set('filog.contactSheet.backdrops.v1', '{"x": 5, "y": "ok"}');
+  assert.deepEqual(createStore().getState().backdrops, { y: 'ok' });
+  kv.set('filog.contactSheet.backdrops.v1', 'garbage');
+  assert.deepEqual(createStore().getState().backdrops, {});
+
+  const jsx = (type, props) => ({ type, props });
+  const { ContactSheetCanvas } = load('components/ContactSheetCanvas.tsx', {
+    react: { useEffect: () => {}, useRef: value => ({ current: value }), useState: value => [value === null ? { width: 3000, height: 2000 } : value, () => {}] },
+    'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
+    'react-native': { Image: 'Image', Text: 'Text', View: 'View', Platform: { OS: 'ios' } },
+  });
+  const layout = getContactSheetLayout('35mm', 5, 'frame-card', 4);
+  const rows = contactSheetRows(Array.from({ length: 5 }, (_, i) => ({ id: 'p' + i, uri: `file:///image-${i}.jpg`, number: i + 1 })), 4);
+  const images = backdropId => {
+    const nodes = [];
+    (function visit(node) {
+      if (!node || typeof node !== 'object') return;
+      if (Array.isArray(node)) return node.forEach(visit);
+      if (typeof node.type === 'function') return visit(node.type(node.props));
+      if (node.type === 'Image') nodes.push(node.props.source.uri);
+      visit(node.props?.children);
+    })(ContactSheetCanvas({ appearance: { ...defaultContactSheetAppearance, frameStyle: 'frame-card' }, layout, rows, backdropId,
+      header: { left: '', center: '', right: '' }, width: 600, unavailableLabel: 'Unavailable' }));
+    return nodes;
+  };
+  assert.equal(images(undefined)[0], 'file:///image-0.jpg');
+  assert.equal(images('p4')[0], 'file:///image-4.jpg');
+  assert.equal(images('missing')[0], 'file:///image-0.jpg');
+  assert.equal(images(null).length, 5, 'no backdrop image, only the five frames');
 });

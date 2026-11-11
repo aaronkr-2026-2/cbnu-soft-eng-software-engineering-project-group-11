@@ -2,6 +2,8 @@
 
 **A logbook for film photographers.**
 
+**[Download on the App Store](https://apps.apple.com/app/filog/id6827538749)** · iPhone, iOS 16.4 or later · Free
+
 FiLog keeps the story behind every roll — film stock, camera, place and date — together with your scans, organized on your iPhone. No account, no ads, no tracking: your data stays on your device and in your own iCloud.
 
 <p align="center">
@@ -17,7 +19,7 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
   <img src="docs/images/app-store/08-film-library.png" width="200" alt="Film stock library">
 </p>
 
-**Current beta: version 1.0.0 (build 7)** — see [What's new](#whats-new-in-build-7).
+**On the App Store: version 1.0.0.** Next beta: **1.0.1 (build 9)** on TestFlight — see [What's new](#whats-new-in-101-build-9).
 
 ## Features
 
@@ -25,9 +27,9 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 - Film stock, camera, format (35mm / 120 / 110), frame count, shooting month, lab and notes
 - Film expiry month with an automatic **In date** / **Outdate** badge, plus the date each roll was created
 - A spec card on every roll, and a compact header that stays pinned while you browse its photos
-- A built-in library of 269 film stocks with package covers, plus your own films and cameras
+- A built-in library of 269 film stocks with package covers, plus your own films and cameras (add your own camera — there are no preset cameras)
 - Tap any film cover for its introduction page: type, format, ISO, process, production status and a short description, tinted to the cover's colors
-- Custom covers are cropped to a fixed ratio; an optional "copy prompt" helps you create one with ChatGPT (nothing is sent automatically)
+- Custom covers are cropped to a fixed ratio; an optional "copy prompt" plus **Open ChatGPT** helps you create one for a film or camera (nothing is sent automatically)
 
 **Your scans, linked — not copied**
 - Add scans straight from Apple Photos; originals stay where they are and use no extra storage
@@ -39,14 +41,22 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 
 **Relive and share**
 - Statistics: your most-shot films, cameras and places, and activity over time
-- Export a classic contact sheet with 11 frame styles (film strips, color and B&W negatives, 120 edges, instant prints…) and 8 backgrounds, including any custom color
+- Export a classic contact sheet with 12 frame styles (film strips, color and B&W negatives, 120 edges, instant prints, Frame card…), 8 backgrounds including any custom color, and small, medium or large photos
 
 **iCloud sync and restore**
 - Turn on **Settings → iCloud Sync** (off by default) and your rolls sync through your private iCloud (CloudKit); they are restored automatically after reinstalling or on a new iPhone
 
 **Built for everyone**
 - English, Tiếng Việt and 한국어 · Light, Dark or **System** appearance with a warm, high-contrast palette (WCAG AA) · VoiceOver labels
-- Free, with no ads or subscriptions. Optional tips to support development are planned for a later update.
+- Free, with no ads or subscriptions. From 1.0.1 an optional one-time **Buy me a coffee** tip ($2.99) supports development; it unlocks nothing.
+
+## What's new in 1.0.1 (build 9)
+
+- **Support FiLog** — Settings › Support Development offers one optional coffee tip ($2.99).
+- **Frame card contact sheet** — bold edge numbers, rounded frames and a full-bleed background photo you can pick per roll (or none).
+- **Photo size** for contact sheets — 6, 5 (new default) or 4 photos per row.
+- **Cameras** — no preset cameras; add yours, with the ChatGPT prompt now above the image picker and an **Open ChatGPT** button (also for film covers).
+- Saving a contact sheet no longer shifts the preview or buttons.
 
 ## What's new in build 7
 
@@ -74,9 +84,13 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 - **iCloud Sync** is off on a fresh install; turn it on in Settings to back up and restore.
 - Fixes: photos no longer flash all at once when the Photos library changes; tidier back and options buttons.
 
-## Install the beta with TestFlight
+## Install
 
-FiLog is in beta on Apple TestFlight. You need an **iPhone running iOS 16.4 or later**.
+**App Store:** [apps.apple.com/app/filog/id6827538749](https://apps.apple.com/app/filog/id6827538749)
+
+### Beta with TestFlight
+
+New versions are tested on Apple TestFlight first. You need an **iPhone running iOS 16.4 or later**.
 
 1. Install **[TestFlight](https://apps.apple.com/app/testflight/id899247664)** from the App Store and sign in with your Apple ID.
 2. Join the beta:

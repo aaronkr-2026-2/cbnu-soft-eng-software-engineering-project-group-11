@@ -154,16 +154,13 @@ Answer **None / No** to every content question → **4+**. No user-generated con
 
 ## In-app purchases (consumable) — planned for 1.0.1
 
-**Not part of 1.0.0.** The tip screen is switched off with `tipsEnabled` in `src/constants/features.ts`, so do not attach these products to the 1.0.0 submission. Once the **Paid Applications Agreement** is Active (Business › Agreements, bank and tax forms), set `tipsEnabled = true`, upload a new build, and submit the products together with version 1.0.1.
+**Not part of 1.0.0.** The tip screen is switched off with `tipsEnabled` in `src/constants/features.ts`, so do not attach these products to the 1.0.0 submission. Once the **Paid Applications Agreement** is Active (Business › Agreements, bank and tax forms), set `tipsEnabled = true`, upload a new build, and submit the product together with version 1.0.1.
 
 | Product ID | Reference name | Price | Display name (EN) | Description (EN) |
 | --- | --- | --- | --- | --- |
-| `com.manhduong2003.filog.tip.coffee` | Coffee Tip | $0.99 | Buy me a coffee | A small token of appreciation |
-| `com.manhduong2003.filog.tip.lunch` | Lunch Tip | $3.99 | Buy me lunch | Help fuel development |
-| `com.manhduong2003.filog.tip.dinner` | Dinner Tip | $9.99 | Buy me dinner | Generous support for the app |
-| `com.manhduong2003.filog.tip.sponsor` | Sponsor Tip | $29.99 | Sponsor development | A major contribution to FiLog |
+| `com.manhduong2003.filog.support.coffee` | Coffee Tip | $2.99 | Buy me a coffee | A small token of appreciation |
 
-Each needs a review screenshot of Settings › Support Development (one screenshot can be reused).
+It needs a review screenshot of Settings › Support Development.
 
 ## App Review information
 
@@ -195,4 +192,4 @@ Use only photos you own; avoid showing third-party brand logos prominently beyon
 
 ### Notes for the reviewer — 1.0.1 (when tips are enabled)
 
-> Settings › Support Development offers four consumable tips. They are voluntary and unlock no features or content; the app is fully functional for free.
+> Settings › Support Development offers one consumable tip ("Buy me a coffee"). It is voluntary and unlocks no features or content; the app is fully functional for free.

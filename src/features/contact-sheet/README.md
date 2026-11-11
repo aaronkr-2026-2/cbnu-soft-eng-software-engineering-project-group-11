@@ -92,7 +92,7 @@ the actual canvas into browser DOM with synthetic SVG fixtures. It is visual lay
 not a native export screenshot or a production UI dependency. Native iPhone capture, keyboard
 interaction, Save/Share results and large-library memory behavior still require device checks.
 
-Current limits: fixed six columns, fixed border thickness, fixed vertical orientation for Dark,
+Current limits: fixed border thickness, fixed vertical orientation for Dark,
 RGB sliders plus hex (no alpha/color wheel), and preferences apply globally to future sheets rather than
 to individual rolls. Future enhancements could add border width, strip orientation/group sizing,
 reusable appearance presets without changing roll metadata.
@@ -122,3 +122,14 @@ unperforated dark strip with `◂ 12 ▸` arrows. Only 35mm rolls show sprocket 
 4-unit border that keeps a visible gap between prints plus a 30-unit chin below the photo. The light
 Film strip draws an overlay edge so it stays visible on light paper. All of these keep the shared
 sheet size and photo aperture, so preview and export still match.
+
+Photo size and Frame card (2026-11-11): **Photo size** sets photos per row: Small 6, Medium 5
+(default) or Large 4. The sheet stays 2400px wide, so fewer columns mean larger photos; saved
+preferences without a size load as Medium. **Frame card** draws one rounded dark panel over the
+roll's first photo, shown full-bleed and tinted with the chosen background (Darkroom red gives a
+red glow). Each frame has rounded corners, sprocket holes above and below, `<FILM NAME> FRAME` plus
+the number on the top edge, and the number with an arrow on the bottom edge. The film name is the
+roll's own; no manufacturer logo is drawn. Capture also waits for the backdrop photo to load.
+With Frame card selected, **Background photo** lists the roll's photos plus **No photo**. The choice
+is saved per roll under `filog.contactSheet.backdrops.v1` (photo id, or `null` for none); a removed
+photo falls back to the first one. The export snapshots the choice and a change invalidates the cached PNG.

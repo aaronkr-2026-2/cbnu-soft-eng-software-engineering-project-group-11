@@ -6,6 +6,7 @@ import { SelectionChip } from '../../../components/ui/SelectionChip';
 import type { Film } from '../../../types/models';
 import { buildFilmCoverPrompt } from '../utils/filmCoverPrompt';
 import { copyFilmPrompt } from '../services/FilmPromptClipboard';
+import { openChatGPT } from '../services/openChatGPT';
 
 type Props = { brand: string; name: string; iso: string; formats: Film['format'][]; type: Film['type']; process: string };
 
@@ -24,7 +25,11 @@ export function FilmCoverPrompt({ formats, ...fields }: Props) {
     try {
       const copied = await copyFilmPrompt(prompt);
       if (!copied) setExpanded(true);
-      Alert.alert(t(copied ? 'filmPromptCopied' : 'filmPromptManualTitle'), t(copied ? 'filmPromptNext' : 'filmPromptManualBody'));
+      if (copied) Alert.alert(t('filmPromptCopied'), t('filmPromptNext'), [
+        { text: t('later'), style: 'cancel' },
+        { text: t('openChatGPT'), onPress: () => { void openChatGPT(); } },
+      ]);
+      else Alert.alert(t('filmPromptManualTitle'), t('filmPromptManualBody'));
     } finally { setCopying(false); }
   }
   return <View style={styles.section}>
