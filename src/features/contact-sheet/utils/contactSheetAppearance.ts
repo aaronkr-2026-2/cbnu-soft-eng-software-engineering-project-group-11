@@ -4,10 +4,14 @@ export const contactSheetFrameStyles = ['none', 'white-border', 'black-border', 
 export const contactSheetPhotoSizes = ['small', 'medium', 'large'] as const;
 export type ContactSheetPhotoSize = typeof contactSheetPhotoSizes[number];
 export const contactSheetPhotoColumns: Record<ContactSheetPhotoSize, number> = { small: 6, medium: 5, large: 4 };
+/** Social-media canvas ratios (width:height). The sheet itself is never cropped or resized; it is centred on the canvas. */
+export const contactSheetExportRatios = ['original', 'story', 'post', 'square', 'landscape', 'wide'] as const;
+export type ContactSheetExportRatio = typeof contactSheetExportRatios[number];
+export const contactSheetRatioValues: Record<Exclude<ContactSheetExportRatio, 'original'>, number> = { story: 9 / 16, post: 4 / 5, square: 1, landscape: 3 / 2, wide: 16 / 9 };
 export type ContactSheetBackground = typeof contactSheetBackgrounds[number];
 export type ContactSheetFrameStyle = typeof contactSheetFrameStyles[number];
-export type ContactSheetAppearance = { background: ContactSheetBackground; customColor: string; frameStyle: ContactSheetFrameStyle; photoSize: ContactSheetPhotoSize };
-export const defaultContactSheetAppearance: ContactSheetAppearance = { background: 'black', customColor: '#242424', frameStyle: 'film-strip', photoSize: 'medium' };
+export type ContactSheetAppearance = { background: ContactSheetBackground; customColor: string; frameStyle: ContactSheetFrameStyle; photoSize: ContactSheetPhotoSize; exportRatio: ContactSheetExportRatio };
+export const defaultContactSheetAppearance: ContactSheetAppearance = { background: 'black', customColor: '#242424', frameStyle: 'film-strip', photoSize: 'medium', exportRatio: 'original' };
 export const contactSheetPresetColors = { black: '#000000', white: '#FFFFFF', cream: '#F4EBDD', gray: '#242424', kraft: '#C4A27A', slate: '#2F3B45', darkroom: '#2A0D0D' };
 /** Styles printed as a horizontal film rebate behind each row. */
 export const contactSheetStripStyles: readonly ContactSheetFrameStyle[] = ['film-strip', 'color-negative', 'bw-negative', 'medium-format'];
@@ -31,6 +35,7 @@ export function validateContactSheetAppearance(value: unknown): ContactSheetAppe
     customColor: typeof item.customColor === 'string' ? normalizeContactSheetHex(item.customColor) ?? defaultContactSheetAppearance.customColor : defaultContactSheetAppearance.customColor,
     frameStyle: contactSheetFrameStyles.includes(item.frameStyle as ContactSheetFrameStyle) ? item.frameStyle! : defaultContactSheetAppearance.frameStyle,
     photoSize: contactSheetPhotoSizes.includes(item.photoSize as ContactSheetPhotoSize) ? item.photoSize! : defaultContactSheetAppearance.photoSize,
+    exportRatio: contactSheetExportRatios.includes(item.exportRatio as ContactSheetExportRatio) ? item.exportRatio! : defaultContactSheetAppearance.exportRatio,
   };
 }
 export function contactSheetBackgroundColor(appearance: ContactSheetAppearance) {

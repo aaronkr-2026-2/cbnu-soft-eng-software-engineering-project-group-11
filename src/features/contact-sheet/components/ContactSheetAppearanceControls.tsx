@@ -4,7 +4,7 @@ import { useTranslation } from '../../../i18n/useTranslation';
 import type { TranslationKey } from '../../../i18n/translations';
 import { useThemedStyles, useTheme } from '../../../constants/theme';
 import { createContactSheetStyles } from '../styles/contact-sheet.styles';
-import { contactSheetBackgroundColor, contactSheetBackgrounds, contactSheetFrameStyles, contactSheetPhotoSizes, normalizeContactSheetHex, type ContactSheetAppearance, type ContactSheetBackground, type ContactSheetFrameStyle, type ContactSheetPhotoSize } from '../utils/contactSheetAppearance';
+import { contactSheetBackgroundColor, contactSheetBackgrounds, contactSheetExportRatios, contactSheetFrameStyles, contactSheetPhotoSizes, normalizeContactSheetHex, type ContactSheetAppearance, type ContactSheetBackground, type ContactSheetExportRatio, type ContactSheetFrameStyle, type ContactSheetPhotoSize } from '../utils/contactSheetAppearance';
 
 const backgroundLabels: Record<ContactSheetBackground, TranslationKey> = {
   black: 'csBlack', white: 'csWhite', cream: 'csCream', gray: 'csGray', kraft: 'csKraft', slate: 'csSlate', darkroom: 'csDarkroom', custom: 'csCustom',
@@ -14,6 +14,9 @@ const frameLabels: Record<ContactSheetFrameStyle, TranslationKey> = {
   'color-negative': 'csColorNegative', 'bw-negative': 'csBwNegative', 'medium-format': 'csMediumFormat', 'classic-sprocket': 'csClassicSprocket', 'frame-card': 'csFrameCard',
 };
 const sizeLabels: Record<ContactSheetPhotoSize, TranslationKey> = { small: 'csSizeSmall', medium: 'csSizeMedium', large: 'csSizeLarge' };
+const ratioLabels: Record<ContactSheetExportRatio, TranslationKey> = {
+  original: 'csRatioOriginal', story: 'csRatioStory', post: 'csRatioPost', square: 'csRatioSquare', landscape: 'csRatioLandscape', wide: 'csRatioWide',
+};
 export type BackdropChoice = { photos: { id: string; uri?: string }[]; selected: string | null; onSelect: (id: string | null) => void };
 export function ContactSheetAppearanceControls({ appearance, disabled, hexValue, onHexChange, onChange, backdrop }: {
   appearance: ContactSheetAppearance; disabled: boolean; hexValue: string;
@@ -61,6 +64,14 @@ export function ContactSheetAppearanceControls({ appearance, disabled, hexValue,
         accessibilityState={{ checked: appearance.photoSize === value, disabled }} disabled={disabled}
         onPress={() => onChange({ photoSize: value })} style={[styles.option, appearance.photoSize === value && styles.optionSelected, disabled && styles.disabled]}>
         <Text style={styles.optionText}>{t(sizeLabels[value])}</Text>
+      </Pressable>)}
+    </ScrollView>
+    <Text accessibilityRole="header" style={styles.appearanceLabel}>{t('csExportRatio')}</Text>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.options}>
+      {contactSheetExportRatios.map(value => <Pressable key={value} accessibilityRole="radio" accessibilityLabel={t(ratioLabels[value])}
+        accessibilityState={{ checked: appearance.exportRatio === value, disabled }} disabled={disabled}
+        onPress={() => onChange({ exportRatio: value })} style={[styles.option, appearance.exportRatio === value && styles.optionSelected, disabled && styles.disabled]}>
+        <Text style={styles.optionText}>{t(ratioLabels[value])}</Text>
       </Pressable>)}
     </ScrollView>
     {appearance.background === 'custom' && <>

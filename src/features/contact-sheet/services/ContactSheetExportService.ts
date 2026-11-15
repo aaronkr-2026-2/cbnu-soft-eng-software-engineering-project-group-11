@@ -3,15 +3,16 @@ import { Asset } from 'expo-media-library';
 import { ensurePhotoWritePermission, PhotoLibraryPermissionError } from '../../photos/services/PhotoLibraryPermissionService';
 import * as Sharing from 'expo-sharing';
 import { captureRef, releaseCapture } from 'react-native-view-shot';
-import { contactSheetCaptureSize, type ContactSheetLayout } from '../utils/contactSheetLayout';
+import { contactSheetCaptureSize } from '../utils/contactSheetLayout';
 
 export class ContactSheetExportError extends Error {
   constructor(public reason: 'permission' | 'sharing') { super(reason); }
 }
 
-export function captureContactSheet(view: View, layout: ContactSheetLayout): Promise<string> {
+/** `size` is the full canvas (the sheet plus any social-media padding) in export pixels. */
+export function captureContactSheet(view: View, size: { width: number; height: number }): Promise<string> {
   return captureRef(view, { format: 'png', quality: 1, result: 'tmpfile',
-    ...contactSheetCaptureSize(layout, PixelRatio.get(), Platform.OS), useRenderInContext: true });
+    ...contactSheetCaptureSize(size, PixelRatio.get(), Platform.OS), useRenderInContext: true });
 }
 
 /** One image per preview session; retry failed generation and release temporary files on close. */

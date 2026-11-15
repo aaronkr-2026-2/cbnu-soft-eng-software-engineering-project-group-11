@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type Ref } from 'react';
 import { Image, Platform, Text, View } from 'react-native';
 import { contactSheetPalette, defaultContactSheetAppearance, type ContactSheetAppearance } from '../utils/contactSheetAppearance';
-import type { ContactSheetLayout } from '../utils/contactSheetLayout';
+import type { ContactSheetCanvasFrame, ContactSheetLayout } from '../utils/contactSheetLayout';
 import { getContactSheetPhotoTransform } from '../utils/contactSheetPhotoTransform';
 
 export type ContactSheetFrame = { id: string; uri?: string; number: number };
@@ -15,13 +15,17 @@ type Props = {
   edgeLabel?: string;
   /** Frame card backdrop photo id; undefined uses the first photo, null shows the plain background. */
   backdropId?: string | null;
+  /** Social-media canvas around the sheet (layout units); defaults to the sheet itself. `width` is the canvas width. */
+  frame?: ContactSheetCanvasFrame;
   width: number; unavailableLabel: string; canvasRef?: Ref<View>;
   onReady?: () => void; onFailure?: () => void;
 };
 
 /** The same declarative film design renders at preview or physical export resolution. */
-export function ContactSheetCanvas({ layout, rows, header, width, unavailableLabel, canvasRef, onReady, onFailure, edgeLabel, backdropId, appearance = defaultContactSheetAppearance }: Props) {
-  const scale = width / layout.width;
+export function ContactSheetCanvas({ layout, rows, header, width, unavailableLabel, canvasRef, onReady, onFailure, edgeLabel, backdropId, frame, appearance = defaultContactSheetAppearance }: Props) {
+  const canvas = frame ?? { width: layout.width, height: layout.height, x: 0, y: 0 };
+  const scale = width / canvas.width;
+  const canvasHeight = canvas.height * scale;
   const palette = contactSheetPalette({ ...appearance, frameStyle: layout.frameStyle });
   const [laidOut, setLaidOut] = useState(false);
   const [loaded, setLoaded] = useState(0);
@@ -40,15 +44,17 @@ export function ContactSheetCanvas({ layout, rows, header, width, unavailableLab
     return () => { cancelAnimationFrame(first); cancelAnimationFrame(next); };
   }, [laidOut, loaded, count, onReady]);
 
+  // The canvas fills any social-media ratio with the sheet background (and Frame card photo); the sheet inside never changes.
   return <View ref={canvasRef} collapsable={false} onLayout={() => setLaidOut(true)}
-    style={{ width, height: layout.height * scale, backgroundColor: palette.background, paddingHorizontal: layout.padding * scale,
-      paddingTop: layout.padding * scale, paddingBottom: layout.bottomPadding * scale }}>
+    style={{ width, height: canvasHeight, backgroundColor: palette.background }}>
     {backdropUri ? <>
       <Image source={{ uri: backdropUri }} resizeMode="cover" resizeMethod="resize" fadeDuration={0} onLoad={() => markLoaded('backdrop')}
-        onError={onFailure} style={{ position: 'absolute', left: 0, top: 0, width, height: layout.height * scale }} />
+        onError={onFailure} style={{ position: 'absolute', left: 0, top: 0, width, height: canvasHeight }} />
       {/* The chosen background tints the photo, e.g. Darkroom red. */}
-      <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width, height: layout.height * scale, backgroundColor: palette.background, opacity: 0.55 }} />
+      <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width, height: canvasHeight, backgroundColor: palette.background, opacity: 0.55 }} />
     </> : null}
+    <View style={{ position: 'absolute', left: canvas.x * scale, top: canvas.y * scale, width: layout.width * scale, height: layout.height * scale,
+      paddingHorizontal: layout.padding * scale, paddingTop: layout.padding * scale, paddingBottom: layout.bottomPadding * scale }}>
     <View style={{ height: layout.headerHeight * scale, flexDirection: 'row', alignItems: 'flex-start' }}>
       {[header.left, header.center, header.right].map((label, index) => <Text key={index} allowFontScaling={false} numberOfLines={2}
         style={{ flex: 1, color: palette.header, fontSize: 28 * scale, lineHeight: 36 * scale,
@@ -72,6 +78,7 @@ export function ContactSheetCanvas({ layout, rows, header, width, unavailableLab
         {layout.frameStyle === 'film-strip' ? <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, borderWidth: 2 * scale, borderColor: palette.edge }} /> : null}
       </View>;
     })}
+    </View>
     </View>
   </View>;
 }

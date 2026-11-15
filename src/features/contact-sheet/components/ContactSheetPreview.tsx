@@ -16,7 +16,7 @@ import { formatRollMonth } from '../../rolls/utils/rollMonth';
 import { isRollMonth } from '../../rolls/utils/groupRolls';
 import { captureContactSheet, ContactSheetExportError, createContactSheetExportSession } from '../services/ContactSheetExportService';
 import { createContactSheetStyles } from '../styles/contact-sheet.styles';
-import { contactSheetRows, getContactSheetLayout, orderedContactPhotos } from '../utils/contactSheetLayout';
+import { contactSheetRows, getContactSheetCanvasFrame, getContactSheetLayout, orderedContactPhotos } from '../utils/contactSheetLayout';
 import { type ContactSheetFrame, ContactSheetCanvas } from './ContactSheetCanvas';
 
 type Props = { roll: Roll; onClose: () => void };
@@ -44,6 +44,7 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
   const photos = useMemo(() => orderedContactPhotos(roll), [roll]);
   const layout = useMemo(() => getContactSheetLayout(roll.format, photos.length, appearance.frameStyle, contactSheetPhotoColumns[appearance.photoSize]),
     [roll.format, photos.length, appearance.frameStyle, appearance.photoSize]);
+  const frame = useMemo(() => getContactSheetCanvasFrame(layout, appearance.exportRatio), [layout, appearance.exportRatio]);
   const edgeLabel = effectiveFilmName(roll);
   // A removed photo falls back to the first one; null keeps the plain background.
   const backdropId = savedBackdrop === null ? null : photos.some(photo => photo.id === savedBackdrop) ? savedBackdrop! : photos[0]?.id ?? null;
@@ -51,6 +52,7 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
   const rows = useMemo(() => contactSheetRows(photos.map((photo, index) => ({ id: photo.id, uri: resolved.items[index]?.uri, number: index + 1 })), layout.columns), [photos, layout.columns, resolved.items]);
   const [exportAppearance, setExportAppearance] = useState(appearance);
   const [exportBackdrop, setExportBackdrop] = useState<string | null>(null);
+  const [exportFrame, setExportFrame] = useState(frame);
   const [exportRows, setExportRows] = useState<ContactSheetFrame[][]>([]);
   const header = {
     left: isRollMonth(roll.date) ? formatRollMonth(roll.date, language) : '',
@@ -69,6 +71,7 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
       }
       setExportAppearance(appearance);
       setExportBackdrop(backdropId);
+      setExportFrame(frame);
       setExportRows(contactSheetRows(images, layout.columns));
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => { pending.current = null; reject(new Error('Contact sheet images timed out')); }, 30000);
@@ -76,11 +79,11 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
         setRenderExport(true);
       });
       if (!exportView.current) throw new Error('Contact sheet canvas is missing');
-      return await captureContactSheet(exportView.current, layout);
+      return await captureContactSheet(exportView.current, frame);
     } finally {
       if (mounted.current) setRenderExport(false);
     }
-  }, [layout, photos, appearance, backdropId]);
+  }, [layout, frame, photos, appearance, backdropId]);
 
   const ready = useCallback(() => {
     if (!pending.current) return;
@@ -144,7 +147,7 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
     if (color) changeAppearance({ background: 'custom', customColor: color });
   }
   const invalidHex = appearance.background === 'custom' && !normalizeContactSheetHex(hexValue);
-  const previewWidth = Math.max(0, Math.min(stage.width, stage.height * layout.width / layout.height));
+  const previewWidth = Math.max(0, Math.min(stage.width, stage.height * frame.width / frame.height));
   const disabled = busy || photos.length === 0 || Boolean(invalidHex);
   return <Modal visible animationType="slide" presentationStyle="fullScreen" onRequestClose={() => { if (!busyRef.current) onClose(); }}>
     <SafeAreaView style={styles.root}><KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -159,7 +162,7 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
         const { width, height } = event.nativeEvent.layout;
         setStage(previous => previous.width === width && previous.height === height ? previous : { width, height });
       }}>
-        {previewWidth > 0 ? <ContactSheetCanvas appearance={appearance} edgeLabel={edgeLabel} backdropId={backdropId} layout={layout} rows={rows} header={header} width={previewWidth} unavailableLabel={t('unavailable')} /> : null}
+        {previewWidth > 0 ? <ContactSheetCanvas appearance={appearance} edgeLabel={edgeLabel} backdropId={backdropId} frame={frame} layout={layout} rows={rows} header={header} width={previewWidth} unavailableLabel={t('unavailable')} /> : null}
       </View>
       <View pointerEvents="none" style={styles.overlay}>
         {busy ? <View style={styles.status}><ActivityIndicator color={colors.secondaryText} /><Text accessibilityLiveRegion="polite" style={styles.statusText}>{t('generatingContactSheet')}</Text></View> : null}
@@ -182,8 +185,8 @@ export function ContactSheetPreview({ roll, onClose }: Props) {
         </Pressable>
       </View>
       {renderExport ? <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.exportLayer}>
-        <ContactSheetCanvas appearance={exportAppearance} edgeLabel={edgeLabel} backdropId={exportBackdrop} canvasRef={exportView} layout={layout} rows={exportRows} header={header}
-          width={layout.width / PixelRatio.get()} unavailableLabel={t('unavailable')} onReady={ready} onFailure={failed} />
+        <ContactSheetCanvas appearance={exportAppearance} edgeLabel={edgeLabel} backdropId={exportBackdrop} frame={exportFrame} canvasRef={exportView} layout={layout} rows={exportRows} header={header}
+          width={exportFrame.width / PixelRatio.get()} unavailableLabel={t('unavailable')} onReady={ready} onFailure={failed} />
       </View> : null}
     </KeyboardAvoidingView></SafeAreaView>
   </Modal>;

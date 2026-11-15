@@ -1,4 +1,4 @@
-import { contactSheetStripStyles, type ContactSheetFrameStyle } from './contactSheetAppearance';
+import { contactSheetRatioValues, contactSheetStripStyles, type ContactSheetExportRatio, type ContactSheetFrameStyle } from './contactSheetAppearance';
 import type { Roll, RollFormat } from '../../rolls/types';
 
 export const contactSheetWidth = 2400;
@@ -37,8 +37,19 @@ export function getContactSheetLayout(format: RollFormat, photoCount: number, fr
 
 export type ContactSheetLayout = ReturnType<typeof getContactSheetLayout>;
 
+export type ContactSheetCanvasFrame = { width: number; height: number; x: number; y: number };
+
+/** Grows the canvas to the chosen ratio around the unchanged sheet (no crop, no scaling), keeping it centred. */
+export function getContactSheetCanvasFrame(layout: Pick<ContactSheetLayout, 'width' | 'height'>, ratio: ContactSheetExportRatio = 'original'): ContactSheetCanvasFrame {
+  const target = ratio === 'original' ? undefined : contactSheetRatioValues[ratio];
+  if (!target) return { width: layout.width, height: layout.height, x: 0, y: 0 };
+  const width = layout.width / layout.height >= target ? layout.width : Math.ceil(layout.height * target);
+  const height = layout.width / layout.height >= target ? Math.ceil(layout.width / target) : layout.height;
+  return { width, height, x: Math.floor((width - layout.width) / 2), y: Math.floor((height - layout.height) / 2) };
+}
+
 /** view-shot 5 uses UIKit point dimensions on iOS, physical bitmap dimensions on Android. */
-export function contactSheetCaptureSize(layout: ContactSheetLayout, pixelRatio: number, platform: string) {
+export function contactSheetCaptureSize(layout: { width: number; height: number }, pixelRatio: number, platform: string) {
   const divisor = platform === 'ios' ? pixelRatio : 1;
   return { width: layout.width / divisor, height: layout.height / divisor };
 }

@@ -19,7 +19,7 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
   <img src="docs/images/app-store/08-film-library.png" width="200" alt="Film stock library">
 </p>
 
-**On the App Store: version 1.0.0.** Next: **1.0.1 (build 10)** — see [What's new](#whats-new-in-101-build-10).
+**On the App Store: version 1.0.0.** Next: **1.0.1 (build 10)** in review, then **1.0.2 (build 11)** — see [What's new](#whats-new-in-102-build-11).
 
 ## Features
 
@@ -41,7 +41,7 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 
 **Relive and share**
 - Statistics: your most-shot films, cameras and places, and activity over time
-- Export a classic contact sheet with 12 frame styles (film strips, color and B&W negatives, 120 edges, instant prints, Frame card…), 8 backgrounds including any custom color, and small, medium or large photos
+- Export a classic contact sheet with 12 frame styles (film strips, color and B&W negatives, 120 edges, instant prints, Frame card…), 8 backgrounds including any custom color, small, medium or large photos, and export sizes for Instagram stories and posts (9:16, 4:5, 1:1, 3:2, 16:9) that keep the sheet itself unchanged
 
 **iCloud sync and restore**
 - Turn on **Settings → iCloud Sync** (off by default) and your rolls sync through your private iCloud (CloudKit); they are restored automatically after reinstalling or on a new iPhone
@@ -49,6 +49,10 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 **Built for everyone**
 - English, Tiếng Việt and 한국어 · Light, Dark or **System** appearance with a warm, high-contrast palette (WCAG AA) · VoiceOver labels
 - Free, with no ads or subscriptions. An optional **Buy me a coffee** tip ($2.99) is ready but switched off until the Paid Apps Agreement is active; it unlocks nothing.
+
+## What's new in 1.0.2 (build 11)
+
+- **Export sizes for social media** — save a contact sheet as an Instagram story (9:16), post (4:5), square (1:1), 3:2 or 16:9. The sheet is centred and never cropped or resized; the extra space uses the background color or the Frame card photo.
 
 ## What's new in 1.0.1 (build 10)
 

@@ -133,3 +133,10 @@ roll's own; no manufacturer logo is drawn. Capture also waits for the backdrop p
 With Frame card selected, **Background photo** lists the roll's photos plus **No photo**. The choice
 is saved per roll under `filog.contactSheet.backdrops.v1` (photo id, or `null` for none); a removed
 photo falls back to the first one. The export snapshots the choice and a change invalidates the cached PNG.
+
+Export size (2026-11-16): **Export size** places the sheet on a social-media canvas: Original (default),
+Story 9:16, Post 4:5, Square 1:1, 3:2 or 16:9. `getContactSheetCanvasFrame` only grows one side of the
+canvas to reach the ratio and centres the sheet, so the sheet is never cropped or scaled and stays pixel
+for pixel the same as Original. The extra space uses the sheet background, or the Frame card backdrop
+photo, which covers the whole canvas. Preview and export share the same frame, and the PNG is captured at
+the canvas size. The setting is part of the saved appearance; older saved settings load as Original.

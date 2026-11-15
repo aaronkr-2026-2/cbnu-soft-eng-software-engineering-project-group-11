@@ -272,7 +272,7 @@ test('Contact-sheet preferences persist separately, validate old/corrupt setting
   const store = createStore();
   assert.deepEqual(store.getState().appearance, defaultContactSheetAppearance);
   store.getState().updateAppearance({ background: 'custom', customColor: 'ab89ef', frameStyle: 'film-strip-dark' });
-  assert.deepEqual(createStore().getState().appearance, { background: 'custom', customColor: '#AB89EF', frameStyle: 'film-strip-dark', photoSize: 'medium' });
+  assert.deepEqual(createStore().getState().appearance, { background: 'custom', customColor: '#AB89EF', frameStyle: 'film-strip-dark', photoSize: 'medium', exportRatio: 'original' });
   assert.equal(kv.get('filmer.rolls.v1'), 'REAL_ARCHIVE_UNTOUCHED');
   assert.equal(kv.get('filmer.settings.v1'), 'OTHER_SETTINGS_UNTOUCHED');
   assert.deepEqual(writes, ['filog.contactSheet.appearance.v1']);
@@ -623,4 +623,38 @@ test('Frame card backdrop is chosen per roll, persists separately and can be tur
   assert.equal(images('p4')[0], 'file:///image-4.jpg');
   assert.equal(images('missing')[0], 'file:///image-0.jpg');
   assert.equal(images(null).length, 5, 'no backdrop image, only the five frames');
+});
+
+test('Social-media export sizes pad the unchanged sheet to the exact ratio, centred, without scaling', () => {
+  const { getContactSheetCanvasFrame } = load('utils/contactSheetLayout.ts');
+  const { contactSheetExportRatios, validateContactSheetAppearance } = load('utils/contactSheetAppearance.ts');
+  assert.equal(validateContactSheetAppearance({}).exportRatio, 'original');
+  assert.equal(validateContactSheetAppearance({ exportRatio: 'tiktok' }).exportRatio, 'original');
+  assert.equal(validateContactSheetAppearance({ exportRatio: 'story' }).exportRatio, 'story');
+  const expected = { story: 9 / 16, post: 4 / 5, square: 1, landscape: 3 / 2, wide: 16 / 9 };
+  for (const layout of [getContactSheetLayout('35mm', 36, 'film-strip', 6), getContactSheetLayout('35mm', 3, 'frame-card', 4), getContactSheetLayout('120', 12, 'none', 4)]) {
+    assert.deepEqual(getContactSheetCanvasFrame(layout, 'original'), { width: layout.width, height: layout.height, x: 0, y: 0 });
+    for (const ratio of contactSheetExportRatios.filter(value => value !== 'original')) {
+      const frame = getContactSheetCanvasFrame(layout, ratio);
+      assert.ok(frame.width >= layout.width && frame.height >= layout.height, ratio + ' never shrinks the sheet');
+      assert.ok(frame.width === layout.width || frame.height === layout.height, ratio + ' pads one side only');
+      assert.ok(Math.abs(frame.width / frame.height - expected[ratio]) < 0.001, ratio + ' ratio');
+      assert.ok(Math.abs(frame.x * 2 - (frame.width - layout.width)) <= 1 && Math.abs(frame.y * 2 - (frame.height - layout.height)) <= 1, ratio + ' centred');
+    }
+  }
+  const jsx = (type, props) => ({ type, props });
+  const { ContactSheetCanvas } = load('components/ContactSheetCanvas.tsx', {
+    react: { useEffect: () => {}, useRef: value => ({ current: value }), useState: value => [value, () => {}] },
+    'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
+    'react-native': { Image: 'Image', Text: 'Text', View: 'View', Platform: { OS: 'ios' } },
+  });
+  const layout = getContactSheetLayout('35mm', 6, 'film-strip', 6);
+  const rows = contactSheetRows(Array.from({ length: 6 }, (_, i) => ({ id: String(i), uri: `file:///${i}.jpg`, number: i + 1 })), 6);
+  const frame = getContactSheetCanvasFrame(layout, 'story');
+  const render = f => ContactSheetCanvas({ layout, rows, frame: f, header: { left: '', center: '', right: '' }, width: (f ?? layout).width / 4, unavailableLabel: 'x' });
+  const story = render(frame), original = render(undefined);
+  assert.equal(story.props.style.width, frame.width / 4); assert.equal(story.props.style.height, frame.height / 4);
+  const sheet = tree => tree.props.children.find(child => child && child.props?.style?.position === 'absolute' && child.props.style.paddingTop !== undefined);
+  assert.equal(sheet(story).props.style.top, frame.y / 4); assert.equal(sheet(story).props.style.left, 0);
+  assert.deepEqual({ ...sheet(story).props.style, top: 0 }, sheet(original).props.style, 'sheet is identical inside the story canvas');
 });
