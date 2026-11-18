@@ -19,7 +19,7 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
   <img src="docs/images/app-store/08-film-library.png" width="200" alt="Film stock library">
 </p>
 
-**On the App Store: version 1.0.0.** Next: **1.0.1 (build 10)** in review, then **1.0.2 (build 11)** — see [What's new](#whats-new-in-102-build-11).
+**On the App Store: version 1.0.0.** Next: **1.0.3 (build 12)** — see [What's new](#whats-new-in-103-build-12).
 
 ## Features
 
@@ -49,6 +49,10 @@ FiLog keeps the story behind every roll — film stock, camera, place and date �
 **Built for everyone**
 - English, Tiếng Việt and 한국어 · Light, Dark or **System** appearance with a warm, high-contrast palette (WCAG AA) · VoiceOver labels
 - Free, with no ads or subscriptions. An optional **Buy me a coffee** tip ($2.99) is ready but switched off until the Paid Apps Agreement is active; it unlocks nothing.
+
+## What's new in 1.0.3 (build 12)
+
+- Same app as 1.0.2 (social-media export sizes), resubmitted as a new version without any In-App Purchases. 1.0.2 build 11 was rejected (2.1(b)) because the tip products were attached to the submission while tips are switched off in the app.
 
 ## What's new in 1.0.2 (build 11)
 
